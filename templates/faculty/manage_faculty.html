@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/faculty.css') }}">
+{% endblock %}
+
+{% block content %}
+    {% for message in get_flashed_messages(with_categories=true) %}
+        {% if message[0] == 'success' %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {% elif message[0] == 'error' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {% else %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {% endif %}
+    {{ message[1] }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+
+    <div class="d-flex justify-content-between align-items-center">
+        <h1>Manage Faculties</h1>
+        <a href="{{ url_for('faculty.add_faculty') }}" class="btn btn-primary">Add Faculties</a>
+    </div>
+
+    <br/><br>
+    <div class="input-group mb-3">
+        <form method="GET" action="{{ url_for('faculty.manage_faculty') }}">
+            {{ search.hidden_tag() }}
+            <input type="search" class="form-control" placeholder="Search" aria-label="Search"
+                   aria-describedby="search-btn" name="search">
+            <button class="btn btn-secondary" type="submit" id="search-btn">Search</button>
+        </form>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center">
+        <form method="GET" action="{{ url_for('faculty.manage_faculty') }}">
+            <input type="hidden" name="search" value="{{ request.args.get('search', '') }}">
+            <input type="hidden" name="page" value="{{ request.args.get('page', 1) }}">
+            <div class="input-group mb-3">
+                <label class="input-group-text" for="per_page">Entries per page:</label>
+                <select class="form-select" id="per_page" name="per_page" onchange="this.form.submit()">
+                    <option value="10" {% if request.args.get('per_page', 10)|int == 10 %}selected{% endif %}>10
+                    </option>
+                    <option value="25" {% if request.args.get('per_page', 10)|int == 25 %}selected{% endif %}>25
+                    </option>
+                    <option value="50" {% if request.args.get('per_page', 10)|int == 50 %}selected{% endif %}>50
+                    </option>
+                    <option value="100" {% if request.args.get('per_page', 10)|int == 100 %}selected{% endif %}>100
+                    </option>
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <table class="table table-hover">
+        <thead>
+        <tr>
+            <th scope="col">No.</th>
+            <th scope="col">Full Name</th>
+            <th scope="col">Secret Key</th>
+            <th scope="col">RFID Number</th>
+            <th scope="col">Email</th>
+            <th scope="col">Actions</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        {% set start_index = (faculties.page - 1) * faculties.per_page + 1 %}
+        {% for faculty in faculties.items %}
+            <tr>
+                <td>{{ loop.index0 + start_index }}</td>
+                <td>{{ faculty.full_name }}</td>
+                <td>234352352345</td>
+                <td>{{ faculty.user.rfid_uid }}</td>
+                <td>{{ faculty.user.email }}</td>
+                <td>
+                    <a href="{{ url_for('faculty.edit_faculty', id=faculty.id) }}" class="btn btn-sm btn-info">
+                        <img src="{{ url_for('static', filename='images/icons/pencil-fill.svg') }}" alt="Pencil Icon">
+                    </a>
+                    <a href="#" class="btn btn-sm btn-danger" data-bs-toggle="modal"
+                       data-bs-target="#deleteModal{{ faculty.id }}">
+                        <img src="{{ url_for('static', filename='images/icons/trash-fill.svg') }}" alt="Trash Icon">
+                    </a>
+
+                    <!-- Delete Confirmation Modal -->
+                    <div class="modal fade" id="deleteModal{{ faculty.id }}" tabindex="-1"
+                         aria-labelledby="deleteModalLabel{{ faculty.id }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="deleteModalLabel{{ faculty.id }}">Confirm Delete</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    Are you sure you want to delete {{ faculty.full_name }}?
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel
+                                    </button>
+                                    <form method="POST"
+                                          action="{{ url_for('faculty.delete_faculty', id=faculty.id) }}">
+                                        {{ form.hidden_tag() }}
+                                        <button type="submit" class="btn btn-danger">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Pagination links -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if faculties.has_prev %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="{{ url_for('faculty.manage_faculty', page=faculties.prev_num, search=request.args.get('search', ''), per_page=request.args.get('per_page', 10)) }}">Previous</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Previous</span>
+                </li>
+            {% endif %}
+
+            {% for num in faculties.iter_pages() %}
+                {% if num %}
+                    {% if num == faculties.page %}
+                        <li class="page-item active" aria-current="page">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% else %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="{{ url_for('faculty.manage_faculty', page=num, search=request.args.get('search', ''), per_page=request.args.get('per_page', 10)) }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if faculties.has_next %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="{{ url_for('faculty.manage_faculty', page=faculties.next_num, search=request.args.get('search', ''), per_page=request.args.get('per_page', 10)) }}">Next</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next</span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+
+{% endblock %}

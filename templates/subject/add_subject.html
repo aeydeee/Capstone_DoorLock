@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    {% for message in get_flashed_messages(with_categories=true) %}
+        {% if message[0] == 'success' %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {% elif message[0] == 'error' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {% else %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {% endif %}
+    {{ message[1] }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+
+    <h1>Add Subject!</h1>
+    <br/><br>
+
+    <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
+        <form action="" method="post">
+            {{ form.hidden_tag() }}
+
+            <div class="form-group">
+                {{ form.faculty.label(class="form-label") }}
+                {{ form.faculty(class="form-control") }}
+                {% for error in form.faculty.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                {{ form.name.label(class="form-label") }}
+                {{ form.name(class="form-control") }}
+                {% for error in form.name.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                {{ form.code.label(class="form-label") }}
+                {{ form.code(class="form-control") }}
+                {% for error in form.code.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                {{ form.units.label(class="form-label") }}
+                {{ form.units(class="form-control") }}
+                {% for error in form.units.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+
+            <div class="form-group">
+                {{ form.day.label(class="form-label") }}
+                {{ form.day(class="form-control") }}
+                {% for error in form.day.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                {{ form.schedule_from.label(class="form-label") }}
+                {{ form.schedule_from(class="form-control") }}
+                {% for error in form.schedule_from.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                {{ form.schedule_to.label(class="form-label") }}
+                {{ form.schedule_to(class="form-control") }}
+                {% for error in form.schedule_to.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <br/>
+            <div class="form-group">
+                {{ form.submit(class="btn btn-secondary") }}
+                <a href="{{ url_for('subject.manage_subject') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

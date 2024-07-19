@@ -1,0 +1,160 @@
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f4f4;
+}
+
+.page-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+.page-container {
+    flex-grow: 1;
+    padding: 20px;
+}
+
+.main-content {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.title-1 {
+    font-size: 28px;
+    margin-bottom: 20px;
+    color: #333;
+    font-weight: 600;
+}
+
+.overview-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.au-btn {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.au-btn:hover {
+    background-color: #0056b3;
+}
+
+.row {
+    margin: -15px;
+}
+
+.col-md-12,
+.col-sm-6,
+.col-lg-3,
+.col-lg-6,
+.col-lg-9 {
+    padding: 15px;
+}
+
+.overview-item {
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.overview-item:hover {
+    transform: translateY(-10px);
+}
+
+.overview-item--c1 {
+    background-color: #ff6b6b;
+    color: #fff;
+}
+
+.overview-item--c2 {
+    background-color: #4e73df;
+    color: #fff;
+}
+
+.overview-item--c3 {
+    background-color: #1cc88a;
+    color: #fff;
+}
+
+.overview-item--c4 {
+    background-color: #f6c23e;
+    color: #fff;
+}
+
+.icon {
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+.text {
+    font-size: 18px;
+}
+
+.text h2 {
+    font-size: 36px;
+    margin: 0;
+}
+
+.au-card {
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    margin-bottom: 20px;
+    border-collapse: collapse;
+}
+
+.table th,
+.table td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+
+.table th {
+    background-color: #f8f9fc;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #f8f9fc;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.copyright {
+    text-align: center;
+    padding: 15px 0;
+    background-color: #fff;
+    border-top: 1px solid #ddd;
+    margin-top: 20px;
+}
+
+.au-card-top-countries .au-card-inner {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}

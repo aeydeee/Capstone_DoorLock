@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/add_faculty.css') }}">
+{% endblock %}
+
+{% block content %}
+
+    {% for message in get_flashed_messages() %}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+
+    <h1>Faculty Update</h1>
+    <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
+        <form method="POST" action="{{ url_for('faculty.edit_faculty', id=faculty.id) }}" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+
+            <!-- RFID UID -->
+            <label for="rfid_uid">RFID UID</label>
+            <input type="text" id="rfid_uid" name="rfid_uid" maxlength="100" value="{{ form.rfid_uid.data }}" required>
+
+            <!-- Username -->
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" maxlength="255" value="{{ form.username.data }}" required>
+
+            <!-- First Name -->
+            <label for="f_name">First Name</label>
+            <input type="text" id="f_name" name="f_name" maxlength="100" value="{{ form.f_name.data }}" required>
+
+            <!-- Last Name -->
+            <label for="l_name">Last Name</label>
+            <input type="text" id="l_name" name="l_name" maxlength="100" value="{{ form.l_name.data }}" required>
+
+            <!-- Middle Name -->
+            <label for="m_name">Middle Name</label>
+            <input type="text" id="m_name" name="m_name" maxlength="100" value="{{ form.m_name.data }}" required>
+
+            <!-- Middle Initial -->
+            <label for="m_initial">Middle Initial</label>
+            <input type="text" id="m_initial" name="m_initial" maxlength="1" value="{{ form.m_initial.data }}" required>
+
+            <!-- School ID -->
+            <label for="school_id">School ID</label>
+            <input type="text" id="school_id" name="school_id" maxlength="100" value="{{ form.school_id.data }}"
+                   required>
+
+            <!-- Email -->
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" maxlength="100" value="{{ form.email.data }}" required>
+
+            <!-- Date of Birth -->
+            <label for="date_of_birth">Date of Birth</label>
+            <input type="date" id="date_of_birth" name="date_of_birth" value="{{ form.date_of_birth.data }}" required>
+
+            <!-- Place of Birth -->
+            <label for="place_of_birth">Place of Birth</label>
+            <input type="text" id="place_of_birth" name="place_of_birth" maxlength="255"
+                   value="{{ form.place_of_birth.data }}" required>
+
+            <!-- Gender -->
+            <label for="gender">Gender</label>
+            <select id="gender" name="gender" required>
+                <option value="male" {% if form.gender.data == 'male' %} selected {% endif %}>Male</option>
+                <option value="female" {% if form.gender.data == 'female' %} selected {% endif %}>Female</option>
+            </select>
+
+            <!-- Civil Status -->
+            <label for="civil_status">Civil Status</label>
+            <input type="text" id="civil_status" name="civil_status" maxlength="100"
+                   value="{{ form.civil_status.data }}" required>
+
+            <!-- Nationality -->
+            <label for="nationality">Nationality</label>
+            <input type="text" id="nationality" name="nationality" maxlength="100" value="{{ form.nationality.data }}"
+                   required>
+
+            <!-- Citizenship -->
+            <label for="citizenship">Citizenship</label>
+            <input type="text" id="citizenship" name="citizenship" maxlength="100" value="{{ form.citizenship.data }}"
+                   required>
+
+            <!-- Address -->
+            <label for="address">Address</label>
+            <textarea id="address" name="address" maxlength="255" required>{{ form.address.data }}</textarea>
+
+            <!-- Profile Picture -->
+            <label for="profile_pic">Profile Picture</label>
+            <input type="file" id="profile_pic" name="profile_pic">
+
+            <!-- Religion -->
+            <label for="religion">Religion</label>
+            <input type="text" id="religion" name="religion" maxlength="100" value="{{ form.religion.data }}">
+
+            <!-- Dialect -->
+            <label for="dialect">Dialect</label>
+            <input type="text" id="dialect" name="dialect" maxlength="100" value="{{ form.dialect.data }}">
+
+            <!-- Contact Number -->
+            <label for="contact_number">Contact Number</label>
+            <input type="text" id="contact_number" name="contact_number" minlength="10" maxlength="15"
+                   value="{{ form.contact_number.data }}" required>
+
+            <!-- Contact Info -->
+            <fieldset>
+                <legend>Contact Info</legend>
+                <label for="h_city">Home City</label>
+                <input type="text" id="h_city" name="h_city" maxlength="100"
+                       value="{{ form.h_city.data }}">
+                <br>
+                <label for="h_barangay">Home Barangay</label>
+                <input type="text" id="h_barangay" name="h_barangay" maxlength="100"
+                       value="{{ form.h_barangay.data }}">
+                <br>
+                <label for="h_house_no">Home House Number</label>
+                <input type="text" id="h_house_no" name="h_house_no" maxlength="100"
+                       value="{{ form.h_house_no.data }}">
+                <br>
+                <label for="h_street">Home Street</label>
+                <input type="text" id="h_street" name="h_street" maxlength="100"
+                       value="{{ form.h_street.data }}">
+                <br>
+                <label for="curr_city">Current City</label>
+                <input type="text" id="curr_city" name="curr_city" maxlength="100"
+                       value="{{ form.curr_city.data }}">
+                <br>
+                <label for="curr_barangay">Current Barangay</label>
+                <input type="text" id="curr_barangay" name="curr_barangay" maxlength="100"
+                       value="{{ form.curr_barangay.data }}">
+                <br>
+                <label for="curr_house_no">Current House Number</label>
+                <input type="text" id="curr_house_no" name="curr_house_no" maxlength="100"
+                       value="{{ form.curr_house_no.data }}">
+                <br>
+                <label for="curr_street">Current Street</label>
+                <input type="text" id="curr_street" name="curr_street" maxlength="100"
+                       value="{{ form.curr_street.data }}">
+                <br>
+            </fieldset>
+
+            <!-- Family Background -->
+            <fieldset>
+                <legend>Family Background</legend>
+                <label for="mother_full_name">Mother's Full Name</label>
+                <input type="text" id="mother_full_name" name="mother_full_name" maxlength="255"
+                       value="{{ form.mother_full_name.data }}">
+                <br>
+                <label for="mother_educ_attainment">Mother's Educational Attainment</label>
+                <input type="text" id="mother_educ_attainment" name="mother_educ_attainment" maxlength="255"
+                       value="{{ form.mother_educ_attainment.data }}">
+                <br>
+                <label for="mother_addr">Mother's Address</label>
+                <input type="text" id="mother_addr" name="mother_addr" maxlength="255"
+                       value="{{ form.mother_addr.data }}">
+                <br>
+                <label for="mother_brgy">Mother's Barangay</label>
+                <input type="text" id="mother_brgy" name="mother_brgy" maxlength="100"
+                       value="{{ form.mother_brgy.data }}">
+                <br>
+                <label for="mother_cont_no">Mother's Contact Number</label>
+                <input type="text" id="mother_cont_no" name="mother_cont_no" minlength="10" maxlength="15"
+                       value="{{ form.mother_cont_no.data }}">
+                <br>
+                <label for="mother_place_work_or_company_name">Mother's Place of Work/Company Name</label>
+                <input type="text" id="mother_place_work_or_company_name" name="mother_place_work_or_company_name"
+                       maxlength="255" value="{{ form.mother_place_work_or_company_name.data }}">
+                <br>
+                <label for="mother_occupation">Mother's Occupation</label>
+                <input type="text" id="mother_occupation" name="mother_occupation" maxlength="255"
+                       value="{{ form.mother_occupation.data }}">
+                <br>
+                <label for="father_full_name">Father's Full Name</label>
+                <input type="text" id="father_full_name" name="father_full_name" maxlength="255"
+                       value="{{ form.father_full_name.data }}">
+                <br>
+                <label for="father_educ_attainment">Father's Educational Attainment</label>
+                <input type="text" id="father_educ_attainment" name="father_educ_attainment" maxlength="255"
+                       value="{{ form.father_educ_attainment.data }}">
+                <br>
+                <label for="father_addr">Father's Address</label>
+                <input type="text" id="father_addr" name="father_addr" maxlength="255"
+                       value="{{ form.father_addr.data }}">
+                <br>
+                <label for="father_brgy">Father's Barangay</label>
+                <input type="text" id="father_brgy" name="father_brgy" maxlength="100"
+                       value="{{ form.father_brgy.data }}">
+                <br>
+                <label for="father_cont_no">Father's Contact Number</label>
+                <input type="text" id="father_cont_no" name="father_cont_no" minlength="10" maxlength="15"
+                       value="{{ form.father_cont_no.data }}">
+                <br>
+                <label for="father_place_work_or_company_name">Father's Place of Work/Company Name</label>
+                <input type="text" id="father_place_work_or_company_name" name="father_place_work_or_company_name"
+                       maxlength="255" value="{{ form.father_place_work_or_company_name.data }}">
+                <br>
+                <label for="father_occupation">Father's Occupation</label>
+                <input type="text" id="father_occupation" name="father_occupation" maxlength="255"
+                       value="{{ form.father_occupation.data }}">
+                <br>
+                <label for="guardian_full_name">Guardian's Full Name</label>
+                <input type="text" id="guardian_full_name" name="guardian_full_name" maxlength="255"
+                       value="{{ form.guardian_full_name.data }}">
+                <br>
+                <label for="guardian_educ_attainment">Guardian's Educational Attainment</label>
+                <input type="text" id="guardian_educ_attainment" name="guardian_educ_attainment" maxlength="255"
+                       value="{{ form.guardian_educ_attainment.data }}">
+                <br>
+                <label for="guardian_addr">Guardian's Address</label>
+                <input type="text" id="guardian_addr" name="guardian_addr" maxlength="255"
+                       value="{{ form.guardian_addr.data }}">
+                <br>
+                <label for="guardian_brgy">Guardian's Barangay</label>
+                <input type="text" id="guardian_brgy" name="guardian_brgy" maxlength="100"
+                       value="{{ form.guardian_brgy.data }}">
+                <br>
+                <label for="guardian_cont_no">Guardian's Contact Number</label>
+                <input type="text" id="guardian_cont_no" name="guardian_cont_no" minlength="10" maxlength="15"
+                       value="{{ form.guardian_cont_no.data }}">
+                <br>
+                <label for="guardian_place_work_or_company_name">Guardian's Place of Work/Company Name</label>
+                <input type="text" id="guardian_place_work_or_company_name" name="guardian_place_work_or_company_name"
+                       maxlength="255" value="{{ form.guardian_place_work_or_company_name.data }}">
+                <br>
+                <label for="guardian_occupation">Guardian's Occupation</label>
+                <input type="text" id="guardian_occupation" name="guardian_occupation" maxlength="255"
+                       value="{{ form.guardian_occupation.data }}">
+                <br>
+            </fieldset>
+
+            <!-- Educational Background -->
+            <fieldset>
+                <legend>Educational Background</legend>
+                <label for="elem_school_name">Elementary School Name</label>
+                <input type="text" id="elem_school_name" name="elem_school_name" maxlength="255"
+                       value="{{ form.elem_school_name.data }}">
+                <br>
+                <label for="elem_address">Elementary School Address</label>
+                <input type="text" id="elem_address" name="elem_address" maxlength="255"
+                       value="{{ form.elem_address.data }}">
+                <br>
+                <label for="elem_year_grad">Elementary Year Graduated</label>
+                <input type="text" id="elem_year_grad" name="elem_year_grad" maxlength="4"
+                       value="{{ form.elem_year_grad.data }}">
+                <br>
+                <label for="junior_hs_school_name">Junior High School Name</label>
+                <input type="text" id="junior_hs_school_name" name="junior_hs_school_name" maxlength="255"
+                       value="{{ form.junior_hs_school_name.data }}">
+                <br>
+                <label for="junior_hs_address">Junior High School Address</label>
+                <input type="text" id="junior_hs_address" name="junior_hs_address" maxlength="255"
+                       value="{{ form.junior_hs_address.data }}">
+                <br>
+                <label for="junior_hs_year_grad">Junior High Year Graduated</label>
+                <input type="text" id="junior_hs_year_grad" name="junior_hs_year_grad" maxlength="4"
+                       value="{{ form.junior_hs_year_grad.data }}">
+                <br>
+                <label for="senior_hs_school_name">Senior High School Name</label>
+                <input type="text" id="senior_hs_school_name" name="senior_hs_school_name" maxlength="255"
+                       value="{{ form.senior_hs_school_name.data }}">
+                <br>
+                <label for="senior_hs_address">Senior High School Address</label>
+                <input type="text" id="senior_hs_address" name="senior_hs_address" maxlength="255"
+                       value="{{ form.senior_hs_address.data }}">
+                <br>
+                <label for="senior_hs_year_grad">Senior High Year Graduated</label>
+                <input type="text" id="senior_hs_year_grad" name="senior_hs_year_grad" maxlength="4"
+                       value="{{ form.senior_hs_year_grad.data }}">
+                <br>
+                <label for="senior_hs_track_strand">Senior High Track/Strand</label>
+                <input type="text" id="senior_hs_track_strand" name="senior_hs_track_strand" maxlength="255"
+                       value="{{ form.senior_hs_track_strand.data }}">
+                <br>
+                <label for="tertiary_school_name">Tertiary School Name</label>
+                <input type="text" id="tertiary_school_name" name="tertiary_school_name" maxlength="255"
+                       value="{{ form.tertiary_school_name.data }}">
+                <br>
+                <label for="tertiary_school_address">Tertiary School Address</label>
+                <input type="text" id="tertiary_school_address" name="tertiary_school_address" maxlength="255"
+                       value="{{ form.tertiary_school_address.data }}">
+                <br>
+                <label for="tertiary_year_grad">Tertiary Year Graduated</label>
+                <input type="text" id="tertiary_year_grad" name="tertiary_year_grad" maxlength="4"
+                       value="{{ form.tertiary_year_grad.data }}">
+                <br>
+                <label for="tertiary_course">Tertiary Course</label>
+                <input type="text" id="tertiary_course" name="tertiary_course" maxlength="255"
+                       value="{{ form.tertiary_course.data }}">
+                <br>
+            </fieldset>
+
+
+            <button type="submit" class="btn btn-primary">Update Faculty</button>
+        </form>
+    </div>
+
+{% endblock %}

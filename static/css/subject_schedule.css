@@ -1,0 +1,33 @@
+.table th, .table td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.table thead th {
+    width: auto;
+}
+
+.table-bordered th, .table-bordered td {
+    border: 1px solid #dee2e6;
+}
+
+.table-bordered {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.table-hover .table-primary > td {
+    background-color: #e2e3e5;
+}
+
+.table td.p-0 {
+    padding: 0;
+}
+
+.table-hover tr.collapse td {
+    padding: 0 !important;
+}
+
+.table-hover tr.collapse table {
+    margin: 0;
+}

@@ -1,0 +1,11 @@
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.invalid-feedback {
+    color: red;
+}
+
+.alert {
+    margin-top: 1rem;
+}

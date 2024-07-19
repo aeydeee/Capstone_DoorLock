@@ -1,0 +1,65 @@
+<nav class="navbar bg-dark border-bottom border-body fixed-top" data-bs-theme="dark">
+    <div class="container-fluid">
+        <a class="navbar-brand text-light" href="{{ url_for('auth.register') }}">DOORLOCK</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar"
+                aria-controls="offcanvasNavbar" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="offcanvas offcanvas-end bg-dark" tabindex="-1" id="offcanvasNavbar"
+             aria-labelledby="offcanvasNavbarLabel">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title text-light" id="offcanvasNavbarLabel">DOORLOCK</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body">
+                <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
+                    {% if current_user.is_authenticated %}
+
+                        {% if current_user.id == 11 %}
+                            <li class="nav-item">
+                                <a class="nav-link text-light" href="{{ url_for('auth.register') }}">Admin</a>
+                            </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link text-light" href="{{ url_for('auth.logout') }}">Logout</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link text-light" href="{{ url_for('auth.register') }}">Register</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-light" href="{{ url_for('auth.login') }}">Login</a>
+                        </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link text-light" href="{{ url_for('dashboard.dashboard') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-light" href="{{ url_for('schedule.manage_schedule') }}">Manage
+                            Schedule</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-light" href="{{ url_for('subject.manage_subject') }}">Manage Subject</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-light" href="{{ url_for('faculty.manage_faculty') }}">Manage
+                            Faculty</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-light" href="{{ url_for('student.manage_student') }}">Manage
+                            Student</a>
+                    </li>
+
+                </ul>
+                {#                {% if form %}#}
+                {#                    <form method="POST" action="{{ url_for('search') }}" class="d-flex mt-3" role="search">#}
+                {#                        {{ form.hidden_tag() }}#}
+                {#                        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search"#}
+                {#                               name="searched">#}
+                {#                        <button class="btn btn-outline-secondary" type="submit">Search</button>#}
+                {#                    </form>#}
+                {#                {% endif %}#}
+            </div>
+        </div>
+    </div>
+</nav>

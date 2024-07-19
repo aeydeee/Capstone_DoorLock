@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/student.css') }}">
+{% endblock %}
+
+{% block content %}
+    {% for message in get_flashed_messages(with_categories=true) %}
+        {% if message[0] == 'success' %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {% elif message[0] == 'error' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {% else %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {% endif %}
+    {{ message[1] }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+
+    <div class="d-flex justify-content-between align-items-center">
+        <h1>Manage Students</h1>
+        <a href="{{ url_for('student.add_student') }}" class="btn btn-primary">Add Students</a>
+    </div>
+
+    <br/><br>
+    <div class="input-group mb-3">
+        <form method="GET" action="{{ url_for('student.manage_student') }}">
+            {{ search.hidden_tag() }}
+            <input type="search" class="form-control" placeholder="Search" aria-label="Search"
+                   aria-describedby="search-btn" name="search" value="{{ request.args.get('search', '') }}">
+            <button class="btn btn-secondary" type="submit" id="search-btn">Search</button>
+
+            <label for="course_section">Filter by Course Section:</label>
+            <select name="course_section" id="course_section" class="form-select" onchange="this.form.submit()">
+                <option value="">All Sections</option>
+                {% for section in course_sections %}
+                    <option value="{{ section }}"
+                            {% if request.args.get('course_section') == section %}selected{% endif %}>
+                        {{ section }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+
+        <script>
+            document.getElementById('select-all').addEventListener('click', function () {
+                const checkboxes = document.querySelectorAll('input[name="student_ids"]');
+                checkboxes.forEach(checkbox => checkbox.checked = this.checked);
+            });
+        </script>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center">
+        <form method="GET" action="{{ url_for('student.manage_student') }}">
+            <input type="hidden" name="search" value="{{ request.args.get('search', '') }}">
+            <input type="hidden" name="page" value="{{ request.args.get('page', 1) }}">
+            <input type="hidden" name="course_section" value="{{ request.args.get('course_section', '') }}">
+            <div class="input-group mb-3">
+                <label class="input-group-text" for="per_page">Entries per page: </label>
+                <select class="form-select" id="per_page" name="per_page" onchange="this.form.submit()">
+                    <option value="10" {% if request.args.get('per_page', 10)|int == 10 %}selected{% endif %}>10
+                    </option>
+                    <option value="25" {% if request.args.get('per_page', 10)|int == 25 %}selected{% endif %}>25
+                    </option>
+                    <option value="50" {% if request.args.get('per_page', 10)|int == 50 %}selected{% endif %}>50
+                    </option>
+                    <option value="100" {% if request.args.get('per_page', 10)|int == 100 %}selected{% endif %}>100
+                    </option>
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <form method="POST" action="{{ url_for('student.assign_students_to_instructor') }}">
+        {{ assign_form.hidden_tag() }}
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th scope="col"><label for="select-all"></label><input type="checkbox" id="select-all"></th>
+                <th scope="col">No.</th>
+                <th scope="col">RFID Number</th>
+                <th scope="col">Student Number</th>
+                <th scope="col">Full Name</th>
+                <th scope="col">Email</th>
+                <th scope="col">Course & Section</th>
+                <th scope="col">Instructor</th>
+                <th scope="col">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% set start_index = (students.page - 1) * students.per_page + 1 %}
+            {% for student in students.items %}
+                <tr>
+                    <td><input type="checkbox" name="student_ids" value="{{ student.id }}"></td>
+                    <td>{{ loop.index0 + start_index }}</td>
+                    <td>{{ student.user.rfid_uid }}</td>
+                    <td>{{ student.student_number }}</td>
+                    <td>{{ student.full_name }}</td>
+                    <td>{{ student.user.email }}</td>
+                    <td>{{ student.course_section }}</td>
+                    <td>
+                        {% for faculty in student.faculties %}
+                            {{ faculty.user.f_name }} {{ faculty.user.l_name }}{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('student.edit_student', id=student.id) }}" class="btn btn-sm btn-info">
+                            <img src="{{ url_for('static', filename='images/icons/pencil-fill.svg') }}"
+                                 alt="Pencil Icon">
+                        </a>
+                        <a href="#" class="btn btn-sm btn-danger" data-bs-toggle="modal"
+                           data-bs-target="#deleteModal{{ student.id }}">
+                            <img src="{{ url_for('static', filename='images/icons/trash-fill.svg') }}"
+                                 alt="Trash Icon">
+                        </a>
+                        <!-- Delete Confirmation Modal -->
+                        <div class="modal fade" id="deleteModal{{ student.id }}" tabindex="-1"
+                             aria-labelledby="deleteModalLabel{{ student.id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="deleteModalLabel{{ student.id }}">Confirm
+                                            Delete</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Are you sure you want to delete {{ student.full_name }}?
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                            Cancel
+                                        </button>
+                                        <form method="POST"
+                                              action="{{ url_for('student.delete_student', id=student.id) }}">
+                                            {{ form.hidden_tag() }}
+                                            <button type="submit" class="btn btn-danger">Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+
+        <div class="mb-3">
+            <label for="instructor">Assign to Instructor</label>
+            {{ assign_form.instructor(class="form-select") }}
+        </div>
+        <button type="submit" class="btn btn-primary">Assign Selected Students</button>
+    </form>
+    <script>
+        document.getElementById('select-all').addEventListener('click', function () {
+            const checkboxes = document.querySelectorAll('input[name="student_ids"]');
+            checkboxes.forEach(checkbox => checkbox.checked = this.checked);
+        });
+    </script>
+
+    <!-- Pagination links -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if students.has_prev %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="{{ url_for('student.manage_student', page=students.prev_num, per_page=request.args.get('per_page', 10), search=request.args.get('search', ''), course_section=request.args.get('course_section', '')) }}"
+                       aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+
+            {% for page_num in students.iter_pages() %}
+                {% if page_num %}
+                    {% if page_num == students.page %}
+                        <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
+                    {% else %}
+                        <li class="page-item"><a class="page-link"
+                                                 href="{{ url_for('student.manage_student', page=page_num, per_page=request.args.get('per_page', 10), search=request.args.get('search', ''), course_section=request.args.get('course_section', '')) }}">{{ page_num }}</a>
+                        </li>
+                    {% endif %}
+                {% else %}
+                    <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if students.has_next %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="{{ url_for('student.manage_student', page=students.next_num, per_page=request.args.get('per_page', 10), search=request.args.get('search', ''), course_section=request.args.get('course_section', '')) }}"
+                       aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endblock %}
