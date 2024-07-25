@@ -2,97 +2,94 @@ import os
 import uuid
 
 from flask import Blueprint, request, render_template, current_app, flash, redirect, url_for
-from flask_login import current_user
+from flask_login import current_user, login_required
 from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
 
 from app import db
-from models import Student, User, EducationalBackground, FamilyBackground, ContactInfo, StudentCourseAndYear, Faculty
+from models import Student, User, EducationalBackground, FamilyBackground, ContactInfo, StudentCourseAndYear, Faculty, \
+    Subject
 
 from webforms.delete_form import DeleteForm
-from webforms.search_form import SearchForm, AssignStudentsForm
+from webforms.search_form import SearchForm, AssignStudentForm
 from webforms.student_form import AddStudent
 
 student_bp = Blueprint('student', __name__)
 
 
-@student_bp.route('/')
+@student_bp.route('/', methods=['GET', 'POST'])
 def manage_student():
-    search = SearchForm()
     delete_form = DeleteForm()
-    assign_form = AssignStudentsForm()
+    assign_form = AssignStudentForm()
 
-    # Populate the instructor dropdown
-    instructors = Faculty.query.all()
-    assign_form.instructor.choices = [(instructor.id, instructor.full_name) for instructor in instructors]
+    # Populate the subject dropdown with subject name and faculty name
+    subjects = Subject.query.all()
+    assign_form.subject.choices = [
+        (subject.id, f"{subject.subject_name} - {subject.faculty_id}") for subject in subjects
+    ]
 
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 10, type=int)
-    search_query = request.args.get('search', '')
+    # Retrieve all students or filter by course_section
     course_section = request.args.get('course_section', '')
-
-    query = Student.query.join(User).join(StudentCourseAndYear)
-
-    if search_query:
-        query = query.filter(
-            db.or_(
-                User.f_name.ilike(f'%{search_query}%'),
-                User.m_name.ilike(f'%{search_query}%'),
-                User.l_name.ilike(f'%{search_query}%'),
-                User.rfid_uid.ilike(f'%{search_query}%'),
-                User.email.ilike(f'%{search_query}%')
-            )
-        )
-
     if course_section:
-        parts = course_section.split(' ')
-        course_name = parts[0]
-        year_level = parts[1]
-        section = ' '.join(parts[2:])
-        query = query.filter(
-            StudentCourseAndYear.course_name == course_name,
-            StudentCourseAndYear.year_level == year_level,
-            StudentCourseAndYear.section == section
-        )
-
-    students = query.paginate(page=page, per_page=per_page)
+        students = Student.query.join(StudentCourseAndYear).filter(
+            (StudentCourseAndYear.course_name + " " +
+             StudentCourseAndYear.year_level + " " +
+             StudentCourseAndYear.section) == course_section
+        ).all()
+    else:
+        students = Student.query.all()
 
     course_sections = [
         f"{sc.course_name} {sc.year_level} {sc.section}"
-        for sc in StudentCourseAndYear.query.distinct(StudentCourseAndYear.course_name, StudentCourseAndYear.year_level,
-                                                      StudentCourseAndYear.section).all()
+        for sc in StudentCourseAndYear.query.distinct(
+            StudentCourseAndYear.course_name,
+            StudentCourseAndYear.year_level,
+            StudentCourseAndYear.section
+        ).all()
     ]
 
-    return render_template('student/manage_student.html', students=students, search=search, form=delete_form,
-                           course_sections=course_sections, assign_form=assign_form)
+    return render_template(
+        'student/manage_student.html',
+        students=students,
+        delete_form=delete_form,
+        course_sections=course_sections,
+        assign_form=assign_form
+    )
 
 
-@student_bp.route('/assign_students', methods=['POST'])
-def assign_students_to_instructor():
-    assign_form = AssignStudentsForm()
-
-    # Populate the instructor dropdown again
-    instructors = Faculty.query.all()
-    assign_form.instructor.choices = [(instructor.id, instructor.full_name) for instructor in instructors]
+@student_bp.route('/assign_students_to_subject', methods=['POST'])
+def assign_students_to_subject():
+    assign_form = AssignStudentForm()
+    assign_form.subject.choices = [
+        (subject.id, f"{subject.subject_name} - {subject.faculty_id}") for subject in Subject.query.all()
+    ]
 
     if assign_form.validate_on_submit():
-        student_ids = request.form.getlist('student_ids')
-        instructor_id = assign_form.instructor.data
+        subject_id = assign_form.subject.data
+        selected_student_ids = request.form.getlist('student_ids')
 
-        if student_ids:
-            students_to_assign = Student.query.filter(Student.id.in_(student_ids)).all()
-            instructor = Faculty.query.get(instructor_id)
+        if not selected_student_ids:
+            flash('No students selected for assignment.', 'error')
+            return redirect(url_for('student.manage_student'))
 
-            for student in students_to_assign:
-                if instructor not in student.faculties:
-                    student.faculties.append(instructor)
-            db.session.commit()
-            flash('Selected students have been assigned to the instructor.', 'success')
-        else:
-            flash('No students selected.', 'error')
+        subject = Subject.query.get(subject_id)
+        if not subject:
+            flash('Invalid subject selected.', 'error')
+            return redirect(url_for('student.manage_student'))
 
-    return redirect(url_for('student.manage_student'))
+        for student_id in selected_student_ids:
+            student = Student.query.get(student_id)
+            if student:
+                student.subjects.append(subject)
+                db.session.add(student)
+
+        db.session.commit()
+        flash('Students successfully assigned to the subject.', 'success')
+        return redirect(url_for('student.manage_student'))
+    else:
+        flash('Form validation failed. Please check your inputs.', 'error')
+        return redirect(url_for('student.manage_student'))
 
 
 @student_bp.route("/add", methods=["GET", "POST"])

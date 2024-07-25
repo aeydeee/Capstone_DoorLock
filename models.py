@@ -5,12 +5,13 @@ from flask_login import UserMixin
 
 from app import db
 
-# Create an association table for the many-to-many relationship
-student_faculty_association = db.Table('student_faculty',
+# Create an association table for the many-to-many relationship between students and subjects
+student_subject_association = db.Table('student_subject',
                                        db.Column('student_id', db.Integer,
                                                  db.ForeignKey('student.id', ondelete='CASCADE'), primary_key=True),
-                                       db.Column('faculty_id', db.Integer,
-                                                 db.ForeignKey('faculty.id', ondelete='CASCADE'), primary_key=True)
+                                       db.Column('subject_id', db.Integer,
+                                                 db.ForeignKey('course_subjects.id', ondelete='CASCADE'),
+                                                 primary_key=True)
                                        )
 
 
@@ -127,8 +128,8 @@ class Student(db.Model):
     student_course_and_year = db.relationship('StudentCourseAndYear', backref='student', uselist=False,
                                               cascade="all, delete-orphan")
 
-    # Define the relationship to faculties through the association table
-    faculties = db.relationship('Faculty', secondary=student_faculty_association, back_populates='students')
+    # Define the relationship to subjects through the association table
+    subjects = db.relationship('Subject', secondary=student_subject_association, back_populates='students')
 
     @property
     def full_name(self):
@@ -173,17 +174,15 @@ class Admin(db.Model):
 class Faculty(db.Model):
     __tablename__ = 'faculty'
     id = db.Column(db.Integer, primary_key=True)
-    faculty_id = db.Column(db.String(100), nullable=False, unique=True)
+    faculty_number = db.Column(db.String(100), nullable=False, unique=True)
     designation = db.Column(db.String(255), nullable=False)
     faculty_department = db.Column(db.String(255), nullable=False)
     password_hash = db.Column(db.String(128))
 
+    # Define relationships with string references
+    subjects = db.relationship('Subject', back_populates='faculty', cascade="all, delete-orphan")
+
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
-
-    subjects_details = db.relationship('Subject', backref='faculty', cascade="all, delete-orphan")
-
-    # Define the relationship to students through the association table
-    students = db.relationship('Student', secondary=student_faculty_association, back_populates='faculties')
 
     @property
     def password(self):
@@ -191,7 +190,7 @@ class Faculty(db.Model):
 
     @password.setter
     def password(self, password):
-        self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
+        self.password_hash = generate_password_hash(password)
 
     def verify_password(self, password):
         return check_password_hash(self.password_hash, password)
@@ -204,25 +203,29 @@ class Faculty(db.Model):
 class Subject(db.Model):
     __tablename__ = 'course_subjects'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), nullable=False)
-    code = db.Column(db.String(255), nullable=False)
-    units = db.Column(db.Integer)
+    subject_code = db.Column(db.String(255), nullable=False)
+    subject_name = db.Column(db.String(255), nullable=False)
+    subject_units = db.Column(db.String(255), nullable=False)
+    subject_description = db.Column(db.String(255))
 
-    schedule_details = db.relationship('Schedule', back_populates='subject_details', cascade="all, delete-orphan")
-
+    # Define the relationship to faculty
     faculty_id = db.Column(db.Integer, db.ForeignKey('faculty.id', ondelete='CASCADE'), nullable=False)
+    faculty = db.relationship('Faculty', back_populates='subjects')
+
+    # Define relationships with schedules and students
+    schedule_details = db.relationship('Schedule', backref='subject', cascade="all, delete-orphan")
+    students = db.relationship('Student', secondary=student_subject_association, back_populates='subjects')
 
 
 class Schedule(db.Model):
-    __tablename__ = 'open_lab_schedules'
+    __tablename__ = 'schedule'
     id = db.Column(db.Integer, primary_key=True)
-    day = db.Column(db.Enum('sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'),
-                    nullable=False)
-    schedule_from = db.Column(db.Time, nullable=False)
-    schedule_to = db.Column(db.Time, nullable=False)
+    schedule_day = db.Column(db.String(255), nullable=False)
+    schedule_time_from = db.Column(db.Time, nullable=False)
+    schedule_time_to = db.Column(db.Time, nullable=False)
 
+    faculty_id = db.Column(db.Integer, db.ForeignKey('faculty.id', ondelete='CASCADE'), nullable=False)
     subject_id = db.Column(db.Integer, db.ForeignKey('course_subjects.id', ondelete='CASCADE'), nullable=False)
-    subject_details = db.relationship('Subject', back_populates='schedule_details')
 
 
 class Attendance(db.Model):

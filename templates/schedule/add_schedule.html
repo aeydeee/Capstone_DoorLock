@@ -37,27 +37,26 @@
                 {% endfor %}
             </div>
 
-
             <div class="form-group">
-                {{ form.day.label(class_="form-label") }}
-                {{ form.day(class="form-control") }}
-                {% for error in form.day.errors %}
+                {{ form.schedule_day.label(class_="form-label") }}
+                {{ form.schedule_day(class="form-control") }}
+                {% for error in form.schedule_day.errors %}
                     <span class="text-danger">{{ error }}</span>
                 {% endfor %}
             </div>
 
             <div class="form-group">
-                {{ form.schedule_from.label(class_="form-label") }}
-                {{ form.schedule_from(class="form-control") }}
-                {% for error in form.schedule_from.errors %}
+                {{ form.schedule_time_from.label(class_="form-label") }}
+                {{ form.schedule_time_from(class="form-control") }}
+                {% for error in form.schedule_time_from.errors %}
                     <span class="text-danger">{{ error }}</span>
                 {% endfor %}
             </div>
 
             <div class="form-group">
-                {{ form.schedule_to.label(class_="form-label") }}
-                {{ form.schedule_to(class="form-control") }}
-                {% for error in form.schedule_to.errors %}
+                {{ form.schedule_time_to.label(class_="form-label") }}
+                {{ form.schedule_time_to(class="form-control") }}
+                {% for error in form.schedule_time_to.errors %}
                     <span class="text-danger">{{ error }}</span>
                 {% endfor %}
             </div>
@@ -77,7 +76,7 @@
             facultySelect.addEventListener('change', function () {
                 const facultyId = this.value;
 
-                fetch(`/get_subjects/${facultyId}`)
+                fetch(`get_subjects/${facultyId}`)
                     .then(response => response.json())
                     .then(data => {
                         subjectSelect.innerHTML = '';

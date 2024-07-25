@@ -9,7 +9,6 @@ from app import db
 from models import Faculty, User, EducationalBackground, FamilyBackground, ContactInfo
 from webforms.faculty_form import AddFaculty
 from webforms.delete_form import DeleteForm
-from webforms.search_form import SearchForm
 
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -18,27 +17,11 @@ faculty_bp = Blueprint('faculty', __name__)
 
 @faculty_bp.route('/')
 def manage_faculty():
-    search = SearchForm()
     delete_form = DeleteForm()
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 10, type=int)  # Get the per_page from the request args, default to 10
-    search_query = request.args.get('search', '')
+    faculties = Faculty.query.all()
 
-    if search_query:
-        faculties = Faculty.query.join(User).filter(
-            db.or_(
-                User.f_name.ilike(f'%{search_query}%'),
-                User.m_name.ilike(f'%{search_query}%'),
-                User.l_name.ilike(f'%{search_query}%'),
-                User.rfid_uid.ilike(f'%{search_query}%'),
-                User.email.ilike(f'%{search_query}%')
-            )
-        ).paginate(page=page, per_page=per_page)
-    else:
-        faculties = Faculty.query.paginate(page=page, per_page=per_page)
-
-    return render_template('faculty/manage_faculty.html', faculties=faculties, search=search,
-                           form=delete_form)
+    return render_template('faculty/manage_faculty.html', faculties=faculties,
+                           delete_form=delete_form)
 
 
 @faculty_bp.route("/add", methods=["GET", "POST"])
@@ -149,8 +132,8 @@ def add_faculty():
                 # Add Faculty
                 faculty = Faculty(
                     user_id=user.id,
-                    faculty_id=form.department.data,
-                    faculty_department=form.school_id.data,
+                    faculty_department=form.department.data,
+                    faculty_number=form.school_id.data,
                     designation=form.designation.data,
                     password_hash=hashed_pw
                 )
@@ -175,7 +158,7 @@ def edit_faculty(id):
     form = AddFaculty(obj=user)
 
     if request.method == 'GET':
-        form.school_id.data = facu.faculty_id
+        form.school_id.data = facu.faculty_number
         contact_info = user.contact_info
         if contact_info:
             form.contact_number.data = contact_info.contact_number
@@ -307,7 +290,7 @@ def edit_faculty(id):
             educational_background.tertiary_graduated = form.tertiary_year_grad.data
             educational_background.tertiary_course = form.tertiary_course.data
 
-        facu.faculty_id = form.school_id.data
+        facu.faculty_number = form.school_id.data
 
         try:
             db.session.commit()

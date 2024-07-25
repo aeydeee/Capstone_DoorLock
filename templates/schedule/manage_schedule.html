@@ -1,7 +1,13 @@
 {% extends 'base.html' %}
 
+{% block title_block %}
+    Manage Schedules
+{% endblock %}
+
 {% block extra_styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/subject_schedule.css') }}">
+    <script defer src="{{ url_for('static', filename='js/view_schedules.js') }}"></script>
+
 {% endblock %}
 
 {% block content %}
@@ -33,22 +39,19 @@
             <th scope="col">Option</th>
         </tr>
         </thead>
-
         <tbody>
-        {% for faculty in faculties.items %}
-            <!-- Loop through paginated items -->
+        {% for faculty in faculties %}
             <tr class="table-primary" data-bs-toggle="collapse" data-bs-target="#collapse{{ faculty.id }}"
                 aria-expanded="false" aria-controls="collapse{{ faculty.id }}">
-                <!-- Display faculty name and toggle collapse -->
                 <td>{{ faculty.user.f_name }} {{ faculty.user.l_name }}</td>
                 <td colspan="5">Click to view schedules</td>
             </tr>
             <tr id="collapse{{ faculty.id }}" class="collapse">
-                <!-- Collapse row remains unchanged -->
                 <td colspan="6">
-                    <table class="table table-bordered">
+                    <table class="table table-bordered" id="manage_schedules">
                         <thead>
                         <tr>
+                            <th scope="col"></th>
                             <th scope="col">Faculty</th>
                             <th scope="col">Subject</th>
                             <th scope="col">Day</th>
@@ -58,15 +61,15 @@
                         </tr>
                         </thead>
                         <tbody>
-                        {% for subject in faculty.subjects_details %}
+                        {% for subject in faculty.subjects %}
                             {% for schedule in subject.schedule_details %}
-                                <!-- Display schedule details -->
                                 <tr>
+                                    <td></td>
                                     <td>{{ faculty.user.f_name }} {{ faculty.user.l_name }}</td>
-                                    <td>{{ subject.name }}</td>
-                                    <td>{{ schedule.day }}</td>
-                                    <td>{{ schedule.schedule_from.strftime('%H:%M') }}</td>
-                                    <td>{{ schedule.schedule_to.strftime('%H:%M') }}</td>
+                                    <td>{{ subject.subject_name }}</td>
+                                    <td>{{ schedule.schedule_day }}</td>
+                                    <td>{{ schedule.schedule_time_from }}</td>
+                                    <td>{{ schedule.schedule_time_to }}</td>
                                     <td>
                                         <a href="{{ url_for('schedule.edit_schedule', id=schedule.id) }}"
                                            class="btn btn-sm btn-info">
@@ -74,60 +77,26 @@
                                         </a>
                                     </td>
                                 </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="6">No schedule available for this subject</td>
+                                </tr>
                             {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6">No subjects available for this faculty</td>
+                            </tr>
                         {% endfor %}
                         </tbody>
                     </table>
                 </td>
             </tr>
+        {% else %}
+            <tr>
+                <td colspan="6">No faculties available</td>
+            </tr>
         {% endfor %}
         </tbody>
     </table>
-
-    <!-- Pagination links -->
-    <nav aria-label="Page navigation">
-        <ul class="pagination justify-content-center">
-            {% if faculties.has_prev %}
-                <li class="page-item">
-                    <a class="page-link"
-                       href="{{ url_for('schedule.manage_schedule', page=faculties.prev_num) }}">Previous</a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link">Previous</span>
-                </li>
-            {% endif %}
-
-            {% for num in faculties.iter_pages() %}
-                {% if num %}
-                    {% if num == faculties.page %}
-                        <li class="page-item active" aria-current="page">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                    {% else %}
-                        <li class="page-item">
-                            <a class="page-link"
-                               href="{{ url_for('schedule.manage_schedule', page=num) }}">{{ num }}</a>
-                        </li>
-                    {% endif %}
-                {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link">...</span>
-                    </li>
-                {% endif %}
-            {% endfor %}
-
-            {% if faculties.has_next %}
-                <li class="page-item">
-                    <a class="page-link"
-                       href="{{ url_for('schedule.manage_schedule', page=faculties.next_num) }}">Next</a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link">Next</span>
-                </li>
-            {% endif %}
-        </ul>
-    </nav>
 
 {% endblock %}

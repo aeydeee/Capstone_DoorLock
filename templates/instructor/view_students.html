@@ -28,7 +28,7 @@
         <form method="GET" action="{{ url_for('instructor.view_students') }}">
             {{ search.hidden_tag() }}
             <input type="search" class="form-control" placeholder="Search" aria-label="Search"
-                   aria-describedby="search-btn" name="search">
+                   aria-describedby="search-btn" name="search" value="{{ request.args.get('search', '') }}">
             <button class="btn btn-secondary" type="submit" id="search-btn">Search</button>
         </form>
     </div>
@@ -109,8 +109,7 @@
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel
                                     </button>
-                                    <form method="POST"
-                                          action="{{ url_for('student.delete_student', id=student.id) }}">
+                                    <form method="POST" action="{{ url_for('student.delete_student', id=student.id) }}">
                                         {{ form.hidden_tag() }}
                                         <button type="submit" class="btn btn-danger">Delete</button>
                                     </form>
@@ -122,6 +121,7 @@
             </tr>
         {% endfor %}
         </tbody>
+
     </table>
 
     <!-- Pagination links -->
@@ -130,24 +130,19 @@
             {% if students.has_prev %}
                 <li class="page-item">
                     <a class="page-link"
-                       href="{{ url_for('instructor.view_students', page=students.prev_num, search=request.args.get('search', ''), per_page=request.args.get('per_page', 10)) }}">Previous</a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link">Previous</span>
+                       href="{{ url_for('instructor.view_students', page=students.prev_num, per_page=students.per_page, search=request.args.get('search', '')) }}">Previous</a>
                 </li>
             {% endif %}
-
-            {% for num in students.iter_pages() %}
-                {% if num %}
-                    {% if num == students.page %}
+            {% for page_num in students.iter_pages() %}
+                {% if page_num %}
+                    {% if page_num == students.page %}
                         <li class="page-item active" aria-current="page">
-                            <span class="page-link">{{ num }}</span>
+                            <span class="page-link">{{ page_num }}</span>
                         </li>
                     {% else %}
                         <li class="page-item">
                             <a class="page-link"
-                               href="{{ url_for('instructor.view_students', page=num, search=request.args.get('search', ''), per_page=request.args.get('per_page', 10)) }}">{{ num }}</a>
+                               href="{{ url_for('instructor.view_students', page=page_num, per_page=students.per_page, search=request.args.get('search', '')) }}">{{ page_num }}</a>
                         </li>
                     {% endif %}
                 {% else %}
@@ -156,15 +151,10 @@
                     </li>
                 {% endif %}
             {% endfor %}
-
             {% if students.has_next %}
                 <li class="page-item">
                     <a class="page-link"
-                       href="{{ url_for('instructor.view_students', page=students.next_num, search=request.args.get('search', ''), per_page=request.args.get('per_page', 10)) }}">Next</a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link">Next</span>
+                       href="{{ url_for('instructor.view_students', page=students.next_num, per_page=students.per_page, search=request.args.get('search', '')) }}">Next</a>
                 </li>
             {% endif %}
         </ul>

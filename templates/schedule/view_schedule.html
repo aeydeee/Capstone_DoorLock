@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title_block %}
+    View Schedules
+{% endblock %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/subject_schedule.css') }}">
+{% endblock %}
+
+{% block extra_scripts %}
+    <script defer src="{{ url_for('static', filename='js/view_schedules.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h1>Schedule for {{ faculty.full_name }}</h1>
+        <table class="table table-hover" id="view_schedules">
+            <thead>
+            <tr>
+                <th></th>
+                <th>Subject</th>
+                <th>Day</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for sched in schedule %}
+                <tr>
+                    <td></td>
+                    <td>{{ sched.subject.subject_name }}</td>
+                    <td>{{ sched.schedule_day }}</td>
+                    <td>{{ sched.schedule_time_from }}</td>
+                    <td>{{ sched.schedule_time_to }}</td>
+                    <td>
+                        <a href="{{ url_for('schedule.edit_schedule', id=sched.id) }}"
+                           class="btn btn-sm btn-info">
+                            <img src="{{ url_for('static', filename='images/icons/pencil-fill.svg') }}"
+                                 alt="Pencil Icon">
+                        </a>
+                        <a href="#" class="btn btn-sm btn-danger" data-bs-toggle="modal"
+                           data-bs-target="#deleteModal{{ sched.id }}">
+                            <img src="{{ url_for('static', filename='images/icons/trash-fill.svg') }}" alt="Trash Icon">
+                        </a>
+
+                        <!-- Delete Confirmation Modal -->
+                        <div class="modal fade" id="deleteModal{{ sched.id }}" tabindex="-1"
+                             aria-labelledby="deleteModalLabel{{ sched.id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="deleteModalLabel{{ sched.id }}">Confirm Delete</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Are you sure you want to delete this schedule
+                                        for {{ sched.subject.subject_name }}?
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel
+                                        </button>
+                                        <form method="POST"
+                                              action="{{ url_for('schedule.delete_schedule', id=sched.id) }}">
+                                            {{ delete_form.hidden_tag() }}
+                                            <button type="submit" class="btn btn-danger">Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <a href="{{ url_for('faculty.manage_faculty') }}" class="btn btn-secondary">Back to Manage Faculties</a>
+    </div>
+{% endblock %}

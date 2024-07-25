@@ -7,13 +7,6 @@ from app import db
 subject_bp = Blueprint('subject', __name__)
 
 
-@subject_bp.route('/get_subjects/<int:faculty_id>')
-def get_subjects(faculty_id):
-    subjects = Subject.query.filter_by(faculty_id=faculty_id).all()
-    subjects_list = [(subj.id, subj.name) for subj in subjects]
-    return jsonify(subjects_list)
-
-
 @subject_bp.route('/')
 def manage_subject():
     # Get the page number from the query parameters, defaulting to page 1

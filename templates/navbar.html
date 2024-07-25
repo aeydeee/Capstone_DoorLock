@@ -34,10 +34,7 @@
                     <li class="nav-item">
                         <a class="nav-link text-light" href="{{ url_for('dashboard.dashboard') }}">Dashboard</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-light" href="{{ url_for('schedule.manage_schedule') }}">Manage
-                            Schedule</a>
-                    </li>
+
                     <li class="nav-item">
                         <a class="nav-link text-light" href="{{ url_for('subject.manage_subject') }}">Manage Subject</a>
                     </li>
@@ -48,6 +45,16 @@
                     <li class="nav-item">
                         <a class="nav-link text-light" href="{{ url_for('student.manage_student') }}">Manage
                             Student</a>
+                    </li>
+                    <br>
+                    <p>INSTRUCTOR</p>
+                    <li class="nav-item">
+                        <a class="nav-link text-light" href="{{ url_for('instructor.view_students') }}">View
+                            Student</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-light" href="{{ url_for('instructor.view_attendance') }}">View
+                            Attendance</a>
                     </li>
 
                 </ul>

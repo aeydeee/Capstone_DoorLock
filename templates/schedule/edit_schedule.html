@@ -24,35 +24,35 @@
 
             <div class="form-group">
                 <label class="form-label">Faculty</label>
-                <input type="text" class="form-control" value="{{ schedule.subject_details.faculty.full_name }}"
+                <input type="text" class="form-control" value="{{ schedule.subject.faculty.full_name }}"
                        disabled>
             </div>
             <br/>
             <div class="form-group">
                 <label class="form-label">Subject</label>
-                <input type="text" class="form-control" value="{{ schedule.subject_details.name }}" disabled>
+                <input type="text" class="form-control" value="{{ schedule.subject.subject_name }}" disabled>
             </div>
             <br/>
             <div class="form-group">
-                {{ form.day.label(class="form-label") }}
-                {{ form.day(class="form-control") }}
-                {% for error in form.day.errors %}
+                {{ form.schedule_day.label(class="form-label") }}
+                {{ form.schedule_day(class="form-control") }}
+                {% for error in form.schedule_day.errors %}
                     <span class="text-danger">{{ error }}</span>
                 {% endfor %}
             </div>
             <br/>
             <div class="form-group">
-                {{ form.schedule_from.label(class="form-label") }}
-                {{ form.schedule_from(class="form-control") }}
-                {% for error in form.schedule_from.errors %}
+                {{ form.schedule_time_from.label(class="form-label") }}
+                {{ form.schedule_time_from(class="form-control") }}
+                {% for error in form.schedule_time_from.errors %}
                     <span class="text-danger">{{ error }}</span>
                 {% endfor %}
             </div>
             <br/>
             <div class="form-group">
-                {{ form.schedule_to.label(class="form-label") }}
-                {{ form.schedule_to(class="form-control") }}
-                {% for error in form.schedule_to.errors %}
+                {{ form.schedule_time_to.label(class="form-label") }}
+                {{ form.schedule_time_to(class="form-control") }}
+                {% for error in form.schedule_time_to.errors %}
                     <span class="text-danger">{{ error }}</span>
                 {% endfor %}
             </div>

@@ -1,10 +1,26 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from datetime import datetime, timedelta
 from models import Schedule, Faculty, Subject
+from webforms.delete_form import DeleteForm
 from webforms.schedule_form import ScheduleForm, EditScheduleForm
 from app import db
 
 schedule_bp = Blueprint('schedule', __name__)
+
+
+@schedule_bp.route('/<int:faculty_id>/schedule')
+def view_schedule(faculty_id):
+    delete_form = DeleteForm()
+    faculty = Faculty.query.get_or_404(faculty_id)
+    schedule = Schedule.query.filter_by(faculty_id=faculty_id).all()
+    return render_template('schedule/view_schedule.html', faculty=faculty, schedule=schedule, delete_form=delete_form)
+
+
+@schedule_bp.route('/get_subjects/<int:faculty_id>', methods=['GET'])
+def get_subjects(faculty_id):
+    subjects = Subject.query.filter_by(faculty_id=faculty_id).all()
+    subjects_list = [(subj.id, subj.subject_name) for subj in subjects]
+    return jsonify(subjects_list)
 
 
 @schedule_bp.route('/add_schedule', methods=['GET', 'POST'])
@@ -21,32 +37,21 @@ def add_schedule():
     if faculty_id:
         # Populate subject choices based on the selected faculty
         subjects = Subject.query.filter_by(faculty_id=faculty_id).all()
-        form.subject.choices = [(subj.id, subj.name) for subj in subjects]
+        form.subject.choices = [(subj.id, subj.subject_name) for subj in subjects]
 
     if request.method == 'POST':
         # Update subject choices based on the selected faculty
         faculty_id = form.faculty.data
         subjects = Subject.query.filter_by(faculty_id=faculty_id).all()
-        form.subject.choices = [(subj.id, subj.name) for subj in subjects]
-
-        # Set default values for schedule_from and schedule_to if not provided
-        if 'schedule_from' not in request.form:
-            form.schedule_from.data = datetime.now().time()
-
-        if 'schedule_to' not in request.form:
-            form.schedule_to.data = (datetime.now() + timedelta(hours=1)).time()
+        form.subject.choices = [(subj.id, subj.subject_name) for subj in subjects]
 
         if form.validate_on_submit():
             # Process form data
             faculty_id = form.faculty.data
             subject_id = form.subject.data
-            day = form.day.data
-            schedule_from = form.schedule_from.data
-            schedule_to = form.schedule_to.data
-
-            # Convert to time objects
-            schedule_from_time = datetime.combine(datetime.min, schedule_from).time()
-            schedule_to_time = datetime.combine(datetime.min, schedule_to).time()
+            schedule_day = form.schedule_day.data
+            schedule_time_from = form.schedule_time_from.data
+            schedule_time_to = form.schedule_time_to.data
 
             # Fetch the existing subject
             existing_subject = Subject.query.get(subject_id)
@@ -56,9 +61,10 @@ def add_schedule():
                 if existing_subject.faculty_id == int(faculty_id):
                     # Create a new schedule linked to the existing subject
                     new_schedule = Schedule(
-                        day=day,
-                        schedule_from=schedule_from_time,
-                        schedule_to=schedule_to_time,
+                        schedule_day=schedule_day,
+                        schedule_time_from=schedule_time_from,
+                        schedule_time_to=schedule_time_to,
+                        faculty_id=faculty_id,  # Ensure faculty_id is assigned
                         subject_id=existing_subject.id
                     )
                     db.session.add(new_schedule)
@@ -74,19 +80,6 @@ def add_schedule():
     return render_template('schedule/add_schedule.html', form=form)
 
 
-@schedule_bp.route('/')
-def manage_schedule():
-    # Get the page number from the query parameters, defaulting to page 1
-    page = request.args.get('page', 1, type=int)
-    per_page = 20  # Number of items per page
-
-    # Query all faculties with their subjects and schedule details, paginated
-    faculties = Faculty.query.paginate(page=page, per_page=per_page)
-
-    # Render the HTML template with the fetched data
-    return render_template('schedule/manage_schedule.html', faculties=faculties)
-
-
 @schedule_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
 def edit_schedule(id):
     sched = Schedule.query.get_or_404(id)
@@ -97,14 +90,23 @@ def edit_schedule(id):
         form.populate_obj(sched)
 
         # Convert to time objects
-        schedule_from_time = datetime.combine(datetime.min, form.schedule_from.data).time()
-        schedule_to_time = datetime.combine(datetime.min, form.schedule_to.data).time()
+        schedule_time_from = datetime.combine(datetime.min, form.schedule_time_from.data).time()
+        schedule_time_to = datetime.combine(datetime.min, form.schedule_time_to.data).time()
 
-        sched.schedule_from = schedule_from_time
-        sched.schedule_to = schedule_to_time
+        sched.schedule_time_from = schedule_time_from
+        sched.schedule_time_to = schedule_time_to
 
         db.session.commit()
         flash('Schedule has been updated successfully!')
-        return redirect(url_for('schedule.manage_schedule'))
+        return redirect(url_for('schedule.view_schedule', faculty_id=sched.faculty_id))
 
     return render_template('schedule/edit_schedule.html', form=form, schedule=sched)
+
+
+@schedule_bp.route('/delete/<int:id>', methods=['POST'])
+def delete_schedule(id):
+    schedule = Schedule.query.get_or_404(id)
+    db.session.delete(schedule)
+    db.session.commit()
+    flash('Schedule deleted successfully', 'success')
+    return redirect(url_for('schedule.view_schedule', faculty_id=schedule.faculty_id))
