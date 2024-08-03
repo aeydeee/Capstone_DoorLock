@@ -2,7 +2,7 @@
 
 {% block content %}
     <div class="container">
-        <h1 class="mt-5 mb-4">Student Update</h1>
+        <h1 class="mt-5 mb-4">Student Registration</h1>
         {% for message in get_flashed_messages() %}
             <div class="alert alert-warning alert-dismissible fade show" role="alert">
                 {{ message }}
@@ -39,9 +39,9 @@
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
-                                {{ form.school_id.label(class="form-label") }}
-                                {{ form.school_id(class="form-control") }}
-                                {% for error in form.school_id.errors %}
+                                {{ form.student_number.label(class="form-label") }}
+                                {{ form.student_number(class="form-control") }}
+                                {% for error in form.student_number.errors %}
                                     <div class="invalid-feedback">{{ error }}</div>
                                 {% endfor %}
                             </div>
@@ -57,18 +57,18 @@
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
-                                {{ form.course_name.label(class="form-label") }}
-                                {{ form.course_name(class="form-control") }}
-                                {% for error in form.course_name.errors %}
+                                {{ form.course_id.label(class="form-label") }}
+                                {{ form.course_id(class="form-control") }}
+                                {% for error in form.course_id.errors %}
                                     <div class="invalid-feedback">{{ error }}</div>
                                 {% endfor %}
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
-                                {{ form.section.label(class="form-label") }}
-                                {{ form.section(class="form-control") }}
-                                {% for error in form.section.errors %}
+                                {{ form.section_id.label(class="form-label") }}
+                                {{ form.section_id(class="form-control") }}
+                                {% for error in form.section_id.errors %}
                                     <div class="invalid-feedback">{{ error }}</div>
                                 {% endfor %}
                             </div>
@@ -205,15 +205,6 @@
                                 {{ form.profile_pic.label(class="form-label") }}
                                 {{ form.profile_pic(class="form-control") }}
                                 {% for error in form.profile_pic.errors %}
-                                    <div class="invalid-feedback">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                {{ form.year_level.label(class="form-label") }}
-                                {{ form.year_level(class="form-control") }}
-                                {% for error in form.year_level.errors %}
                                     <div class="invalid-feedback">{{ error }}</div>
                                 {% endfor %}
                             </div>
@@ -630,6 +621,30 @@
                                     {{ form.tertiary_course.label(class="form-label") }}
                                     {{ form.tertiary_course(class="form-control") }}
                                     {% for error in form.tertiary_course.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    {{ form.year_level_id.label(class="form-label") }}
+                                    {{ form.year_level_id(class="form-control") }}
+                                    {% for error in form.year_level_id.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    {{ form.semester_id.label(class="form-label") }}
+                                    {{ form.semester_id(class="form-control") }}
+                                    {% for error in form.semester_id.errors %}
                                         <div class="invalid-feedback">{{ error }}</div>
                                     {% endfor %}
                                 </div>

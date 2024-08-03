@@ -31,72 +31,18 @@
         <a href="{{ url_for('faculty.add_faculty') }}" class="btn btn-primary">Add Faculties</a>
     </div>
 
-
     <table class="table table-hover" id="manage_faculties">
         <thead>
         <tr>
             <th scope="col"></th>
-            <th scope="col">Full Name</th>
-            <th scope="col">Secret Key</th>
-            <th scope="col">RFID Number</th>
-            <th scope="col">Email</th>
+            <th scope="col">No.</th>
+            <th scope="col">Faculty Number</th>
+            <th scope="col">Last Name</th>
+            <th scope="col">First Name</th>
+            <th scope="col">Middle Name</th>
+            <th scope="col">Sex</th>
             <th scope="col">Actions</th>
         </tr>
         </thead>
-
-        <tbody>
-        {% for faculty in faculties %}
-            <tr>
-                <td></td>
-                <td>{{ faculty.full_name }}</td>
-                <td>234352352345</td>
-                <td>{{ faculty.user.rfid_uid }}</td>
-                <td>{{ faculty.user.email }}</td>
-                <td>
-                    <a href="{{ url_for('schedule.view_schedule', faculty_id=faculty.id) }}"
-                       class="btn btn-sm view-button">
-                        <img src="{{ url_for('static', filename='images/icons/view.png') }}" alt="Eye Icon"
-                             class="icon-small">
-                        View Schedules
-                    </a>
-
-                    <a href="{{ url_for('faculty.edit_faculty', id=faculty.id) }}" class="btn btn-sm btn-info">
-                        <img src="{{ url_for('static', filename='images/icons/pencil-fill.svg') }}" alt="Pencil Icon">
-                    </a>
-                    <a href="#" class="btn btn-sm btn-danger" data-bs-toggle="modal"
-                       data-bs-target="#deleteModal{{ faculty.id }}">
-                        <img src="{{ url_for('static', filename='images/icons/trash-fill.svg') }}" alt="Trash Icon">
-                    </a>
-
-                    <!-- Delete Confirmation Modal -->
-                    <div class="modal fade" id="deleteModal{{ faculty.id }}" tabindex="-1"
-                         aria-labelledby="deleteModalLabel{{ faculty.id }}" aria-hidden="true">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="deleteModalLabel{{ faculty.id }}">Confirm Delete</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                            aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    Are you sure you want to delete {{ faculty.full_name }}?
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel
-                                    </button>
-                                    <form method="POST"
-                                          action="{{ url_for('faculty.delete_faculty', id=faculty.id) }}">
-                                        {{ delete_form.hidden_tag() }}
-                                        <button type="submit" class="btn btn-danger">Delete</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
     </table>
-
 {% endblock %}

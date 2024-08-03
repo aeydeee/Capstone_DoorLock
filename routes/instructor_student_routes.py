@@ -5,8 +5,8 @@ from flask_login import login_required, current_user
 from flask import current_app as app
 
 from app import db
-from models import Faculty, User, Student, Attendance, Schedule, Subject, StudentCourseAndYear, \
-    student_subject_association
+from models import Faculty, User, Student, Attendance, Schedule, Subject, \
+    student_subject_association, faculty_subject_association
 from webforms.attendance_form import SelectScheduleForm
 from webforms.delete_form import DeleteForm
 from webforms.search_form import SearchForm
@@ -17,33 +17,18 @@ instructor_bp = Blueprint('instructor', __name__)
 @instructor_bp.route('/students')
 @login_required
 def view_students():
-    search = SearchForm()
     delete_form = DeleteForm()
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 10, type=int)
-    search_query = request.args.get('search', '')
 
-    # Explicitly specify onclause for joins
-    query = Student.query.join(User, Student.user_id == User.id).join(
+    # Query all students joined with necessary tables and filtered by faculty_id
+    students = Student.query.join(User, Student.user_id == User.id).join(
         student_subject_association, Student.id == student_subject_association.c.student_id
-    ).join(Subject, student_subject_association.c.subject_id == Subject.id).filter(
-        Subject.faculty_id == current_user.faculty_details.id
-    )
+    ).join(Subject, student_subject_association.c.subject_id == Subject.id).join(
+        faculty_subject_association, Subject.id == faculty_subject_association.c.subject_id
+    ).join(Faculty, faculty_subject_association.c.faculty_id == Faculty.id).filter(
+        Faculty.id == current_user.faculty_details.id
+    ).all()
 
-    if search_query:
-        query = query.filter(
-            db.or_(
-                User.rfid_uid.ilike(f'%{search_query}%'),
-                User.f_name.ilike(f'%{search_query}%'),
-                User.m_name.ilike(f'%{search_query}%'),
-                User.l_name.ilike(f'%{search_query}%'),
-                User.email.ilike(f'%{search_query}%')
-            )
-        )
-
-    students = query.paginate(page=page, per_page=per_page)
-
-    return render_template('instructor/view_students.html', students=students, search=search, form=delete_form)
+    return render_template('instructor/view_students.html', students=students, form=delete_form)
 
 
 @instructor_bp.route('/get_schedules/<int:subject_id>', methods=['GET'])

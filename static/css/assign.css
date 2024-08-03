@@ -1,0 +1,24 @@
+/* static/css/style.css */
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: center;
+}
+
+.alert {
+    margin-top: 20px;
+}
+
+.btn {
+    margin-top: 20px;
+    text-decoration: none;
+    padding: 10px 20px;
+    color: #fff;
+    background-color: #007bff;
+    border-radius: 5px;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}

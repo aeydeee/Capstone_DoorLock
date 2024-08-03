@@ -1,4 +1,5 @@
 from .auth_routes import auth_bp
+from .department_detail_routes import department_bp
 from .instructor_student_routes import instructor_bp
 from .student_routes import student_bp
 from .subject_routes import subject_bp
@@ -16,6 +17,7 @@ def register_blueprints(app):
     app.register_blueprint(schedule_bp, url_prefix='/schedules')
     app.register_blueprint(faculty_bp, url_prefix='/faculties')
     app.register_blueprint(student_bp, url_prefix='/students')
+    app.register_blueprint(department_bp, url_prefix='/departments')
 
     # Instructor routes
     app.register_blueprint(instructor_bp, url_prefix='/instructors')

@@ -1,7 +1,7 @@
 import os
 import uuid
 
-from flask import Blueprint, request, render_template, current_app, flash, redirect, url_for
+from flask import Blueprint, request, render_template, current_app, flash, redirect, url_for, jsonify
 from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
 
@@ -13,6 +13,28 @@ from webforms.delete_form import DeleteForm
 from sqlalchemy.exc import SQLAlchemyError
 
 faculty_bp = Blueprint('faculty', __name__)
+
+
+@faculty_bp.route('/api/faculty_data', methods=['GET'])
+def get_faculty_data():
+    faculties = Faculty.query.all()
+    data = []
+    for faculty in faculties:
+        subjects = [{"code": subj.subject_code, "name": subj.subject_name} for subj in faculty.subjects]
+        data.append({
+            "id": faculty.id,
+            "faculty_number": faculty.faculty_number,
+            "full_name": faculty.full_name,
+            "designation": faculty.designation,
+            "l_name": faculty.user.l_name,
+            "f_name": faculty.user.f_name,
+            "m_name": faculty.user.m_name,
+            "gender": faculty.user.gender,
+            "rfid_uid": faculty.user.rfid_uid,
+            "email": faculty.user.email,
+            "subjects": subjects
+        })
+    return jsonify({"data": data})
 
 
 @faculty_bp.route('/')

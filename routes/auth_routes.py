@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 import os
 import uuid
 
-from models import User, Student, Admin, Faculty, StudentCourseAndYear, EducationalBackground, FamilyBackground, \
+from models import User, Student, Admin, Faculty, EducationalBackground, FamilyBackground, \
     ContactInfo
 from webforms.login_form import LoginForm
 from webforms.registration_form import RegistrationForm

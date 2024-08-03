@@ -25,109 +25,36 @@
     </div>
 
     <br/><br>
-
-    <table class="table table-hover">
-        <thead class="table-dark">
-        <tr>
-            <th scope="col">Faculty</th>
-            <th scope="col">Option</th>
-        </tr>
-        </thead>
-
-        <tbody>
-        {% for faculty in faculties.items %}
-            <!-- Loop through paginated items -->
-            <tr class="table-primary" data-bs-toggle="collapse" data-bs-target="#collapse{{ faculty.id }}"
-                aria-expanded="false" aria-controls="collapse{{ faculty.id }}">
-                <!-- Display faculty name and toggle collapse -->
-                <td>{{ faculty.user.f_name }} {{ faculty.user.l_name }}</td>
-                <td colspan="5">Click to view schedules</td>
+    {% for (course_id, year_level_id, semester_id), subjects in grouped_subjects.items() %}
+        <h2>{{ Course.query.get(course_id).course_name }} - {{ YearLevel.query.get(year_level_id).display_name }}
+            - {{ Semester.query.get(semester_id).semester_name }}</h2>
+        <table class="table table-hover">
+            <thead class="table-dark">
+            <tr>
+                <th scope="col">Subject</th>
+                <th scope="col">Subject Code</th>
+                <th scope="col">Actions</th>
             </tr>
-            <tr id="collapse{{ faculty.id }}" class="collapse">
-                <!-- Collapse row remains unchanged -->
-                <td colspan="6">
-                    <table class="table table-bordered">
-                        <thead>
-                        <tr>
-                            <th scope="col">Faculty</th>
-                            <th scope="col">Course Subject</th>
-                            <th scope="col">Subject Code</th>
-                            <th scope="col">Start Time</th>
-                            <th scope="col">End Time</th>
-                            <th scope="col">Actions</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for subject in faculty.subjects_details %}
-                            {% for schedule in subject.schedule_details %}
-                                <!-- Display schedule details -->
-                                <tr>
-                                    <td>{{ faculty.user.f_name }} {{ faculty.user.l_name }}</td>
-                                    <td>{{ subject.subject_name }}</td>
-                                    <td>{{ subject.code }}</td>
-                                    <td>{{ schedule.schedule_from.strftime('%H:%M') }}</td>
-                                    <td>{{ schedule.schedule_to.strftime('%H:%M') }}</td>
-                                    <td>
-                                        <a href="{{ url_for('subject.edit_subject', id=subject.id) }}"
-                                           class="btn btn-sm btn-info">
-                                            <i class="bi bi-pencil-square"></i> Edit
-                                        </a>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-
-    <!-- Pagination links -->
-    <nav aria-label="Page navigation">
-        <ul class="pagination justify-content-center">
-            {% if faculties.has_prev %}
-                <li class="page-item">
-                    <a class="page-link"
-                       href="{{ url_for('subject.manage_subject', page=faculties.prev_num) }}">Previous</a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link">Previous</span>
-                </li>
-            {% endif %}
-
-            {% for num in faculties.iter_pages() %}
-                {% if num %}
-                    {% if num == faculties.page %}
-                        <li class="page-item active" aria-current="page">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                    {% else %}
-                        <li class="page-item">
-                            <a class="page-link"
-                               href="{{ url_for('subject.manage_subject', page=num) }}">{{ num }}</a>
-                        </li>
-                    {% endif %}
-                {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link">...</span>
-                    </li>
-                {% endif %}
+            </thead>
+            <tbody>
+            {% for subject in subjects %}
+                <tr>
+                    <td>{{ subject.subject_name }}</td>
+                    <td>{{ subject.subject_code }}</td>
+                    <td>
+                        {#                        <a href="{{ url_for('subject.edit_subject', id=subject.id) }}" class="btn btn-sm btn-info">#}
+                        {#                            <i class="bi bi-pencil-square"></i> Edit#}
+                        {#                        </a>#}
+                        {#                        <a href="{{ url_for('subject.delete_subject', id=subject.id) }}" class="btn btn-sm btn-danger"#}
+                        {#                           onclick="return confirm('Are you sure you want to delete this subject?');">#}
+                        {#                            <i class="bi bi-trash"></i> Delete#}
+                        {#                        </a>#}
+                    </td>
+                </tr>
             {% endfor %}
-
-            {% if faculties.has_next %}
-                <li class="page-item">
-                    <a class="page-link"
-                       href="{{ url_for('subject.manage_subject', page=faculties.next_num) }}">Next</a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link">Next</span>
-                </li>
-            {% endif %}
-        </ul>
-    </nav>
+            </tbody>
+        </table>
+        <br>
+    {% endfor %}
 
 {% endblock %}

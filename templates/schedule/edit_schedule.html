@@ -24,8 +24,11 @@
 
             <div class="form-group">
                 <label class="form-label">Faculty</label>
-                <input type="text" class="form-control" value="{{ schedule.subject.faculty.full_name }}"
-                       disabled>
+                <ul class="list-unstyled">
+                    {% for faculty in schedule.subject.faculties %}
+                        <li>{{ faculty.full_name }}</li>
+                    {% endfor %}
+                </ul>
             </div>
             <br/>
             <div class="form-group">
@@ -59,7 +62,10 @@
             <br/>
             <div class="form-group">
                 {{ form.submit(class="btn btn-primary") }}
-                <a href="{{ url_for('schedule.manage_schedule') }}" class="btn btn-secondary">Cancel</a>
+                {% for faculty in schedule.subject.faculties %}
+                    <a href="{{ url_for('schedule.view_schedule', faculty_id=faculty.id) }}"
+                       class="btn btn-secondary">Cancel</a>
+                {% endfor %}
             </div>
         </form>
     </div>

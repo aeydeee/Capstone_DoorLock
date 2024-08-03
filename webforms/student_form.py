@@ -2,8 +2,20 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField
 from wtforms.fields.choices import SelectField
 from wtforms.fields.datetime import DateField
+from wtforms.fields.numeric import IntegerField
 from wtforms.fields.simple import StringField, EmailField, TextAreaField, PasswordField, SubmitField
 from wtforms.validators import Optional, DataRequired, Length, Email, EqualTo, NumberRange
+
+from models import YearLevel, Section, Course, Semester
+
+
+# # Function to fetch year level choices
+# def get_year_level_choices():
+#     # Fetch year levels from the database
+#     year_levels = YearLevel.query.all()
+#     # Create choices list
+#     choices = [(year_level.id, year_level.level_name) for year_level in year_levels]
+#     return choices
 
 
 class AddStudent(FlaskForm):
@@ -11,12 +23,13 @@ class AddStudent(FlaskForm):
     username = StringField('Username', validators=[Length(max=255)])
     f_name = StringField('First Name', validators=[DataRequired(), Length(max=100)])
     l_name = StringField('Last Name', validators=[DataRequired(), Length(max=100)])
-    m_name = StringField('Middle Name', validators=[DataRequired(), Length(max=100)])
+    m_name = StringField('Middle Name', validators=[Length(max=100)])  # Optional Middle Name
     m_initial = StringField('Middle Initial', validators=[Length(max=10)])
-    email = EmailField('Email', validators=[DataRequired(), Email(), Length(max=100)])
+    email = StringField('Email', validators=[DataRequired(), Email(), Length(max=100)])
     date_of_birth = DateField('Date of Birth', validators=[DataRequired()])
     place_of_birth = StringField('Place of Birth', validators=[DataRequired(), Length(max=255)])
-    gender = SelectField('Gender', choices=[('male', 'Male'), ('female', 'Female')], validators=[DataRequired()])
+    gender = SelectField('Gender', choices=[('male', 'Male'), ('female', 'Female'), ('other', 'Other')],
+                         validators=[DataRequired()])
     civil_status = StringField('Civil Status', validators=[Length(max=50)])
     nationality = StringField('Nationality', validators=[Length(max=100)])
     citizenship = StringField('Citizenship', validators=[Length(max=100)])
@@ -84,42 +97,59 @@ class AddStudent(FlaskForm):
     tertiary_course = StringField('Tertiary School Course', validators=[Length(max=255)])
 
     # Student
-    school_id = StringField('School ID', validators=[DataRequired(), Length(max=100)])
+    student_number = StringField('School ID', validators=[DataRequired(), Length(max=100)])
 
     # Course and Year
-    course_name = SelectField('Course',
-                              choices=[
-                                  ('GENED', 'General Education'),
-                                  ('MIT', 'Master of Information Technology'),
-                                  ('MEN', 'Master of Engineering'),
-                                  ('MAN', 'Master of Arts in Nursing'),
-                                  ('BSIT', 'Bachelor of Science in Information Technology'),
-                                  ('BSCS', 'Bachelor of Science in Computer Science'),
-                                  ('MBM', 'Master in Business Management'),
-                                  ('BLIS', 'Bachelor of Library Information Science'),
-                                  ('BSIS', 'Bachelor of Science in Information Systems'),
-                                  ('BSME', 'Bachelor of Science in Mechanical Engineering'),
-                                  ('BSCE', 'Bachelor of Science in Civil Engineering'),
-                                  ('BSEE', 'Bachelor of Science in Electrical Engineering'),
-                                  ('BSECE', 'Bachelor of Science in Electronics Engineering'),
-                                  ('BSMath', 'Bachelor of Science in Mathematics'),
-                                  ('BAEL', 'Bachelor of Arts in English Language'),
-                                  ('BTVTEFSM',
-                                   'Bachelor of Technical-Vocational Teacher Education Major in Food Service Management'),
-                                  ('BTVTEET',
-                                   'Bachelor of Technical-Vocational Teacher Education Major in Electronics Technology'),
-                                  ('BSOA', 'Bachelor of Science in Office Administration'),
-                                  ('BSHM', 'Bachelor of Science in Hospitality Management'),
-                                  ('BSTM', 'Bachelor of Science in Tourism Management'),
-                                  ('BSEM', 'Bachelor of Science in Entrepreneurial Management'),
-                                  ('BSM', 'Bachelor of Science in Midwifery'),
-                                  ('BSN', 'Bachelor of Science in Nursing')
-                              ],
-                              validators=[Length(max=255)])
-    year_level = SelectField('Year Level',
-                             choices=[(1, 'First Year'), (2, 'Second Year'), (3, 'Third Year'), (4, 'Fourth Year'),
-                                      (5, 'Fifth Year'), (6, 'Graduate')], coerce=int,
-                             validators=[DataRequired(), NumberRange(min=1, max=6)])
-    section = StringField('Section', validators=[Length(max=255)])
+    course_id = SelectField('Course', coerce=int, validators=[DataRequired()])
+    year_level_id = SelectField('Year Level', coerce=int, validators=[DataRequired()])
+    section_id = SelectField('Section', coerce=int, validators=[DataRequired()])
+    semester_id = SelectField('Semester', coerce=int, validators=[DataRequired()])
 
     submit = SubmitField('Register')
+
+    # def __init__(self, *args, **kwargs):
+    #     super(AddStudent, self).__init__(*args, **kwargs)
+    #     # Set dynamic choices for year_level
+    #     self.year_level.choices = get_year_level_choices()
+
+
+class EditStudentForm(FlaskForm):
+    student_number = StringField('Student Number', validators=[DataRequired(), Length(max=255)])
+    year_level = SelectField('Year Level', choices=[], coerce=int, validators=[DataRequired()])
+    section = SelectField('Section', choices=[], coerce=int, validators=[DataRequired()])
+    course = SelectField('Course', choices=[], coerce=int, validators=[DataRequired()])
+    semester = SelectField('Semester', choices=[], coerce=int, validators=[DataRequired()])
+    rfid_uid = StringField('RFID UID', validators=[DataRequired(), Length(max=100)])
+    username = StringField('Username', validators=[DataRequired(), Length(max=255)])
+    f_name = StringField('First Name', validators=[DataRequired(), Length(max=100)])
+    l_name = StringField('Last Name', validators=[DataRequired(), Length(max=100)])
+    m_name = StringField('Middle Name', validators=[DataRequired(), Length(max=100)])
+    m_initial = StringField('Middle Initial', validators=[DataRequired(), Length(max=5)])
+    email = StringField('Email', validators=[DataRequired(), Email(), Length(max=100)])
+    date_of_birth = DateField('Date of Birth', format='%Y-%m-%d', validators=[DataRequired()])
+    place_of_birth = StringField('Place of Birth', validators=[DataRequired(), Length(max=255)])
+    gender = SelectField('Gender', choices=[('male', 'Male'), ('female', 'Female')], validators=[DataRequired()])
+    civil_status = StringField('Civil Status', validators=[DataRequired(), Length(max=15)])
+    nationality = StringField('Nationality', validators=[DataRequired(), Length(max=50)])
+    citizenship = StringField('Citizenship', validators=[DataRequired(), Length(max=50)])
+    address = StringField('Address', validators=[DataRequired(), Length(max=255)])
+    profile_pic = StringField('Profile Picture', validators=[Optional(), Length(max=255)])
+    religion = StringField('Religion', validators=[DataRequired(), Length(max=255)])
+    dialect = StringField('Dialect', validators=[DataRequired(), Length(max=255)])
+    contact_number = StringField('Contact Number', validators=[DataRequired(), Length(max=255)])
+    h_city = StringField('Home City', validators=[DataRequired(), Length(max=255)])
+    h_barangay = StringField('Home Barangay', validators=[DataRequired(), Length(max=255)])
+    h_house_no = IntegerField('Home House Number', validators=[DataRequired()])
+    h_street = StringField('Home Street', validators=[DataRequired(), Length(max=255)])
+    curr_city = StringField('Current City', validators=[Optional(), Length(max=255)])
+    curr_barangay = StringField('Current Barangay', validators=[Optional(), Length(max=255)])
+    curr_house_no = IntegerField('Current House Number', validators=[Optional()])
+    curr_street = StringField('Current Street', validators=[Optional(), Length(max=255)])
+    submit = SubmitField('Update')
+
+    def __init__(self, *args, **kwargs):
+        super(EditStudentForm, self).__init__(*args, **kwargs)
+        self.year_level.choices = [(yl.id, yl.display_name) for yl in YearLevel.query.all()]
+        self.section.choices = [(s.id, s.section_name) for s in Section.query.all()]
+        self.course.choices = [(c.id, c.course_name) for c in Course.query.all()]
+        self.semester.choices = [(s.id, s.display_name) for s in Semester.query.all()]

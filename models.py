@@ -1,5 +1,7 @@
-from datetime import datetime, timedelta
+import enum
+from datetime import datetime, timedelta, date
 
+from sqlalchemy import event, Enum
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 
@@ -13,6 +15,133 @@ student_subject_association = db.Table('student_subject',
                                                  db.ForeignKey('course_subjects.id', ondelete='CASCADE'),
                                                  primary_key=True)
                                        )
+
+faculty_subject_association = db.Table('faculty_subject',
+                                       db.Column('faculty_id', db.Integer,
+                                                 db.ForeignKey('faculty.id', ondelete='CASCADE'), primary_key=True),
+                                       db.Column('subject_id', db.Integer,
+                                                 db.ForeignKey('course_subjects.id', ondelete='CASCADE'),
+                                                 primary_key=True)
+                                       )
+
+
+class TOTPSecret(db.Model):
+    __tablename__ = 'totp_secret'
+    id = db.Column(db.Integer, primary_key=True)
+    secret_key = db.Column(db.String(255), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    user = db.relationship('User', back_populates='totp_secret')
+
+
+class Course(db.Model):
+    __tablename__ = 'course'
+    id = db.Column(db.Integer, primary_key=True)
+    course_name = db.Column(db.String(255), nullable=False, unique=True)
+    course_code = db.Column(db.String(255), nullable=False, unique=True)
+    students = db.relationship('Student', back_populates='course')
+
+
+class YearLevelEnum(enum.Enum):
+    FIRST_YEAR = (1, 'First Year')
+    SECOND_YEAR = (2, 'Second Year')
+    THIRD_YEAR = (3, 'Third Year')
+    FOURTH_YEAR = (4, 'Fourth Year')
+
+    @classmethod
+    def choices(cls):
+        return [(choice.name, choice.value[1]) for choice in cls]
+
+    @classmethod
+    def code(cls, name):
+        return cls[name].value[0]
+
+
+class YearLevel(db.Model):
+    __tablename__ = 'year_level'
+    id = db.Column(db.Integer, primary_key=True)
+    level_name = db.Column(db.Enum(YearLevelEnum), nullable=False, unique=True)
+    level_code = db.Column(db.Integer, nullable=False, unique=True)
+    students = db.relationship('Student', back_populates='year_level')
+
+    @property
+    def display_name(self):
+        return self.level_name.value[1]
+
+    @property
+    def code(self):
+        return self.level_name.value[0]
+
+
+class SemesterEnum(enum.Enum):
+    FIRST_SEMESTER = (1, 'First Semester')
+    SECOND_SEMESTER = (2, 'Second Semester')
+    SUMMER_TERM = (3, 'Summer Term')
+
+    @classmethod
+    def choices(cls):
+        return [(choice.name, choice.value[1]) for choice in cls]
+
+    @classmethod
+    def code(cls, name):
+        return cls[name].value[0]
+
+
+class Semester(db.Model):
+    __tablename__ = 'semester'
+    id = db.Column(db.Integer, primary_key=True)
+    semester_name = db.Column(db.Enum(SemesterEnum), nullable=False, unique=True)
+    semester_code = db.Column(db.Integer, nullable=False, unique=True)
+    students = db.relationship('Student', back_populates='semester')
+
+    @property
+    def display_name(self):
+        return self.semester_name.value[1]
+
+    @property
+    def code(self):
+        return self.semester_name.value[0]
+
+
+class Section(db.Model):
+    __tablename__ = 'section'
+    id = db.Column(db.Integer, primary_key=True)
+    section_name = db.Column(db.String(255), nullable=False, unique=True)
+    students = db.relationship('Student', back_populates='section')
+    schedules = db.relationship('Schedule', back_populates='section', cascade="all, delete-orphan")
+
+
+class Subject(db.Model):
+    __tablename__ = 'course_subjects'
+    id = db.Column(db.Integer, primary_key=True)
+    subject_code = db.Column(db.String(255), nullable=False, unique=True)
+    subject_name = db.Column(db.String(255), nullable=False)
+    subject_units = db.Column(db.String(255), nullable=False)
+
+    # Define the many-to-many relationship to faculties
+    faculties = db.relationship('Faculty', secondary=faculty_subject_association, back_populates='subjects')
+
+    # Define the relationship to schedules and students
+    schedule_details = db.relationship('Schedule', back_populates='subject', cascade="all, delete-orphan")
+    students = db.relationship('Student', secondary=student_subject_association, back_populates='subjects')
+
+
+class CourseYearLevelSemesterSubject(db.Model):
+    __tablename__ = 'course_year_level_semester_subject'
+    id = db.Column(db.Integer, primary_key=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id', ondelete='CASCADE'), nullable=False)
+    year_level_id = db.Column(db.Integer, db.ForeignKey('year_level.id', ondelete='CASCADE'), nullable=False)
+    semester_id = db.Column(db.Integer, db.ForeignKey('semester.id', ondelete='CASCADE'), nullable=False)
+    subject_id = db.Column(db.Integer, db.ForeignKey('course_subjects.id', ondelete='CASCADE'), nullable=False)
+
+    course = db.relationship('Course', backref='course_year_level_semester_subjects')
+    year_level = db.relationship('YearLevel', backref='course_year_level_semester_subjects')
+    semester = db.relationship('Semester', backref='course_year_level_semester_subjects')
+    subject = db.relationship('Subject', backref='course_year_level_semester_subjects')
+
+    __table_args__ = (
+        db.UniqueConstraint('course_id', 'year_level_id', 'semester_id', 'subject_id',
+                            name='_course_year_semester_subject_uc'),
+    )
 
 
 class User(db.Model, UserMixin):
@@ -46,6 +175,7 @@ class User(db.Model, UserMixin):
     family_background = db.relationship('FamilyBackground', backref='user', uselist=False, cascade="all, delete-orphan")
     educational_background = db.relationship('EducationalBackground', backref='user', uselist=False,
                                              cascade="all, delete-orphan")
+    totp_secret = db.relationship('TOTPSecret', back_populates='user', uselist=False, cascade="all, delete-orphan")
 
 
 class ContactInfo(db.Model):
@@ -121,15 +251,19 @@ class EducationalBackground(db.Model):
 class Student(db.Model):
     __tablename__ = 'student'
     id = db.Column(db.Integer, primary_key=True)
-    student_number = db.Column(db.String(100), nullable=False, unique=True)
-
+    student_number = db.Column(db.String(255), unique=True, nullable=False)
+    year_level_id = db.Column(db.Integer, db.ForeignKey('year_level.id', ondelete='CASCADE'), nullable=False)
+    section_id = db.Column(db.Integer, db.ForeignKey('section.id', ondelete='CASCADE'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id', ondelete='CASCADE'), nullable=False)
+    semester_id = db.Column(db.Integer, db.ForeignKey('semester.id', ondelete='CASCADE'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
 
-    student_course_and_year = db.relationship('StudentCourseAndYear', backref='student', uselist=False,
-                                              cascade="all, delete-orphan")
-
-    # Define the relationship to subjects through the association table
+    year_level = db.relationship('YearLevel', back_populates='students')
+    section = db.relationship('Section', back_populates='students')
+    course = db.relationship('Course', back_populates='students')
+    semester = db.relationship('Semester', back_populates='students')
     subjects = db.relationship('Subject', secondary=student_subject_association, back_populates='students')
+    attendances = db.relationship('Attendance', back_populates='student', cascade="all, delete-orphan")
 
     @property
     def full_name(self):
@@ -137,17 +271,7 @@ class Student(db.Model):
 
     @property
     def course_section(self):
-        return f"{self.student_course_and_year.course_name} {self.student_course_and_year.year_level}{self.student_course_and_year.section}"
-
-
-class StudentCourseAndYear(db.Model):
-    __tablename__ = 'student_course_and_year'
-    id = db.Column(db.Integer, primary_key=True)
-    course_name = db.Column(db.String(50), nullable=False)
-    year_level = db.Column(db.String(50), nullable=False)
-    section = db.Column(db.String(50), nullable=False)
-
-    student_id = db.Column(db.Integer, db.ForeignKey('student.id', ondelete='CASCADE'), nullable=False)
+        return f"{self.course.course_code} {self.year_level.level_code}{self.section.section_name}"
 
 
 class Admin(db.Model):
@@ -179,8 +303,8 @@ class Faculty(db.Model):
     faculty_department = db.Column(db.String(255), nullable=False)
     password_hash = db.Column(db.String(128))
 
-    # Define relationships with string references
-    subjects = db.relationship('Subject', back_populates='faculty', cascade="all, delete-orphan")
+    # Define the many-to-many relationship to subjects
+    subjects = db.relationship('Subject', secondary=faculty_subject_association, back_populates='faculties')
 
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
 
@@ -200,52 +324,79 @@ class Faculty(db.Model):
         return f"{self.user.f_name} {self.user.m_name} {self.user.l_name}"
 
 
-class Subject(db.Model):
-    __tablename__ = 'course_subjects'
-    id = db.Column(db.Integer, primary_key=True)
-    subject_code = db.Column(db.String(255), nullable=False)
-    subject_name = db.Column(db.String(255), nullable=False)
-    subject_units = db.Column(db.String(255), nullable=False)
-    subject_description = db.Column(db.String(255))
-
-    # Define the relationship to faculty
-    faculty_id = db.Column(db.Integer, db.ForeignKey('faculty.id', ondelete='CASCADE'), nullable=False)
-    faculty = db.relationship('Faculty', back_populates='subjects')
-
-    # Define relationships with schedules and students
-    schedule_details = db.relationship('Schedule', backref='subject', cascade="all, delete-orphan")
-    students = db.relationship('Student', secondary=student_subject_association, back_populates='subjects')
+class DayOfWeek(enum.Enum):
+    SUNDAY = "Sunday"
+    MONDAY = "Monday"
+    TUESDAY = "Tuesday"
+    WEDNESDAY = "Wednesday"
+    THURSDAY = "Thursday"
+    FRIDAY = "Friday"
+    SATURDAY = "Saturday"
 
 
 class Schedule(db.Model):
     __tablename__ = 'schedule'
     id = db.Column(db.Integer, primary_key=True)
-    schedule_day = db.Column(db.String(255), nullable=False)
-    schedule_time_from = db.Column(db.Time, nullable=False)
-    schedule_time_to = db.Column(db.Time, nullable=False)
+    day = db.Column(Enum(DayOfWeek), nullable=False)
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
 
-    faculty_id = db.Column(db.Integer, db.ForeignKey('faculty.id', ondelete='CASCADE'), nullable=False)
     subject_id = db.Column(db.Integer, db.ForeignKey('course_subjects.id', ondelete='CASCADE'), nullable=False)
+    section_id = db.Column(db.Integer, db.ForeignKey('section.id', ondelete='CASCADE'), nullable=False)
+
+    subject = db.relationship('Subject', back_populates='schedule_details')
+    section = db.relationship('Section', back_populates='schedules')
+
+    __table_args__ = (
+        db.UniqueConstraint('day', 'start_time', 'end_time', 'subject_id', 'section_id',
+                            name='_schedule_unique_constraint'),
+    )
+
+
+class FacultySubjectSchedule(db.Model):
+    __tablename__ = 'faculty_subject_schedule'
+    id = db.Column(db.Integer, primary_key=True)
+    faculty_id = db.Column(db.Integer, db.ForeignKey('faculty.id', ondelete='CASCADE'), nullable=False)
+    schedule_id = db.Column(db.Integer, db.ForeignKey('schedule.id', ondelete='CASCADE'), nullable=False)
+    subject_id = db.Column(db.Integer, db.ForeignKey('course_subjects.id', ondelete='CASCADE'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id', ondelete='CASCADE'), nullable=False)
+    year_level_id = db.Column(db.Integer, db.ForeignKey('year_level.id', ondelete='CASCADE'), nullable=False)
+    semester_id = db.Column(db.Integer, db.ForeignKey('semester.id', ondelete='CASCADE'), nullable=False)
+    section_id = db.Column(db.Integer, db.ForeignKey('section.id', ondelete='CASCADE'), nullable=False)
+
+    faculty = db.relationship('Faculty', backref='faculty_subject_schedules')
+    schedule = db.relationship('Schedule', backref='faculty_subject_schedules')
+    subject = db.relationship('Subject', backref='faculty_subject_schedules')
+    course = db.relationship('Course', backref='faculty_subject_schedules')
+    year_level = db.relationship('YearLevel', backref='faculty_subject_schedules')
+    semester = db.relationship('Semester', backref='faculty_subject_schedules')
+    section = db.relationship('Section', backref='faculty_subject_schedules')
+
+    __table_args__ = (
+        db.UniqueConstraint('faculty_id', 'schedule_id', 'subject_id', 'course_id', 'year_level_id', 'semester_id',
+                            'section_id', name='_faculty_schedule_subject_course_year_semester_section_uc'),
+    )
 
 
 class Attendance(db.Model):
     __tablename__ = 'attendance'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
-    subject_id = db.Column(db.Integer, db.ForeignKey('course_subjects.id', ondelete='CASCADE'), nullable=False)
     time_in = db.Column(db.DateTime, nullable=False)
     time_out = db.Column(db.DateTime, nullable=True)
     status = db.Column(db.Enum('present', 'absent', 'late'), nullable=False)
 
-    user = db.relationship('User', backref='attendances')
+    student_id = db.Column(db.Integer, db.ForeignKey('student.id', ondelete='CASCADE'), nullable=False)
+    subject_id = db.Column(db.Integer, db.ForeignKey('course_subjects.id', ondelete='CASCADE'))
+
+    student = db.relationship('Student', back_populates='attendances')
     subject = db.relationship('Subject', backref='attendances')
 
     def check_lateness(self):
         current_day = self.time_in.strftime('%A').lower()
-        schedule = Schedule.query.filter_by(subject_id=self.subject_id, day=current_day).first()
+        schedule = Schedule.query.filter_by(subject_id=self.subject_id, schedule_day=current_day).first()
 
         if schedule:
-            scheduled_start_time = datetime.combine(self.time_in.date(), schedule.schedule_from)
+            scheduled_start_time = datetime.combine(self.time_in.date(), schedule.schedule_time_from)
             if self.time_in > (scheduled_start_time + timedelta(minutes=15)):
                 self.status = 'late'
             else:

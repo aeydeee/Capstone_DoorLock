@@ -17,5 +17,7 @@ class AssignStudentForm(FlaskForm):
 
     def __init__(self, *args, **kwargs):
         super(AssignStudentForm, self).__init__(*args, **kwargs)
-        self.subject.choices = [(subject.id, f"{subject.subject_name} - {subject.faculty_id}") for subject in
-                                Subject.query.all()]
+        self.subject.choices = [
+            (subject.id, f"{subject.subject_name} - {', '.join(faculty.full_name for faculty in subject.faculties)}")
+            for subject in Subject.query.all()
+        ]

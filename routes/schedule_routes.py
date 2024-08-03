@@ -1,19 +1,37 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from datetime import datetime, timedelta
-from models import Schedule, Faculty, Subject
+from models import Schedule, Faculty, Subject, faculty_subject_association, FacultySubjectSchedule, YearLevel, Course, \
+    Section, Semester, CourseYearLevelSemesterSubject
 from webforms.delete_form import DeleteForm
-from webforms.schedule_form import ScheduleForm, EditScheduleForm
+from webforms.schedule_form import ScheduleForm, EditScheduleForm, NewScheduleForm
 from app import db
 
 schedule_bp = Blueprint('schedule', __name__)
 
 
-@schedule_bp.route('/<int:faculty_id>/schedule')
+@schedule_bp.route('/view_schedule/<int:faculty_id>')
 def view_schedule(faculty_id):
     delete_form = DeleteForm()
     faculty = Faculty.query.get_or_404(faculty_id)
-    schedule = Schedule.query.filter_by(faculty_id=faculty_id).all()
-    return render_template('schedule/view_schedule.html', faculty=faculty, schedule=schedule, delete_form=delete_form)
+
+    # Query schedules joined with necessary tables and filtered by faculty_id
+    schedules = Schedule.query.join(Subject, Schedule.subject_id == Subject.id) \
+        .join(FacultySubjectSchedule, Schedule.id == FacultySubjectSchedule.schedule_id) \
+        .join(Faculty, FacultySubjectSchedule.faculty_id == Faculty.id) \
+        .join(Course, FacultySubjectSchedule.course_id == Course.id) \
+        .join(YearLevel, FacultySubjectSchedule.year_level_id == YearLevel.id) \
+        .join(Section, FacultySubjectSchedule.section_id == Section.id) \
+        .join(Semester, FacultySubjectSchedule.semester_id == Semester.id) \
+        .filter(Faculty.id == faculty_id).all()
+
+    # Format start and end times to 12-hour format and remove SemesterEnum prefix
+    for sched in schedules:
+        sched.formatted_start_time = datetime.strptime(str(sched.start_time), "%H:%M:%S").strftime("%I:%M %p")
+        sched.formatted_end_time = datetime.strptime(str(sched.end_time), "%H:%M:%S").strftime("%I:%M %p")
+        sched.formatted_semester_name = str(sched.faculty_subject_schedules[0].semester.semester_name).replace(
+            'SemesterEnum.', '')
+
+    return render_template('schedule/view_schedule.html', faculty=faculty, schedules=schedules, delete_form=delete_form)
 
 
 @schedule_bp.route('/get_subjects/<int:faculty_id>', methods=['GET'])
@@ -23,61 +41,53 @@ def get_subjects(faculty_id):
     return jsonify(subjects_list)
 
 
-@schedule_bp.route('/add_schedule', methods=['GET', 'POST'])
-def add_schedule():
-    form = ScheduleForm()
+@schedule_bp.route('/new_add_schedule/<int:faculty_id>', methods=['GET', 'POST'])
+def new_add_schedule(faculty_id):
+    form = NewScheduleForm()
 
-    # Fetch faculties from the database and populate choices
-    faculties = Faculty.query.all()
-    form.faculty.choices = [(instr.id, instr.full_name) for instr in faculties]
+    # Get the faculty and their subjects
+    faculty = Faculty.query.get_or_404(faculty_id)
+    form.subject_id.choices = [(subject.id, subject.subject_name) for subject in faculty.subjects]
 
-    # Default to the first faculty if none is selected
-    faculty_id = form.faculty.data or (faculties[0].id if faculties else None)
+    # Create a dictionary to hold subject-related info
+    subject_info = {}
+    for subject in faculty.subjects:
+        connections = CourseYearLevelSemesterSubject.query.filter_by(subject_id=subject.id).all()
+        subject_info[subject.id] = [{
+            'course_id': conn.course_id,
+            'year_level_id': conn.year_level_id,
+            'semester_id': conn.semester_id
+        } for conn in connections]
 
-    if faculty_id:
-        # Populate subject choices based on the selected faculty
-        subjects = Subject.query.filter_by(faculty_id=faculty_id).all()
-        form.subject.choices = [(subj.id, subj.subject_name) for subj in subjects]
+    if form.validate_on_submit():
+        new_schedule = Schedule(
+            day=form.day.data,
+            start_time=form.start_time.data,
+            end_time=form.end_time.data,
+            subject_id=form.subject_id.data,
+            section_id=form.section_id.data
+        )
+        db.session.add(new_schedule)
+        db.session.commit()
 
-    if request.method == 'POST':
-        # Update subject choices based on the selected faculty
-        faculty_id = form.faculty.data
-        subjects = Subject.query.filter_by(faculty_id=faculty_id).all()
-        form.subject.choices = [(subj.id, subj.subject_name) for subj in subjects]
+        subject_conn = subject_info[form.subject_id.data][0]
+        new_faculty_subject_schedule = FacultySubjectSchedule(
+            faculty_id=faculty_id,
+            schedule_id=new_schedule.id,
+            subject_id=form.subject_id.data,
+            course_id=subject_conn['course_id'],
+            year_level_id=subject_conn['year_level_id'],
+            semester_id=subject_conn['semester_id'],
+            section_id=form.section_id.data
+        )
+        db.session.add(new_faculty_subject_schedule)
+        db.session.commit()
 
-        if form.validate_on_submit():
-            # Process form data
-            faculty_id = form.faculty.data
-            subject_id = form.subject.data
-            schedule_day = form.schedule_day.data
-            schedule_time_from = form.schedule_time_from.data
-            schedule_time_to = form.schedule_time_to.data
+        flash('Schedule and faculty assignment added successfully!', 'success')
+        return redirect(url_for('schedule.new_add_schedule', faculty_id=faculty_id))
 
-            # Fetch the existing subject
-            existing_subject = Subject.query.get(subject_id)
-
-            if existing_subject:
-                # Ensure the subject belongs to the selected faculty
-                if existing_subject.faculty_id == int(faculty_id):
-                    # Create a new schedule linked to the existing subject
-                    new_schedule = Schedule(
-                        schedule_day=schedule_day,
-                        schedule_time_from=schedule_time_from,
-                        schedule_time_to=schedule_time_to,
-                        faculty_id=faculty_id,  # Ensure faculty_id is assigned
-                        subject_id=existing_subject.id
-                    )
-                    db.session.add(new_schedule)
-                    db.session.commit()
-
-                    flash('Schedule added successfully!', 'success')
-                    return redirect(url_for('schedule.add_schedule'))
-                else:
-                    flash('The selected subject does not belong to the chosen faculty.', 'error')
-            else:
-                flash('Subject not found.', 'error')
-
-    return render_template('schedule/add_schedule.html', form=form)
+    return render_template('schedule/new_add_schedule.html', form=form, faculty_id=faculty_id,
+                           subject_info=subject_info)
 
 
 @schedule_bp.route('/edit/<int:id>', methods=['GET', 'POST'])

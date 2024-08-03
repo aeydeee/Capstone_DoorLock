@@ -14,24 +14,49 @@
 }
 
 
-/* Media queries for responsive columns */
-@media (max-width: 1200px) {
-    table th:nth-child(4),
-    table td:nth-child(4) {
-        display: none;
-    }
+/* Tooltip container */
+[data-tooltip] {
+    position: relative;
+    cursor: pointer;
 }
 
-@media (max-width: 992px) {
-    table th:nth-child(3),
-    table td:nth-child(3) {
-        display: none;
-    }
+/* Tooltip text */
+[data-tooltip]::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%; /* Position above the element */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 5px;
+    white-space: nowrap;
+    font-size: 1.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0s;
+    pointer-events: none;
 }
 
-@media (max-width: 768px) {
-    table th:nth-child(2),
-    table td:nth-child(2) {
-        display: none;
-    }
+/* Tooltip arrow */
+[data-tooltip]::after {
+    content: '';
+    position: absolute;
+    bottom: 90%; /* Adjust as needed */
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0s;
+}
+
+/* Show the tooltip on hover */
+[data-tooltip]:hover::before,
+[data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
 }

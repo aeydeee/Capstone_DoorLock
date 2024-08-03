@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Edit Section</h2>
+    <form method="POST" action="{{ url_for('department.edit_section', section_id=section.id) }}">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.label('section_name') }}
+            {{ form.section_name(class="form-control") }}
+        </div>
+        <button type="submit" class="btn btn-primary">Update</button>
+        <a href="{{ url_for('department.manage_department_details') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+{% endblock %}
