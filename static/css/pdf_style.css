@@ -1,0 +1,31 @@
+@page {
+    size: legal landscape;
+    margin: 1in 0.75in;
+}
+
+header {
+    position: running(header);
+    text-align: center;
+    font-size: 12px;
+    margin-bottom: 20px;
+}
+
+footer {
+    position: running(footer);
+    font-size: 9px;
+    text-align: center;
+    border-top: 1px solid black;
+    padding-top: 5px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9px;
+}
+
+th, td {
+    border: 1px solid black;
+    padding: 10px;
+    text-align: center;
+}

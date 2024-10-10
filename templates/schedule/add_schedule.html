@@ -1,5 +1,19 @@
 {% extends 'base.html' %}
 
+{% block title_block %}
+    Add Schedules
+{% endblock %}
+
+{% block extra_styles %}
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script defer src="{{ url_for('static', filename='js/add_schedule.js') }}"></script>
+{% endblock %}
+
 {% block content %}
     {% for message in get_flashed_messages(with_categories=true) %}
         {% if message[0] == 'success' %}
@@ -14,82 +28,155 @@
     </div>
     {% endfor %}
 
-    <h1>Add Schedule!</h1>
+    <h1>Add Schedule for {{ faculty.full_name | title }}</h1>
     <br/><br>
 
     <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
-        <form action="" method="post">
+        <form action="{{ url_for('schedule.add_schedule', faculty_id=faculty.id) }}" method="post" class="text-dark">
             {{ form.hidden_tag() }}
 
+            <!-- Faculty Display -->
             <div class="form-group">
-                {{ form.faculty.label(class_="form-label") }}
-                {{ form.faculty(id="faculty", class_="form-control") }}
-                {% for error in form.faculty.errors %}
+                <label class="form-label">Faculty</label>
+                <div class="border p-2 rounded bg-light">
+                    <p>{{ faculty.full_name | title }}</p>
+                </div>
+            </div>
+            <br/>
+
+            <!-- Subject Selection -->
+            <div class="form-group">
+                <label class="form-label">Subject</label>
+                <div class="border p-2 rounded bg-light">
+                    {{ form.subject_id(class_="form-control select2") }}
+                </div>
+            </div>
+
+            <br/>
+            <div class="form-group">
+                {{ form.day.label(class="form-label") }}
+                {{ form.day(class="form-control") }}
+                {% for error in form.day.errors %}
                     <span class="text-danger">{{ error }}</span>
                 {% endfor %}
             </div>
-
+            <br/>
             <div class="form-group">
-                {{ form.subject.label(class_="form-label") }}
-                {{ form.subject(id="subject", class_="form-control") }}
-                {% for error in form.subject.errors %}
+                {{ form.start_time.label(class="form-label") }}
+                {{ form.start_time(class="form-control") }}
+                {% for error in form.start_time.errors %}
                     <span class="text-danger">{{ error }}</span>
                 {% endfor %}
             </div>
-
+            <br/>
             <div class="form-group">
-                {{ form.schedule_day.label(class_="form-label") }}
-                {{ form.schedule_day(class="form-control") }}
-                {% for error in form.schedule_day.errors %}
+                {{ form.end_time.label(class="form-label") }}
+                {{ form.end_time(class="form-control") }}
+                {% for error in form.end_time.errors %}
                     <span class="text-danger">{{ error }}</span>
                 {% endfor %}
             </div>
+            <br/>
 
+            <!-- Course Selection -->
             <div class="form-group">
-                {{ form.schedule_time_from.label(class_="form-label") }}
-                {{ form.schedule_time_from(class="form-control") }}
-                {% for error in form.schedule_time_from.errors %}
-                    <span class="text-danger">{{ error }}</span>
-                {% endfor %}
+                {{ form.course_id.label }}<br>
+                <label for="course_id"></label><select id="course_id" name="course_id" class="form-control">
+                <option value="">-- Select a Subject First --</option>
+            </select>
             </div>
+            <br>
 
+            <!-- Year Level Selection -->
             <div class="form-group">
-                {{ form.schedule_time_to.label(class_="form-label") }}
-                {{ form.schedule_time_to(class="form-control") }}
-                {% for error in form.schedule_time_to.errors %}
-                    <span class="text-danger">{{ error }}</span>
-                {% endfor %}
+                {{ form.year_level_id.label }}<br>
+                <label for="year_level_id"></label><select id="year_level_id" name="year_level_id" class="form-control">
+                <option value="">-- Select a Course First --</option>
+            </select>
             </div>
+            <br>
+
+            <!-- Semester Selection -->
+            <div class="form-group">
+                {{ form.semester_id.label }}<br>
+                <label for="semester_id"></label><select id="semester_id" name="semester_id" class="form-control">
+                <option value="">-- Select a Course First --</option>
+            </select>
+            </div>
+            <br>
+
+            <!-- Section Selection -->
+            <div class="form-group">
+                {{ form.section_id.label }}<br>
+                {{ form.section_id(class="form-control") }}
+            </div>
+            <br/>
 
             <div class="form-group">
-                {{ form.submit(class="btn btn-secondary") }}
-                <a href="{{ url_for('schedule.add_schedule') }}" class="btn btn-secondary">Cancel</a>
+                {{ form.submit(class="btn btn-primary") }}
+                <a href="{{ url_for('schedule.view_schedule', faculty_id=faculty.id) }}" class="btn btn-secondary">Cancel</a>
             </div>
         </form>
-    </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const facultySelect = document.querySelector('#faculty');
-            const subjectSelect = document.querySelector('#subject');
+        <!-- JavaScript -->
+        <script>
+            $(document).ready(function () {
+                // Initialize Select2 for the subject dropdown
+                $('.select2').select2();
 
-            facultySelect.addEventListener('change', function () {
-                const facultyId = this.value;
+                // On subject change, fetch the associated courses
+                $('#subject_id').on('change', function () {
+                    let subjectId = $(this).val();
+                    if (subjectId) {
+                        fetch(`/schedules/get_options/${subjectId}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                let courseSelect = document.getElementById("course_id");
+                                courseSelect.innerHTML = '<option value="">Select Course</option>';
 
-                fetch(`get_subjects/${facultyId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        subjectSelect.innerHTML = '';
-                        data.forEach(subject => {
-                            const option = document.createElement('option');
-                            option.value = subject[0];
-                            option.textContent = subject[1];
-                            subjectSelect.appendChild(option);
-                        });
-                    })
-                    .catch(error => console.error('Error:', error));
+                                data.courses.forEach(function (course) {
+                                    let option = document.createElement("option");
+                                    option.value = course[0];
+                                    option.text = course[1];
+                                    courseSelect.appendChild(option);
+                                });
+                            })
+                            .catch(error => console.error('Error fetching courses:', error));
+                    }
+                });
+
+                // On course change, fetch the year levels and semesters for the selected course
+                $('#course_id').on('change', function () {
+                    let subjectId = $('#subject_id').val();
+                    let courseId = $(this).val();
+                    if (courseId) {
+                        fetch(`/schedules/get_year_levels_and_semesters/${subjectId}/${courseId}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                let yearLevelSelect = document.getElementById("year_level_id");
+                                let semesterSelect = document.getElementById("semester_id");
+
+                                yearLevelSelect.innerHTML = '<option value="">Select Year Level</option>';
+                                semesterSelect.innerHTML = '<option value="">Select Semester</option>';
+
+                                data.year_levels.forEach(function (yearLevel) {
+                                    let option = document.createElement("option");
+                                    option.value = yearLevel[0];
+                                    option.text = yearLevel[1];
+                                    yearLevelSelect.appendChild(option);
+                                });
+
+                                data.semesters.forEach(function (semester) {
+                                    let option = document.createElement("option");
+                                    option.value = semester[0];
+                                    option.text = semester[1];
+                                    semesterSelect.appendChild(option);
+                                });
+                            })
+                            .catch(error => console.error('Error fetching year levels and semesters:', error));
+                    }
+                });
             });
-        });
-    </script>
-
+        </script>
+    </div>
 {% endblock %}

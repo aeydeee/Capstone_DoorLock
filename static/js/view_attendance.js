@@ -6,7 +6,7 @@ const table = new DataTable('#view_attendance', {
             targets: 0
         }
     ],
-    order: [[1, 'asc']]
+    order: [[3, 'desc']]
 });
 
 table

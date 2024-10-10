@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title_block %}
+    Door Control
+{% endblock %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/door_control.css') }}">
+{% endblock %}
+
+{#{% block extra_scripts %}#}
+{#{% endblock %}#}
+
+{% block content %}
+    <div class="door-control-container">
+        <h1 class="mb-4">Door Control</h1>
+        <div>
+            <!-- Animated lock icon -->
+            <i id="lockIcon" class="fas fa-lock lock-icon locked"></i>
+        </div>
+
+        <div class="control-buttons">
+            <form action="/unlock" method="post">
+                <button type="submit" class="btn btn-success" onclick="unlockDoor(event)">Unlock Door</button>
+            </form>
+            <form action="/lock" method="post">
+                <button type="submit" class="btn btn-danger" onclick="lockDoor(event)">Lock Door</button>
+            </form>
+        </div>
+
+        <!-- Flash messages -->
+        <div class="flash-messages">
+            {% for message in get_flashed_messages(with_categories=true) %}
+                {% if message[0] == 'success' %}
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {% elif message[0] == 'error' %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {% else %}
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                {% endif %}
+            {{ message[1] }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+            </div>
+            </div>
+
+            <script>
+                const lockIcon = document.getElementById('lockIcon');
+
+                function unlockDoor(event) {
+                    event.preventDefault();
+                    lockIcon.classList.remove('locked');
+                    lockIcon.classList.add('unlocked');
+                    setTimeout(() => {
+                        event.target.closest('form').submit();
+                    }, 500);
+                }
+
+                function lockDoor(event) {
+                    event.preventDefault();
+                    lockIcon.classList.remove('unlocked');
+                    lockIcon.classList.add('locked');
+                    setTimeout(() => {
+                        event.target.closest('form').submit();
+                    }, 500);
+                }
+            </script>
+{% endblock %}

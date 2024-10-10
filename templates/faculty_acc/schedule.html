@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Schedule</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+<h1>Schedule for {{ student.user.f_name }} {{ student.user.l_name }}</h1>
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th>Day</th>
+        <th>Start Time</th>
+        <th>End Time</th>
+        <th>Subject</th>
+        <th>Section</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for schedule_item in schedule %}
+        <tr>
+            <td>{{ schedule_item.day.name }}</td>
+            <td>{{ schedule_item.start_time }}</td>
+            <td>{{ schedule_item.end_time }}</td>
+            <td>{{ schedule_item.subject.subject_name }}</td>
+            <td>{{ schedule_item.section.display_name }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</body>
+</html>

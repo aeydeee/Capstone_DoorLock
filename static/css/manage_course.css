@@ -1,0 +1,9 @@
+:root {
+    --modal-text-color: #000; /* Default text color for light mode */
+    --modal-bg-color: #fff; /* Default background color for light mode */
+}
+
+.modal-content {
+    color: var(--modal-text-color);
+    background-color: var(--modal-bg-color);
+}

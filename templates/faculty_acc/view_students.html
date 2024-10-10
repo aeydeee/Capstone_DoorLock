@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title_block %}
+    View Students
+{% endblock %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/student.css') }}">
+{% endblock %}
+
+{% block extra_scripts %}
+    <script defer src="{{ url_for('static', filename='js/view_students.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+    {% for message in get_flashed_messages(with_categories=true) %}
+        {% if message[0] == 'success' %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {% elif message[0] == 'error' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {% else %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {% endif %}
+    {{ message[1] }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+
+<div class="d-flex justify-content-between align-items-center">
+    <h1>View All Current Students</h1>
+
+</div>
+
+<table class="table table-hover" id="view_students">
+    <thead>
+    <tr>
+        <th scope="col">No.</th>
+        <th scope="col">RFID Number</th>
+        <th scope="col">Student ID</th>
+        <th scope="col">Full Name</th>
+        <th scope="col">Email</th>
+        <th scope="col">Course & Section</th>
+
+    </tr>
+    </thead>
+
+    <tbody>
+    {% for student in students %}
+        <tr>
+            <td>{{ loop.index + 1 }}</td>
+            <td>{{ student.user.rfid_uid | upper }}</td>
+            <td>{{ student.student_number | upper }}</td>
+            <td>{{ student.full_name | title }}</td>
+            <td>{{ student.user.email }}</td>
+            <td>{{ student.course_section | upper }}</td>
+
+        </tr>
+    {% endfor %}
+    </tbody>
+
+</table>
+</div>
+{% endblock %}

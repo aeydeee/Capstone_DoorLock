@@ -1,120 +1,53 @@
 {% extends 'base.html' %}
 
-{% block title_block %}
-    Manage Subjects
-{% endblock %}
-
 {% block extra_styles %}
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/manage_sub.css') }}">
 {% endblock %}
 
 {% block extra_scripts %}
-    <script defer src="{{ url_for('static', filename='js/manage_department_details.js') }}"></script>
-    <script defer>
-        document.addEventListener("DOMContentLoaded", function () {
-            const selectAllCheckbox = document.getElementById("select_all");
-            const checkboxes = document.querySelectorAll("input[name='subjects']");
-
-            selectAllCheckbox.addEventListener("change", function () {
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = selectAllCheckbox.checked;
-                });
-            });
-
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener("change", function () {
-                    if (!checkbox.checked) {
-                        selectAllCheckbox.checked = false;
-                    } else if (Array.from(checkboxes).every(cb => cb.checked)) {
-                        selectAllCheckbox.checked = true;
-                    }
-                });
-            });
-        });
-    </script>
 {% endblock %}
 
 {% block content %}
-    {% for category, message in get_flashed_messages(with_categories=true) %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+    {% for message in get_flashed_messages(with_categories=true) %}
+        {% if message[0] == 'success' %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {% elif message[0] == 'error' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {% else %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {% endif %}
+    {{ message[1] }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
     {% endfor %}
 
-    <h1 class="text-2xl font-semibold mb-6">Manage Subjects</h1>
-    <form method="POST" action="{{ url_for('subject.manage_subjects') }}">
-        {{ form.hidden_tag() }}
-        <div class="mb-4">
-            <label for="{{ form.course.id }}" class="block  font-medium mb-2">
-                {{ form.course.label.text }}
-            </label>
-            {{ form.course(class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 form-control") }}
-        </div>
-        <div class="mb-4">
-            <label for="{{ form.year_level.id }}" class="block  font-medium mb-2">
-                {{ form.year_level.label.text }}
-            </label>
-            {{ form.year_level(class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 form-control") }}
-        </div>
-        <div class="mb-4">
-            <label for="{{ form.semester.id }}" class="block  font-medium mb-2">
-                {{ form.semester.label.text }}
-            </label>
-            {{ form.semester(class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 form-control") }}
-        </div>
+    <h1 class="mb-lg-5 text-xl">Manage Course Subjects</h1>
 
-        <table class="table table-striped">
-            <thead>
-            <tr>
-                <th><input type="checkbox" id="select_all"></th>
-                <th>Subject</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for subject in subjects %}
-                <tr>
-                    <td><input type="checkbox" name="subjects" value="{{ subject.id }}"></td>
-                    <td>{{ subject.subject_name }}</td>
-                </tr>
+    {% for course in courses %}
+        <div class="header mt-5">
+            <div class="left">
+                <h2>{{ course.course_name | title }}</h2>
+            </div>
+        </div>
+        <!-- Insights -->
+        <ul class="insights">
+            {% for year in range(1, 5) %}
+                <li>
+                    <i class='bx bxs-book-content'></i>
+                    <span class="info">
+                    <h2>{{ year }}{{ 'st' if year == 1 else 'nd' if year == 2 else 'rd' if year == 3 else 'th' }} Year</h2>
+                    <a href="{{ url_for('add_sub_per_course.add_subject', course_id=course.id, year=year, sem=1) }}"
+                       class="text-decoration-none">
+                        <p class="m-0 hover-effect">1st Sem</p>
+                    </a>
+                    <a href="{{ url_for('add_sub_per_course.add_subject', course_id=course.id, year=year, sem=2) }}"
+                       class="text-decoration-none">
+                        <p class="m-0 hover-effect">2nd Sem</p>
+                    </a>
+                </span>
+                </li>
             {% endfor %}
-            </tbody>
-        </table>
-
-        <p><input type="submit" value="Add Selected Subjects" class="btn btn-primary"></p>
-    </form>
-
-    <h2 class="text-xl">Existing Details</h2>
-    <form method="GET" action="{{ url_for('subject.manage_subjects') }}">
-        <label for="course_filter" class="block  font-medium mb-2">Filter by Course:</label>
-        <select id="course_filter" name="course" onchange="this.form.submit()"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 form-control">
-            <option value="">-- Select Course --</option>
-            {% for course in courses %}
-                <option value="{{ course.id }}"
-                        {% if course.id == selected_course %}selected{% endif %}>{{ course.course_name }}</option>
-            {% endfor %}
-        </select>
-    </form>
-
-    <table class="table table-striped mt-4">
-        <thead>
-        <tr>
-            <th>#</th>
-            <th>Subject</th>
-            <th>Year Level</th>
-            <th>Semester</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for detail in details %}
-            <tr>
-                <td></td>
-                <td>{{ detail.subject.subject_name }}</td>
-                <td>{{ detail.year_level.level_name.name }}</td>
-                <td>{{ detail.semester.semester_name.name }}</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+        </ul>
+        <!-- End of Insights -->
+    {% endfor %}
 {% endblock %}

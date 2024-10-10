@@ -6,11 +6,20 @@
 
 {% block extra_styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/student.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
 {% endblock %}
 
 {% block extra_scripts %}
+
+    <script defer src="{{ url_for('static', filename='js/manage_student_subject.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/manage_student.js') }}"></script>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
 {% endblock %}
+
+
 
 {% block content %}
     {% for message in get_flashed_messages(with_categories=true) %}
@@ -26,29 +35,54 @@
     </div>
     {% endfor %}
 
-    <div class="d-flex justify-content-between align-items-center">
+
+    <!-- Heading Section -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>Manage Students</h1>
-        <a href="{{ url_for('student.add_student') }}" class="btn btn-primary">Add Students</a>
+
+        <div class="d-flex">
+            <a href="{{ url_for('student.add_student') }}" class="btn btn-primary d-flex align-items-center me-2">
+                <i class='bx bxs-user-plus'></i>
+                <span class="ms-2">Add Student</span>
+            </a>
+
+
+        </div>
     </div>
 
-    <div class="d-flex justify-content-end align-items-center">
-        <a href="{{ url_for('student.assign_students') }}" class="btn btn-primary">Assign Students</a>
-    </div>
 
-    <div class="input-group mb-3">
-        <form method="GET" action="{{ url_for('student.manage_student') }}">
-            <label for="course_section">Filter by Course Section:</label>
-            <select name="course_section" id="course_section" class="form-select" onchange="this.form.submit()">
-                <option value="">All Sections</option>
-                {% for section in course_sections %}
-                    <option value="{{ section }}"
-                            {% if request.args.get('course_section') == section %}selected{% endif %}>
-                        {{ section }}
-                    </option>
-                {% endfor %}
-            </select>
+
+
+    <!-- Button Group Section -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="btn-group" role="group" aria-label="Manage Actions">
+            {% include 'upload.html' %}
+            <a href="{{ url_for('student.assign_students') }}" class="btn btn-outline-primary">
+                <i class="fas fa-tasks"></i> Auto Assign Subjects
+            </a>
+            <a href="{{ url_for('student.assign_back_subject') }}" class="btn btn-outline-primary">
+                <i class="fa-solid fa-book"></i> Manual Assign Subjects
+            </a>
+        </div>
+
+        <!-- Separate Reset Button -->
+        <form action="{{ url_for('student.reset_schedules') }}" method="POST"
+              onsubmit="return confirm('Are you sure you want to reset all student schedules?');">
+            {{ delete_form.hidden_tag() }}
+            <button type="submit" class="btn btn-outline-danger">RESET SCHEDULES</button>
         </form>
     </div>
+
+
+
+
+
+
+    {##}
+    {#    <a href="{{ url_for('student.manage_student', export='csv') }}" class="btn btn-primary">Export CSV</a>#}
+    {#    <a href="{{ url_for('student.manage_student', export='pdf') }}" class="btn btn-primary">Export PDF</a>#}
+    {##}
+
 
     <form method="POST" action="{{ url_for('student.assign_students_to_subject') }}">
         {{ assign_form.hidden_tag() }}
@@ -56,13 +90,13 @@
             <thead>
             <tr>
                 <th>No.</th>
-                <th><label for="select-all"></label><input type="checkbox" id="select-all"></th>
                 <th>RFID Number</th>
-                <th>Student Number</th>
-                <th>Full Name</th>
+                <th>Student ID</th>
+                <th>Last Name</th>
+                <th>First Name</th>
+                <th>Middle Name</th>
                 <th>Email</th>
                 <th>Course & Section</th>
-                <th>Subjects</th>
                 <th>Actions</th>
             </tr>
             </thead>
@@ -70,75 +104,62 @@
             {% for student in students %}
                 <tr>
                     <td>{{ loop.index }}</td>
-                    <td><input type="checkbox" name="student_ids" value="{{ student.id }}"></td>
-                    <td>{{ student.user.rfid_uid }}</td>
-                    <td>{{ student.student_number }}</td>
-                    <td>{{ student.full_name }}</td>
-                    <td>{{ student.user.email }}</td>
-                    <td>{{ student.course_section }}</td>
+
+                    <td>{{ student.user.rfid_uid|upper }}</td>
+                    <td>{{ student.student_number|upper }}</td>
+                    <td>{{ student.user.l_name|title }}</td>
+                    <td>{{ student.user.f_name|title }}</td>
+                    <td>{{ student.user.m_name|title }}</td>
+                    <td>{{ student.user.email|lower }}</td>
+                    <td>{{ student.course_section|upper }}</td>
                     <td>
-                        {% for subject in student.subjects %}
-                            {{ subject.subject_name }}{% if not loop.last %}, {% endif %}
-                        {% endfor %}
-                    </td>
-                    <td>
-                        <a href="{{ url_for('student.edit_student', id=student.id) }}"
-                           class="btn btn-sm btn-info icon-button">
-                            <img src="{{ url_for('static', filename='images/icons/eye.png') }}" alt="View Icon"
-                                 class="icon-img">
+                        <a href="{{ url_for('student.manage_students_schedule_subjects', student_id=student.id) }}"
+                           class="btn btn-sm view-button"
+                           data-tooltip="View Subjects">
+                            <img src="/static/images/icons/view.png" alt="Eye Icon" class="icon-small">
                         </a>
-                        <a href="#" class="btn btn-sm btn-danger" data-bs-toggle="modal"
-                           data-bs-target="#deleteModal{{ student.id }}">
-                            <img src="{{ url_for('static', filename='images/icons/trash-fill.svg') }}" alt="Trash Icon">
+                        <a href="{{ url_for('student.edit_student', id=student.id) }}"
+                           class="btn btn-sm btn-info"
+                           data-tooltip="Edit Student">
+                            <img src="/static/images/icons/pencil-fill.svg" alt="Pencil Icon">
                         </a>
 
-                        <!-- Delete Confirmation Modal -->
-                        <div class="modal fade" id="deleteModal{{ student.id }}" tabindex="-1"
-                             aria-labelledby="deleteModalLabel{{ student.id }}" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="deleteModalLabel{{ student.id }}">Confirm
-                                            Delete</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        Are you sure you want to delete {{ student.full_name }}?
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel
-                                        </button>
-                                        <form method="POST"
-                                              action="{{ url_for('student.delete_student', id=student.id) }}">
-                                            {{ delete_form.hidden_tag() }}
-                                            <button type="submit" class="btn btn-danger">Delete</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <a href="#" class="btn btn-sm btn-danger" data-bs-toggle="modal"
+                           data-bs-target="#deleteModal{{ student.id }}"
+                           data-tooltip="Delete Student">
+                            <img src="{{ url_for('static', filename='images/icons/trash-fill.svg') }}" alt="Trash Icon">
+                        </a>
                     </td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
-
-        <div class="row">
-            <div class="col-md-6">
-                <label for="subject">Assign to Subject:</label>
-                {{ assign_form.subject(class_='form-select') }}
-            </div>
-            <div class="col-md-6 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary">Assign Selected Students</button>
-            </div>
-        </div>
     </form>
 
-    <script>
-        document.getElementById('select-all').addEventListener('click', function () {
-            const checkboxes = document.querySelectorAll('input[name="student_ids"]');
-            checkboxes.forEach(checkbox => checkbox.checked = this.checked);
-        });
-    </script>
+    <!-- Move modals here, outside the table -->
+    {% for student in students %}
+        <!-- Delete Confirmation Modal -->
+        <div class="modal fade" id="deleteModal{{ student.id }}" tabindex="-1"
+             aria-labelledby="deleteModalLabel{{ student.id }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content bg-whites text-dark">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteModalLabel{{ student.id }}">Confirm Delete</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to delete {{ student.full_name | title }}?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <form method="POST" action="{{ url_for('student.delete_student', id=student.id) }}">
+                            {{ delete_form.hidden_tag() }}
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+
 {% endblock %}

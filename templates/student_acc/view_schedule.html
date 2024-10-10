@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block title_block %}
+    View Schedules
+{% endblock %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.5.0/css/rowGroup.dataTables.css">
+{% endblock %}
+
+{% block extra_scripts %}
+    <script defer src="https://cdn.datatables.net/rowgroup/1.5.0/js/dataTables.rowGroup.js"></script>
+    <script defer src="https://cdn.datatables.net/rowgroup/1.5.0/js/rowGroup.dataTables.js"></script>
+
+    <script defer src="{{ url_for('static', filename='js/student_view_schedule.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+    {% for message in get_flashed_messages(with_categories=true) %}
+        {% if message[0] == 'success' %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {% elif message[0] == 'error' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {% else %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {% endif %}
+    {{ message[1] }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+
+    <div class="container mt-4">
+        <h1>View Current Subjects and Schedules</h1>
+        <h3>Course & Section: {{ student.course_section }}</h3>
+        <br/>
+        <!-- Regular Subjects Table -->
+        <h2>Regular Subjects</h2>
+        <table class="table table-hover" id="student_view_schedule">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Subject</th>
+                <th>Day</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Faculty</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for sub in regular_subjects %}
+                {% if sub.schedule_details_formatted %}
+                    {% for schedule in sub.schedule_details_formatted %}
+                        <tr>
+                            <td></td>
+
+                            <td rowspan="">{{ sub.subject_name | title or "N/A" }}</td>
+
+                            <td>{{ schedule.day }}</td>
+                            <td>{{ schedule.formatted_start_time or "N/A" }}</td>
+                            <td>{{ schedule.formatted_end_time or "N/A" }}</td>
+                            <td>
+                                <span class="copy-faculty-email" data-email="{{ schedule.faculty_email }}"
+                                      style="cursor: pointer;">{{ schedule.faculty_name | title }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td></td>
+                        <td>{{ sub.subject_name | title }}</td>
+                        <td>No schedule available</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <!-- Ensure this colspan matches the number of columns -->
+                    </tr>
+                {% endif %}
+            {% endfor %}
+            </tbody>
+        </table>
+
+
+        <!-- Irregular Subjects Table -->
+        <h2>Irregular Subjects</h2>
+        <table class="table table-hover" id="">
+            <thead>
+            <tr>
+                <th></th>
+                <th>Subject</th>
+                <th>Day</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Faculty</th>
+
+            </tr>
+            </thead>
+            <tbody>
+            {% for sub in irregular_subjects %}
+                {% if sub.schedule_details_formatted %}
+                    {% for schedule in sub.schedule_details_formatted %}
+
+                        <tr>
+                            <td></td>
+                            {% if loop.first %}
+                                <td rowspan="{{ sub.schedule_details_formatted|length }}">{{ sub.subject_name |title }}</td>
+                            {% endif %}
+                            <td>{{ schedule.day }}</td>
+                            <td>{{ schedule.formatted_start_time }}</td>
+                            <td>{{ schedule.formatted_end_time }}</td>
+                            <td>
+                                <span class="copy-faculty-email" data-email="{{ schedule.faculty_email }}"
+                                      style="cursor: pointer;">{{ schedule.faculty_name | title }}
+                                </span>
+                            </td>
+
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td></td>
+                        <td>{{ sub.subject_name }}</td>
+                        <td colspan="4">No schedule available</td>
+
+                    </tr>
+                {% endif %}
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const facultyElements = document.querySelectorAll('.copy-faculty-email');
+            facultyElements.forEach(function (facultyElement) {
+                facultyElement.addEventListener('click', function () {
+                    const email = this.getAttribute('data-email');
+                    navigator.clipboard.writeText(email).then(function () {
+                        alert("Faculty email copied: " + email);
+                    }, function (err) {
+                        console.error("Failed to copy: ", err);
+                    });
+                });
+            });
+        });
+    </script>
+
+
+{% endblock %}

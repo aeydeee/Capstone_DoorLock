@@ -1,5 +1,10 @@
 {% extends 'base.html' %}
 
+{% block title_block %}
+    Add Subject
+{% endblock %}
+
+
 {% block content %}
 
     {% for message in get_flashed_messages(with_categories=true) %}
@@ -18,25 +23,10 @@
     <h1>Add Subject!</h1>
     <br/><br>
 
-    <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
+    <div class="shadow-lg p-3 mb-5 rounded">
         <form action="" method="post">
             {{ form.hidden_tag() }}
 
-            <div class="form-group">
-                {{ form.faculty.label(class="form-label") }}
-                {{ form.faculty(class="form-control", multiple="multiple") }}
-                {% for error in form.faculty.errors %}
-                    <span class="text-danger">{{ error }}</span>
-                {% endfor %}
-            </div>
-
-            <div class="form-group">
-                {{ form.name.label(class="form-label") }}
-                {{ form.name(class="form-control") }}
-                {% for error in form.name.errors %}
-                    <span class="text-danger">{{ error }}</span>
-                {% endfor %}
-            </div>
 
             <div class="form-group">
                 {{ form.code.label(class="form-label") }}
@@ -45,7 +35,17 @@
                     <span class="text-danger">{{ error }}</span>
                 {% endfor %}
             </div>
-
+            <br/>
+            <br/>
+            <div class="form-group">
+                {{ form.name.label(class="form-label") }}
+                {{ form.name(class="form-control") }}
+                {% for error in form.name.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <br/>
+            <br/>
             <div class="form-group">
                 {{ form.units.label(class="form-label") }}
                 {{ form.units(class="form-control") }}
@@ -53,67 +53,12 @@
                     <span class="text-danger">{{ error }}</span>
                 {% endfor %}
             </div>
-
-            <div class="form-group">
-                {{ form.day.label(class="form-label") }}
-                {{ form.day(class="form-control") }}
-                {% for error in form.day.errors %}
-                    <span class="text-danger">{{ error }}</span>
-                {% endfor %}
-            </div>
-
-            <div class="form-group">
-                {{ form.schedule_from.label(class="form-label") }}
-                {{ form.schedule_from(class="form-control") }}
-                {% for error in form.schedule_from.errors %}
-                    <span class="text-danger">{{ error }}</span>
-                {% endfor %}
-            </div>
-
-            <div class="form-group">
-                {{ form.schedule_to.label(class="form-label") }}
-                {{ form.schedule_to(class="form-control") }}
-                {% for error in form.schedule_to.errors %}
-                    <span class="text-danger">{{ error }}</span>
-                {% endfor %}
-            </div>
-
-            <div class="form-group">
-                {{ form.course.label(class="form-label") }}
-                {{ form.course(class="form-control") }}
-                {% for error in form.course.errors %}
-                    <span class="text-danger">{{ error }}</span>
-                {% endfor %}
-            </div>
-
-            <div class="form-group">
-                {{ form.year_level.label(class="form-label") }}
-                {{ form.year_level(class="form-control") }}
-                {% for error in form.year_level.errors %}
-                    <span class="text-danger">{{ error }}</span>
-                {% endfor %}
-            </div>
-
-            <div class="form-group">
-                {{ form.section.label(class="form-label") }}
-                {{ form.section(class="form-control") }}
-                {% for error in form.section.errors %}
-                    <span class="text-danger">{{ error }}</span>
-                {% endfor %}
-            </div>
-
-            <div class="form-group">
-                {{ form.semester.label(class="form-label") }}
-                {{ form.semester(class="form-control") }}
-                {% for error in form.semester.errors %}
-                    <span class="text-danger">{{ error }}</span>
-                {% endfor %}
-            </div>
-
+            <br/>
+            <br/>
             <br/>
             <div class="form-group">
                 {{ form.submit(class="btn btn-secondary") }}
-                <a href="{{ url_for('subject.manage_subject') }}" class="btn btn-secondary">Cancel</a>
+                <a href="{{ url_for('subject.manage_subjects') }}" class="btn btn-secondary">Cancel</a>
             </div>
         </form>
     </div>

@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title_block %}
+    Manage Subjects
+{% endblock %}
+
+{% block extra_styles %}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+
+{% endblock %}
+
+{% block extra_scripts %}
+    <script defer src="{{ url_for('static', filename='js/manage_subject.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/subject_details.js') }}"></script>
+
+{% endblock %}
+
+{% block content %}
+    {% for message in get_flashed_messages(with_categories=true) %}
+        {% if message[0] == 'success' %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {% elif message[0] == 'error' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {% else %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {% endif %}
+    {{ message[1] }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <h1>List of all Subjects</h1>
+        <a href="{{ url_for('subject.course_sub_lists') }}" class="btn btn-primary d-flex align-items-center">
+            <i class="fa-regular fa-eye"></i>
+            <span class="ms-2">View Subjects Per Course</span>
+        </a>
+    </div>
+
+    <table class="table table-striped" id="manage_subject">
+        <thead>
+        <tr>
+            <th>Subject</th>
+            <th>Code</th>
+            <th>Units</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for subject in subjects %}
+            <tr>
+                <td>{{ subject.subject_name | title }}</td>
+                <td>{{ subject.subject_code | upper }}</td>
+                <td>{{ subject.subject_units }}.0</td>
+                <td>
+                    <a href="{{ url_for('subject.edit_subject', id=subject.id) }}" class="btn btn-sm btn-info">
+                        <img src="/static/images/icons/pencil-fill.svg" alt="Pencil Icon">
+                    </a>
+                    <a href="#" class="btn btn-sm btn-danger" data-bs-toggle="modal"
+                       data-bs-target="#deleteModal{{ subject.id }}">
+                        <img src="/static/images/icons/trash-fill.svg" alt="Trash Icon">
+                    </a>
+
+                    <!-- Delete Confirmation Modal -->
+                    <div class="modal fade" id="deleteModal{{ subject.id }}" tabindex="-1"
+                         aria-labelledby="deleteModalLabel{{ subject.id }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="deleteModalLabel{{ subject.id }}">Confirm
+                                        Delete</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    Are you sure you want to delete {{ subject.subject_name | title }}?
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel
+                                    </button>
+                                    <form method="POST"
+                                          action="{{ url_for('subject.delete_subject', id=subject.id) }}">
+                                        {{ delete_form.hidden_tag() }}
+                                        <button type="submit" class="btn btn-danger">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}

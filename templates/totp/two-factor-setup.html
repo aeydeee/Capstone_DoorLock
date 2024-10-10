@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title_block %}
+    Two-Factor Authentication Setup
+{% endblock %}
+
+{% block content %}
+    {% for message in get_flashed_messages(with_categories=true) %}
+        {% if message[0] == 'success' %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {% elif message[0] == 'error' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {% else %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {% endif %}
+    {{ message[1] }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+
+    {% if current_user.role == 'admin' %}
+        <div class="alert alert-danger text-center font-weight-bold p-5" role="alert"
+             style="font-size: 1.5rem; border: 3px solid red; background-color: #ff0000; color: #fff; box-shadow: 0 0 10px red;">
+            ⚠️⚠️ <strong>IMPORTANT NOTICE:</strong> As an admin, you have the option to skip this verification step and
+            allow your users to verify their own accounts.
+            Please proceed with caution. Choose to <strong>verify your account</strong> or <strong>skip
+            verification</strong> at your own discretion! ⚠️⚠️
+        </div>
+    {% endif %}
+
+
+    <h1>Two-Factor Authentication Setup</h1>
+    <p>You are almost done! Please <strong>download and open your TOTP app</strong> (e.g., Google Authenticator,
+        Microsoft Authenticator) on your smartphone and <strong>scan the following QR code</strong> with it:</p>
+
+    <p>
+        <img id="qrcode" src="{{ url_for('totp.qrcode') }}" alt="QR Code"
+             style="background-color: var(--bs-light); padding: 10px;">
+    </p>
+
+    <p>If you can't use the QR code, enter this <strong>secret key to your TOTP Auth app</strong> instead and make
+        sure that it is in
+        <strong>time-based</strong> setting:</p>
+    <p><strong>{{ secret_key }}</strong></p>
+
+    <form action="{{ url_for('totp.verify_totp') }}" method="POST" class="was-validated">
+        {{ form.hidden_tag() }}
+        <div>
+            {{ form.totp.label(class="form-label") }}
+            {{ form.totp(class="form-control", id="totpInput") }}
+            {% for error in form.totp.errors %}
+                <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <div>
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+
+{% endblock %}

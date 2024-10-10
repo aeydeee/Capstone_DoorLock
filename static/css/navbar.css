@@ -13,6 +13,14 @@
     --light-warning: #FFF2C6;
     --success: #388E3C;
     --light-success: #BBF7D0;
+    --nav-link-color-light: #000; /* Text color in light mode */
+    --nav-link-color-dark: #fff; /* Text color in dark mode */
+    --hover-color-light: #ff0000; /* Hover color in light mode */
+    --hover-color-dark: #ffffff; /* Hover color in dark mode */
+    --dropdown-bg-light: #fff; /* Dropdown background in light mode */
+    --dropdown-bg-dark: #333; /* Dropdown background in dark mode */
+    --dropdown-divider-light: #e9ecef; /* Divider color in light mode */
+    --dropdown-divider-dark: #444; /* Divider color in dark mode */
 }
 
 * {
@@ -47,6 +55,56 @@ body.dark {
 body {
     background: var(--grey);
     overflow-x: hidden;
+}
+
+.non-clickable {
+    color: inherit; /* Inherit the color of the parent, making it look like normal text */
+    text-decoration: none; /* Remove the underline */
+    pointer-events: none; /* Disable click events */
+    cursor: default; /* Change the cursor to default */
+}
+
+
+/* Default (light mode) styles */
+.nav-link {
+    color: var(--nav-link-color-light);
+}
+
+.nav-link:hover {
+    color: var(--hover-color-light);
+}
+
+.dropdown-menu {
+    background-color: var(--dropdown-bg-light);
+}
+
+.dropdown-item-text {
+    background-color: var(--dropdown-bg-light);
+}
+
+.dropdown-divider {
+    background-color: var(--dropdown-divider-light);
+}
+
+/* Dark mode styles */
+body.dark .nav-link {
+    color: var(--nav-link-color-dark);
+}
+
+body.dark .nav-link:hover {
+    color: var(--hover-color-dark);
+}
+
+body.dark .dropdown-menu {
+    background-color: var(--dropdown-bg-dark);
+}
+
+body.dark .dropdown-item-text {
+    background-color: var(--dropdown-bg-dark);
+}
+
+body.dark .dropdown-divider {
+    background-color: var(--dropdown-divider-dark);
 }
 
 
@@ -368,7 +426,7 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     grid-gap: 24px;
-    margin-top: 36px;
+    margin-top: 10px;
 }
 
 .content main .insights li {
@@ -378,7 +436,6 @@ body {
     display: flex;
     align-items: center;
     grid-gap: 24px;
-    cursor: pointer;
 }
 
 .content main .insights li .bx {

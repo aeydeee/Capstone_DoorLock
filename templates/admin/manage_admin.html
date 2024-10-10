@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block title_block %}
+    Manage Administrators
+{% endblock %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script defer src="{{ url_for('static', filename='js/manage_admin.js') }}"></script>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+{% endblock %}
+
+
+{% block content %}
+    {% for message in get_flashed_messages(with_categories=true) %}
+        {% if message[0] == 'success' %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {% elif message[0] == 'error' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {% else %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {% endif %}
+    {{ message[1] }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Manage Administrators</h1>
+        <a href="{{ url_for('admin.add_admin') }}" class="btn btn-primary d-flex align-items-center">
+            <i class='bx bxs-user-plus'></i>
+            <span class="ms-2">Add an Admin</span>
+        </a>
+    </div>
+
+
+    <table class="table table-hover table-striped" id="manage_admin">
+        <thead>
+        <tr>
+            <th>No.</th>
+            <th>School Number</th>
+            <th>Last Name</th>
+            <th>First Name</th>
+            <th>Middle Name</th>
+            <th>Sex</th>
+            <th>Email</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for admin in admins %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ admin.school_id |upper }}</td>
+                <td>{{ admin.user.l_name|title }}</td>
+                <td>{{ admin.user.f_name|title }}</td>
+                <td>{{ admin.user.m_name|title }}</td>
+                <td>{{ admin.user.gender|title }}</td>
+                <td>{{ admin.user.email|lower }}</td>
+                <td>
+                    <a href="{{ url_for('admin.edit_admin', id=admin.id) }}"
+                       class="btn btn-sm btn-info"
+                       data-tooltip="Edit Admin">
+                        <img src="/static/images/icons/pencil-fill.svg" alt="Pencil Icon">
+                    </a>
+
+                    <a href="#" class="btn btn-sm btn-danger" data-bs-toggle="modal"
+                       data-bs-target="#deleteModal{{ admin.id }}"
+                       data-tooltip="Delete Admin">
+                        <img src="{{ url_for('static', filename='images/icons/trash-fill.svg') }}" alt="Trash Icon">
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Move modals here, outside the table -->
+    {% for admin in admins %}
+        <!-- Delete Confirmation Modal -->
+        <div class="modal fade" id="deleteModal{{ admin.id }}" tabindex="-1"
+             aria-labelledby="deleteModalLabel{{ admin.id }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content bg-whites text-dark">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteModalLabel{{ admin.id }}">Confirm Delete</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to delete {{ admin.full_name | title }}?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <form method="POST" action="{{ url_for('admin.delete_admin', id=admin.id) }}">
+                            {{ delete_form.hidden_tag() }}
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    {% endfor %}
+
+    <script>
+        // Ensure the script runs after the page has loaded
+        document.addEventListener("DOMContentLoaded", function () {
+            // Listen for the 'hidden.bs.modal' event, which is fired after a modal has been hidden
+            $('.modal').on('hidden.bs.modal', function () {
+                // Remove any existing modal backdrops
+                $('.modal-backdrop').remove();
+                // Remove the 'modal-open' class from the body to restore scrolling
+                $('body').removeClass('modal-open');
+            });
+        });
+    </script>
+{% endblock %}

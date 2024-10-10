@@ -26,17 +26,21 @@
     </div>
     {% endfor %}
 
-    <div class="d-flex justify-content-between align-items-center">
-        <a href="{{ url_for('schedule.new_add_schedule', faculty_id=faculty.id) }}" class="btn btn-primary">Add
-            Schedules</a>
+    <div class="d-flex justify-content-end align-items-center">
+        <a href="{{ url_for('schedule.add_schedule', faculty_id=faculty.id) }}"
+           class="btn btn-primary d-flex align-items-center">
+            <i class='bx bx-add-to-queue'></i>
+            <span class="ms-2">Add Schedule</span>
+        </a>
 
     </div>
 
     <div class="container mt-4">
-        <h1>Schedule for {{ faculty.full_name }}</h1>
+        <h1>Current Schedules of {{ faculty.full_name | title }}</h1>
         <table class="table table-hover" id="view_schedules">
             <thead>
             <tr>
+                <th></th>
                 <th>Subject</th>
                 <th>Day</th>
                 <th>Start Time</th>
@@ -49,12 +53,13 @@
             <tbody>
             {% for sched in schedules %}
                 <tr>
-                    <td>{{ sched.subject.subject_name }}</td>
-                    <td>{{ sched.day.name }}</td>
-                    <td>{{ sched.formatted_start_time }}</td>
-                    <td>{{ sched.formatted_end_time }}</td>
-                    <td>{{ sched.faculty_subject_schedules[0].course.course_code }}
-                        {{ sched.faculty_subject_schedules[0].year_level.level_code }}{{ sched.faculty_subject_schedules[0].section.section_name }}</td>
+                    <td></td>
+                    <td>{{ sched.subject.subject_name | title }}</td>
+                    <td>{{ sched.day.name | upper }}</td>
+                    <td>{{ sched.formatted_start_time | upper }}</td>
+                    <td>{{ sched.formatted_end_time | upper }}</td>
+                    <td>{{ sched.faculty_subject_schedules[0].course.course_code | upper }}
+                        {{ sched.faculty_subject_schedules[0].year_level.level_code }}{{ sched.faculty_subject_schedules[0].section.display_name | upper }}</td>
                     <td>{{ sched.formatted_semester_name }}</td>
                     <td>
                         <a href="{{ url_for('schedule.edit_schedule', id=sched.id) }}" class="btn btn-sm btn-info">

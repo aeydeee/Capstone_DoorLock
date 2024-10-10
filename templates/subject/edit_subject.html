@@ -16,21 +16,13 @@
     {% endfor %}
 
     <h1>Edit Subject!</h1>
-    <h2>Current Faculty: <em>{{ subject.faculty.full_name }}</em></h2>
     <br/><br>
 
     <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
         <form method="POST" action="">
             {{ form.hidden_tag() }}
 
-            <div class="form-group">
-                {{ form.faculty.label(class="form-label") }}
-                {{ form.faculty(class="form-control") }}
-                {% for error in form.faculty.errors %}
-                    <span class="text-danger">{{ error }}</span>
-                {% endfor %}
-            </div>
-            <br/>
+
             <div class="form-group">
                 {{ form.name.label(class="form-label") }}
                 {{ form.name(class="form-control") }}
@@ -55,26 +47,9 @@
                 {% endfor %}
             </div>
             <br/>
-            {% for schedule in schedules %}
-                <div class="form-group">
-                    <label class="form-label">Day</label>
-                    <input type="text" class="form-control" value="{{ schedule.day }}" disabled>
-                </div>
-                <br/>
-                <div class="form-group">
-                    <label class="form-label">Start Time</label>
-                    <input type="time" name="schedule_from" class="form-control" value="{{ schedule.schedule_from }}"
-                           disabled>
-                </div>
-                <br/>
-                <div class="form-group">
-                    <label class="form-label">End Time</label>
-                    <input type="time" name="schedule_to" class="form-control" value="{{ schedule.schedule_to }}"
-                           disabled>
-                </div>
-            {% endfor %}
-            <br/>
+
             {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('subject.subject_lists') }}" class="btn btn-secondary">Cancel</a>
         </form>
     </div>
 {% endblock %}

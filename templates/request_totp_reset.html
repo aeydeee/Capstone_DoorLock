@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title_block %}
+    Reset TOTP
+{% endblock %}
+
+{% block extra_styles %}
+    <!-- Select2 CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
+{% endblock %}
+
+{% block extra_scripts %}
+
+{% endblock %}
+
+{% block content %}
+    {% for message in get_flashed_messages(with_categories=true) %}
+        {% if message[0] == 'success' %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {% elif message[0] == 'error' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {% else %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {% endif %}
+    {{ message[1] }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+
+
+<div class="context">
+    <h1>RESET TOTP SECRET KEY</h1>
+    <!-- Centering the "Reset TOTP" button -->
+    <div class="d-flex justify-content-center mb-3" id="reset-button">
+        <!-- Trigger the modal with this button -->
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#resetTOTPModal">
+            Reset TOTP
+        </button>
+    </div>
+
+    <!-- Centering the "Go Back" link -->
+    <div class="d-flex justify-content-center" id="back-button">
+        <a href="{{ url_for('login.login') }}" class="btn btn-secondary">
+            Go Back
+        </a>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="resetTOTPModal" tabindex="-1" aria-labelledby="resetTOTPModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resetTOTPModalLabel">Confirm Reset</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to reset your TOTP secret key? This will disable your current TOTP
+                    authentication.
+                </div>
+                <div class="modal-footer">
+                    <form method="POST" action="{{ url_for('request_totp_reset') }}">
+                        {{ form.hidden_tag() }} <!-- CSRF Token -->
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Reset TOTP</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include Bootstrap JS and CSS (if not already included) -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+<div class="area">
+    <ul class="circles">
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+    </ul>
+</div>
+{% endblock %}

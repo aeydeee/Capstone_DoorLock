@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
     {% for message in get_flashed_messages(with_categories=true) %}
         {% if message[0] == 'success' %}
             <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -15,57 +14,72 @@
     </div>
     {% endfor %}
 
-    <h1>Edit Schedule</h1>
+    <h1>Edit Schedule for {{ faculty.full_name|title }}</h1>
     <br/><br>
 
     <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
-        <form action="" method="post">
+        <form action="" method="post" class="text-dark">
             {{ form.hidden_tag() }}
 
+            <!-- Faculty Display (Single Faculty Only) -->
             <div class="form-group">
                 <label class="form-label">Faculty</label>
-                <ul class="list-unstyled">
-                    {% for faculty in schedule.subject.faculties %}
-                        <li>{{ faculty.full_name }}</li>
-                    {% endfor %}
-                </ul>
+                <div class="border p-2 rounded bg-light">
+                    <p>{{ faculty.full_name|title }}</p>
+                </div>
             </div>
             <br/>
+
+            <!-- Subject Selection -->
             <div class="form-group">
                 <label class="form-label">Subject</label>
-                <input type="text" class="form-control" value="{{ schedule.subject.subject_name }}" disabled>
-            </div>
-            <br/>
-            <div class="form-group">
-                {{ form.schedule_day.label(class="form-label") }}
-                {{ form.schedule_day(class="form-control") }}
-                {% for error in form.schedule_day.errors %}
+                <label for="subject_id"></label><select class="form-control" id="subject_id" name="subject_id">
+                {% for subject_id, subject_name in form.subject_id.choices %}
+                    <option value="{{ subject_id }}" {% if subject_id == schedule.subject_id %}selected{% endif %}>
+                        {{ subject_name | title }}
+                    </option>
+                {% endfor %}
+            </select>
+                {% for error in form.subject_id.errors %}
                     <span class="text-danger">{{ error }}</span>
                 {% endfor %}
             </div>
             <br/>
             <div class="form-group">
-                {{ form.schedule_time_from.label(class="form-label") }}
-                {{ form.schedule_time_from(class="form-control") }}
-                {% for error in form.schedule_time_from.errors %}
+                {{ form.day.label(class="form-label") }}
+                {{ form.day(class="form-control") }}
+                {% for error in form.day.errors %}
                     <span class="text-danger">{{ error }}</span>
                 {% endfor %}
             </div>
             <br/>
             <div class="form-group">
-                {{ form.schedule_time_to.label(class="form-label") }}
-                {{ form.schedule_time_to(class="form-control") }}
-                {% for error in form.schedule_time_to.errors %}
+                {{ form.start_time.label(class="form-label") }}
+                {{ form.start_time(class="form-control") }}
+                {% for error in form.start_time.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <br/>
+            <div class="form-group">
+                {{ form.end_time.label(class="form-label") }}
+                {{ form.end_time(class="form-control") }}
+                {% for error in form.end_time.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <br/>
+            <div class="form-group">
+                {{ form.section_id.label(class="form-label") }}
+                {{ form.section_id(class="form-control") }}
+                {% for error in form.section_id.errors %}
                     <span class="text-danger">{{ error }}</span>
                 {% endfor %}
             </div>
             <br/>
             <div class="form-group">
                 {{ form.submit(class="btn btn-primary") }}
-                {% for faculty in schedule.subject.faculties %}
-                    <a href="{{ url_for('schedule.view_schedule', faculty_id=faculty.id) }}"
-                       class="btn btn-secondary">Cancel</a>
-                {% endfor %}
+                <a href="{{ url_for('schedule.view_schedule', faculty_id=faculty.id) }}" class="btn btn-secondary">Cancel</a>
             </div>
         </form>
     </div>

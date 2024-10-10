@@ -10,80 +10,157 @@
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/2.1.2/css/dataTables.bootstrap5.css">
-
     <script defer src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <script defer
             src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <script defer src="https://cdn.datatables.net/2.1.2/js/dataTables.js"></script>
+    <script defer src="https://cdn.datatables.net/2.1.6/js/dataTables.js"></script>
     <script defer src="https://cdn.datatables.net/2.1.2/js/dataTables.bootstrap5.js"></script>
 
-    {% block extra_styles %}{% endblock %}
+    <script>
+        window.addEventListener("resize", () => {
+            if (window.innerWidth < 768) {
+                sideBar.classList.add("close");
+            } else {
+                sideBar.classList.remove("close");
+            }
+            /* if (window.innerWidth > 576) {
+                searchBtnIcon.classList.replace("bx-x", "bx-search");
+                searchForm.classList.remove("show");
+            } */
+        });
+    </script>
+
     {% block extra_scripts %}{% endblock %}
+    {% block extra_styles %}{% endblock %}
 </head>
 <body onload="if (localStorage.getItem('darkMode') === 'enabled') document.body.classList.add('dark');">
 <!-- Sidebar -->
 <div class="sidebar">
-    <a href="#" class="logo">
-        <i class='bx bxl-python'></i>
-        <div class="logo-name"><span>Tech</span>Ninjas</div>
+    <a href="#" class="logo" style="display: flex; align-items: center;">
+        <div style="text-align: center;">
+            <i class='bx bxl-python' style="font-size: 50px; margin-bottom: -5px;"></i>
+            <span style="font-size: 8px; display: block; margin-bottom: -5px;">Python</span>
+        </div>
+        <div class="logo-name">
+            <span>Tech</span>Ninjas
+        </div>
     </a>
-    <ul class="side-menu">
 
-        <li class="nav-item">
-            <a href="{{ url_for('dashboard.dashboard') }}">
-                <i class='bx bx-home'></i> Dashboard
-            </a>
-        </li>
 
-        <li class="nav-item">
-            <a href="{{ url_for('subject.manage_subjects') }}">
-                <i class='bx bx-book'></i> Manage Subject
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ url_for('faculty.manage_faculty') }}">
-                <i class='bx bx-chalkboard'></i> Manage Faculty
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ url_for('student.manage_student') }}">
-                <i class='bx bx-user'></i> Manage Student
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ url_for('department.manage_department_details') }}">
-                <i class='bx bx-building-house'></i> Department Details
-            </a>
-        </li>
-        <br>
-        <p>INSTRUCTOR</p>
-        <li class="nav-item">
-            <a href="{{ url_for('instructor.view_students') }}">
-                <i class='bx bx-group'></i> View Student
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ url_for('instructor.view_attendance') }}">
-                <i class='bx bx-check-square'></i> View Attendance
-            </a>
-        </li>
-    </ul>
+
+    {% if current_user.is_authenticated and current_user.role == 'admin' %}
+        <ul class="side-menu">
+
+            <li class="nav-item {% if request.path == url_for('dashboard.dashboard') %}active{% endif %}">
+                <a href="{{ url_for('dashboard.dashboard') }}">
+                    <i class='bx bx-home'></i> Dashboard
+                </a>
+            </li>
+
+            <li class="nav-item {% if request.path == url_for('course.manage_course') %}active{% endif %}">
+                <a href="{{ url_for('course.manage_course') }}">
+                    <i class='bx bxs-school'></i> Manage Course
+                </a>
+            </li>
+
+            <li class="nav-item {% if request.path ==  url_for('subject.manage_sub') %}active{% endif %}">
+                <a href="{{ url_for('subject.manage_sub') }}">
+                    <i class='bx bx-book-content'></i> Manage Subjects
+                </a>
+            </li>
+
+            <li class="nav-item {% if request.path == url_for('subject.subject_lists') %}active{% endif %}">
+                <a href="{{ url_for('subject.subject_lists') }}">
+                    <i class='bx bx-book'></i> Subject Lists
+                </a>
+            </li>
+
+
+            <li class="nav-item {% if request.path == url_for('admin.manage_admin') %}active{% endif %}">
+                <a href="{{ url_for('admin.manage_admin') }}">
+                    <i class='bx bx-user-circle'></i> Manage Admin
+                </a>
+            </li>
+
+            <li class="nav-item {% if request.path == url_for('faculty.manage_faculty') %}active{% endif %}">
+                <a href="{{ url_for('faculty.manage_faculty') }}">
+                    <i class='bx bx-user'></i> Manage Faculty
+                </a>
+            </li>
+
+            <li class="nav-item {% if request.path == url_for('student.manage_student') %}active{% endif %}">
+                <a href="{{ url_for('student.manage_student') }}">
+                    <i class='bx bx-user-check'></i>Manage Student
+                </a>
+            </li>
+
+            <li class="nav-item {% if request.path == url_for('student.irregular_students') %}active{% endif %}">
+                <a href="{{ url_for('student.irregular_students') }}">
+                    <i class='bx bx-user-x'></i> Irregular Students
+                </a>
+            </li>
+            <li class="nav-item {% if request.path == url_for('report.report_generation') %}active{% endif %}">
+                <a href="{{ url_for('report.report_generation') }}">
+                    <i class='bx bxs-report'></i> Report Logs
+                </a>
+            </li>
+            <li class="nav-item {% if request.path == url_for('attendance.view_attendance') %}active{% endif %}">
+                <a href="{{ url_for('attendance.view_attendance') }}">
+                    <i class='bx bxl-blogger'></i> Attendances
+                </a>
+            </li>
+        </ul>
+    {% endif %}
+    {% if current_user.is_authenticated and current_user.role == 'faculty' %}
+        <ul class="side-menu">
+            <li class="nav-item {% if request.path == url_for('faculty_acc.view_students') %}active{% endif %}">
+                <a href="{{ url_for('faculty_acc.view_students') }}">
+                    <i class='bx bx-group'></i> View Students
+                </a>
+            </li>
+
+            <li class="nav-item {% if request.path == url_for('faculty_acc.view_attendance') %}active{% endif %}">
+                <a href="{{ url_for('faculty_acc.view_attendance') }}">
+                    <i class='bx bx-check-square'></i> View Attendance
+                </a>
+            </li>
+
+            {% if current_user.role == 'faculty' %}
+                <li class="nav-item {% if request.path == url_for('faculty_acc.view_schedule', faculty_id=current_user.faculty_details.id) %}active{% endif %}">
+                    <a href="{{ url_for('faculty_acc.view_schedule', faculty_id=current_user.faculty_details.id) }}">
+                        <i class='bx bx-calendar-week'></i> View Schedules
+                    </a>
+                </li>
+            {% endif %}
+            <li class="nav-item {% if request.path == url_for('control_page') %}active{% endif %}">
+                <a href="{{ url_for('control_page') }}">
+                    <i class='bx bxs-lock'></i> Lock Control
+                </a>
+            </li>
+        </ul>
+    {% endif %}
+    {% if current_user.is_authenticated and current_user.role == 'student' %}
+        <ul class="side-menu">
+
+            <li class="nav-item {% if request.path == url_for('student_acc.view_student_account_schedule', student_id=current_user.student_details.id) %}active{% endif %}">
+                <a href="{{ url_for('student_acc.view_student_account_schedule', student_id=current_user.student_details.id) }}">
+                    <i class='bx bx-calendar-week'></i>View Schedules
+                </a>
+            </li>
+        </ul>
+    {% endif %}
 
     <ul class="side-menu">
         {% if current_user.is_authenticated %}
             <li class="nav-item">
-                <a href="{{ url_for('auth.logout') }}" class="logout">
+                <a href="{{ url_for('login.logout') }}" class="logout">
                     <i class='bx bx-log-out-circle'></i> Logout
                 </a>
             </li>
         {% else %}
+
             <li class="nav-item">
-                <a href="{{ url_for('auth.register') }}">
-                    <i class='bx bx-user-plus'></i> Register
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('auth.login') }}">
+                <a href="{{ url_for('login.login') }}">
                     <i class='bx bx-log-in'></i> Login
                 </a>
             </li>

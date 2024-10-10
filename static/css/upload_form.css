@@ -1,0 +1,34 @@
+.upload-form {
+    max-width: 400px;
+    margin: 0 auto;
+    background: #f7f9fc;
+    border-radius: 1rem;
+}
+
+.upload-form .form-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.upload-form .form-control {
+    background-color: #fff;
+    padding: 1rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.upload-form .form-control:hover {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.upload-form .btn {
+    background-color: #5a67d8;
+    color: #fff;
+    font-weight: 600;
+    padding: 0.75rem;
+    transition: background-color 0.3s ease;
+}
+
+.upload-form .btn:hover {
+    background-color: #4c51bf;
+}

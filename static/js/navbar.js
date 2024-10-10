@@ -17,6 +17,25 @@ menuBar.addEventListener('click', () => {
     sideBar.classList.toggle('close');
 });
 
+let startX;
+
+document.addEventListener('touchstart', (event) => {
+    // Store the initial touch position
+    startX = event.touches[0].clientX;
+});
+
+document.addEventListener('touchmove', (event) => {
+    // Calculate the distance moved during the touch
+    let touch = event.touches[0];
+    let moveX = touch.clientX - startX;
+
+    // Detect if it's a left swipe (negative distance)
+    if (moveX < -50) {  // Threshold of 50px for swipe
+        sideBar.classList.add('close');
+    }
+});
+
+
 const searchBtn = document.querySelector('.content nav form .form-input button');
 const searchBtnIcon = document.querySelector('.content nav form .form-input button .bx');
 const searchForm = document.querySelector('.content nav form');

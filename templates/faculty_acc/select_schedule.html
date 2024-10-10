@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/student.css') }}">
+{% endblock %}
+
+{% block content %}
+    <h1 class="mt-5">Select Schedule</h1>
+    <form method="POST" action="{{ url_for('faculty_acc.select_schedule') }}">
+        {{ form.hidden_tag() }}
+        <div>
+            {{ form.subject_id.label }}<br>
+            {{ form.subject_id(class_="form-control", onchange="fetchSchedules(this.value);") }}
+        </div>
+        <div>
+            {{ form.schedule_id.label }}<br>
+            {{ form.schedule_id(class_="form-control") }}
+        </div>
+        <div>
+            {{ form.submit(class_="btn btn-primary") }}
+        </div>
+        {% if form.errors %}
+            <ul class="error-list">
+                {% for field, errors in form.errors.items() %}
+                    <li>{{ field }}: {{ errors[0] }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+    </form>
+
+    <script>
+        function fetchSchedules(subject_id) {
+            fetch(`/faculty_acc/get_schedules/${subject_id}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    let scheduleSelect = document.querySelector("#schedule_id");
+                    scheduleSelect.innerHTML = ''; // Clear previous options
+                    data.forEach(schedule => {
+                        let option = document.createElement('option');
+                        option.value = schedule.id;
+                        option.text = `${schedule.day} ${schedule.from} - ${schedule.to}`;
+                        scheduleSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('There was a problem with the fetch operation:', error);
+                });
+        }
+
+    </script>
+
+{% endblock %}

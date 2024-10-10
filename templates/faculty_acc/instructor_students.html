@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Instructor's Students</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+<h1>Students Under {{ current_user.f_name }} {{ current_user.l_name }}</h1>
+<ul>
+    {% for student in students %}
+        <li>
+            <a href="{{ url_for('faculty_acc.view_student_schedule', student_id=student.id) }}">
+                {{ student.user.f_name }} {{ student.user.l_name }}
+            </a>
+        </li>
+    {% endfor %}
+</ul>
+</body>
+</html>

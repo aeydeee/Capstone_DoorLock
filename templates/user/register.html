@@ -1,5 +1,24 @@
 {% extends 'base.html' %}
 
+{% block title_block %}
+    Registration
+{% endblock %}
+
+{% block extra_styles %}
+    <!-- Select2 CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/address.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet"/>
+{% endblock %}
+
+{% block extra_scripts %}
+    <!-- jQuery -->
+    <script defer src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- Select2 JS -->
+    <script defer src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+    <!-- Custom JS -->
+    <script defer src="{{ url_for('static', filename='js/address/ph-address-selector.js') }}"></script>
+{% endblock %}
+
 {% block content %}
     {% for message in get_flashed_messages() %}
         <div class="alert alert-warning alert-dismissible fade show" role="alert">
@@ -10,124 +29,659 @@
 
     <h1>REGISTRATION: </h1>
     <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
-        <form method="POST" enctype="multipart/form-data" action="{{ url_for('auth.register') }}">
+        <form method="POST" enctype="multipart/form-data" action="{{ url_for('register.register') }}">
             {{ form.hidden_tag() }}
 
-            <h2>User Information</h2>
-            {% for field in form if field.name not in ['contact_number', 'h_city', 'h_barangay', 'h_house_no', 'h_street', 'curr_city', 'curr_barangay', 'curr_house_no', 'curr_street', 'elem_school', 'elem_address', 'elem_graduated', 'junior_school', 'junior_address', 'junior_graduated', 'senior_school', 'senior_address', 'senior_graduated', 'senior_track_strand', 'mother_full_name', 'mother_educ_attainment', 'mother_addr', 'mother_brgy', 'mother_cont_no', 'father_full_name', 'father_educ_attainment', 'father_addr', 'father_brgy', 'father_cont_no', 'guardian_full_name', 'guardian_educ_attainment', 'guardian_addr', 'guardian_brgy', 'guardian_cont_no', 'student_number', 'course_name', 'year_level', 'section', 'faculty_id', 'faculty_department', 'admin_department', 'csrf_token', 'submit', 'school_id', 'password', 'password2', 'designation'] %}
-                <div class="form-group">
-                    {{ field.label(class="form-control-label") }}
-                    {{ field(class="form-control" + (" is-invalid" if field.errors else "")) }}
-                    {% for error in field.errors %}
-                        <div class="invalid-feedback">
-                            {{ error }}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endfor %}
-
-            <div id="password-fields">
-                <div class="form-group">
-                    {{ form.password.label(class="form-control-label") }}
-                    {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else "")) }}
-                    {% for error in form.password.errors %}
-                        <div class="invalid-feedback">
-                            {{ error }}
-                        </div>
-                    {% endfor %}
-                </div>
-                <div class="form-group">
-                    {{ form.password2.label(class="form-control-label") }}
-                    {{ form.password2(class="form-control" + (" is-invalid" if form.password2.errors else "")) }}
-                    {% for error in form.password2.errors %}
-                        <div class="invalid-feedback">
-                            {{ error }}
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <h2>Contact Information</h2>
-            {% for field in [form.contact_number, form.h_city, form.h_barangay, form.h_house_no, form.h_street, form.curr_city, form.curr_barangay, form.curr_house_no, form.curr_street] %}
-                <div class="form-group">
-                    {{ field.label(class="form-control-label") }}
-                    {{ field(class="form-control" + (" is-invalid" if field.errors else "")) }}
-                    {% for error in field.errors %}
-                        <div class="invalid-feedback">
-                            {{ error }}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endfor %}
-
-            <h2>Educational Background</h2>
-            {% for field in [form.elem_school, form.elem_address, form.elem_graduated, form.junior_school, form.junior_address, form.junior_graduated, form.senior_school, form.senior_address, form.senior_graduated, form.senior_track_strand] %}
-                <div class="form-group">
-                    {{ field.label(class="form-control-label") }}
-                    {{ field(class="form-control" + (" is-invalid" if field.errors else "")) }}
-                    {% for error in field.errors %}
-                        <div class="invalid-feedback">
-                            {{ error }}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endfor %}
-
-            <h2>Family Background</h2>
-            {% for field in [form.mother_full_name, form.mother_educ_attainment, form.mother_addr, form.mother_brgy, form.mother_cont_no, form.father_full_name, form.father_educ_attainment, form.father_addr, form.father_brgy, form.father_cont_no, form.guardian_full_name, form.guardian_educ_attainment, form.guardian_addr, form.guardian_brgy, form.guardian_cont_no] %}
-                <div class="form-group">
-                    {{ field.label(class="form-control-label") }}
-                    {{ field(class="form-control" + (" is-invalid" if field.errors else "")) }}
-                    {% for error in field.errors %}
-                        <div class="invalid-feedback">
-                            {{ error }}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endfor %}
-
-            <h2>Role-Specific Information</h2>
-            <div id="student-fields" class="role-specific-fields" style="display: none;">
-                {% for field in [form.student_number, form.course_name, form.year_level, form.section] %}
-                    <div class="form-group">
-                        {{ field.label(class="form-control-label") }}
-                        {{ field(class="form-control" + (" is-invalid" if field.errors else "")) }}
-                        {% for error in field.errors %}
-                            <div class="invalid-feedback">
-                                {{ error }}
-                            </div>
+            <h5 class="card-title">School Information</h5>
+            <hr>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.rfid_uid.label(class="form-label") }}
+                        {{ form.rfid_uid(class="form-control") }}
+                        {% for error in form.rfid_uid.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
                         {% endfor %}
                     </div>
-                {% endfor %}
-            </div>
-            <div id="faculty-fields" class="role-specific-fields" style="display: none;">
-                {% for field in [form.faculty_id, form.faculty_department, form.designation] %}
-                    <div class="form-group">
-                        {{ field.label(class="form-control-label") }}
-                        {{ field(class="form-control" + (" is-invalid" if field.errors else "")) }}
-                        {% for error in field.errors %}
-                            <div class="invalid-feedback">
-                                {{ error }}
-                            </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.username.label(class="form-label") }}
+                        {{ form.username(class="form-control") }}
+                        {% for error in form.username.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
                         {% endfor %}
                     </div>
-                {% endfor %}
-            </div>
-            <div id="admin-fields" class="role-specific-fields" style="display: none;">
-                {% for field in [form.admin_department, form.school_id] %}
-                    <div class="form-group">
-                        {{ field.label(class="form-control-label") }}
-                        {{ field(class="form-control" + (" is-invalid" if field.errors else "")) }}
-                        {% for error in field.errors %}
-                            <div class="invalid-feedback">
-                                {{ error }}
-                            </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.student_number.label(class="form-label") }}
+                        {{ form.student_number(class="form-control") }}
+                        {% for error in form.student_number.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
                         {% endfor %}
                     </div>
-                {% endfor %}
+                </div>
             </div>
 
-            <button type="submit" class="btn btn-primary">Register</button>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.course_id.label(class="form-label") }}
+                        {{ form.course_id(class="form-control") }}
+                        {% for error in form.course_id.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.section_id.label(class="form-label") }}
+                        {{ form.section_id(class="form-control") }}
+                        {% for error in form.section_id.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.year_level_id.label(class="form-label") }}
+                        {{ form.year_level_id(class="form-control") }}
+                        {% for error in form.year_level_id.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.semester_id.label(class="form-label") }}
+                        {{ form.semester_id(class="form-control") }}
+                        {% for error in form.semester_id.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.email.label(class="form-label") }}
+                        {{ form.email(class="form-control") }}
+                        {% for error in form.email.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.password.label(class="form-label") }}
+                        {{ form.password(class="form-control") }}
+                        {% for error in form.password.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.password_2.label(class="form-label") }}
+                        {{ form.password_2(class="form-control") }}
+                        {% for error in form.password_2.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+
+            <h5 class="card-title">Basic Information</h5>
+            <hr>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.f_name.label(class="form-label") }}
+                        {{ form.f_name(class="form-control") }}
+                        {% for error in form.f_name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.m_name.label(class="form-label") }}
+                        {{ form.m_name(class="form-control") }}
+                        {% for error in form.m_name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.m_initial.label(class="form-label") }}
+                        {{ form.m_initial(class="form-control") }}
+                        {% for error in form.m_initial.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.l_name.label(class="form-label") }}
+                        {{ form.l_name(class="form-control") }}
+                        {% for error in form.l_name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.date_of_birth.label(class="form-label") }}
+                        {{ form.date_of_birth(class="form-control") }}
+                        {% for error in form.date_of_birth.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.place_of_birth.label(class="form-label") }}
+                        {{ form.place_of_birth(class="form-control") }}
+                        {% for error in form.place_of_birth.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.gender.label(class="form-label") }}
+                        {{ form.gender(class="form-control") }}
+                        {% for error in form.gender.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.civil_status.label(class="form-label") }}
+                        {{ form.civil_status(class="form-control") }}
+                        {% for error in form.civil_status.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.nationality.label(class="form-label") }}
+                        {{ form.nationality(class="form-control") }}
+                        {% for error in form.nationality.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.citizenship.label(class="form-label") }}
+                        {{ form.citizenship(class="form-control") }}
+                        {% for error in form.citizenship.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.religion.label(class="form-label") }}
+                        {{ form.religion(class="form-control") }}
+                        {% for error in form.religion.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.dialect.label(class="form-label") }}
+                        {{ form.dialect(class="form-control") }}
+                        {% for error in form.dialect.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.tribal_aff.label(class="form-label") }}
+                        {{ form.tribal_aff(class="form-control") }}
+                        {% for error in form.tribal_aff.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.profile_pic.label(class="form-label") }}
+                        {{ form.profile_pic(class="form-control") }}
+                        {% for error in form.profile_pic.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+
+            <h5 class="card-title mt-4">Contact Information</h5>
+            <hr>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.contact_number.label(class="form-label") }}
+                        {{ form.contact_number(class="form-control") }}
+                        {% for error in form.contact_number.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.home_house_no.label(class="form-label") }}
+                        {{ form.home_house_no(class="form-control") }}
+                        {% for error in form.home_house_no.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.home_street.label(class="form-label") }}
+                        {{ form.home_street(class="form-control") }}
+                        {% for error in form.home_street.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.home_addr.label(class="form-label") }} <br>
+                        {{ form.home_addr(class="form-control", id="home_city_select") }}
+                        <input type="hidden" name="home_addr_text" id="home_city_text" required/>
+                        {% for error in form.home_addr.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.home_brgy.label(class="form-label") }}
+                        {{ form.home_brgy(class="form-control", id="home_barangay_select") }}
+                        <input type="hidden" name="home_brgy_text" id="home_barangay_text" required/>
+                        {% for error in form.home_brgy.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.curr_house_no.label(class="form-label") }}
+                        {{ form.curr_house_no(class="form-control") }}
+                        {% for error in form.curr_house_no.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.curr_street.label(class="form-label") }}
+                        {{ form.curr_street(class="form-control") }}
+                        {% for error in form.curr_street.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.curr_addr.label(class="form-label") }}
+                        {{ form.curr_addr(class="form-select ", id="curr_city_select") }}
+                        <input type="hidden" name="curr_addr_text" id="curr_city_text" required/>
+                        {% for error in form.curr_addr.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.curr_brgy.label(class="form-label") }}
+                        {{ form.curr_brgy(class="form-select", id="curr_barangay_select") }}
+                        <input type="hidden" name="curr_brgy_text" id="curr_barangay_text" required/>
+                        {% for error in form.curr_brgy.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="card-title mt-4">Family Background</h5>
+            <hr>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.mother_full_name.label(class="form-label") }}
+                        {{ form.mother_full_name(class="form-control") }}
+                        {% for error in form.mother_full_name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.mother_educ_attainment.label(class="form-label") }}
+                        {{ form.mother_educ_attainment(class="form-control") }}
+                        {% for error in form.mother_educ_attainment.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.mother_addr.label(class="form-label") }}
+                        {{ form.mother_addr(class="form-control", id="mother_city_select") }}
+                        <input type="hidden" name="mother_addr_text" id="mother_city_text" required/>
+                        {% for error in form.mother_addr.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.mother_brgy.label(class="form-label") }}
+                        {{ form.mother_brgy(class="form-control", id="mother_barangay_select") }}
+                        <input type="hidden" name="mother_brgy_text" id="mother_barangay_text" required/>
+                        {% for error in form.mother_brgy.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.mother_cont_no.label(class="form-label") }}
+                        {{ form.mother_cont_no(class="form-control") }}
+                        {% for error in form.mother_cont_no.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.mother_place_work_or_company_name.label(class="form-label") }}
+                        {{ form.mother_place_work_or_company_name(class="form-control") }}
+                        {% for error in form.mother_place_work_or_company_name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.mother_occupation.label(class="form-label") }}
+                        {{ form.mother_occupation(class="form-control") }}
+                        {% for error in form.mother_occupation.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.father_full_name.label(class="form-label") }}
+                        {{ form.father_full_name(class="form-control") }}
+                        {% for error in form.father_full_name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.father_educ_attainment.label(class="form-label") }}
+                        {{ form.father_educ_attainment(class="form-control") }}
+                        {% for error in form.father_educ_attainment.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.father_addr.label(class="form-label") }}
+                        {{ form.father_addr(class="form-select", id="father_city_select") }}
+                        <input type="hidden" name="father_addr_text" id="father_city_text" required/>
+                        {% for error in form.father_addr.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.father_brgy.label(class="form-label") }}
+                        {{ form.father_brgy(class="form-select", id="father_barangay_select") }}
+                        <input type="hidden" name="father_brgy_text" id="father_barangay_text" required/>
+                        {% for error in form.father_brgy.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.father_cont_no.label(class="form-label") }}
+                        {{ form.father_cont_no(class="form-control") }}
+                        {% for error in form.father_cont_no.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.father_place_work_or_company_name.label(class="form-label") }}
+                        {{ form.father_place_work_or_company_name(class="form-control") }}
+                        {% for error in form.father_place_work_or_company_name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.father_occupation.label(class="form-label") }}
+                        {{ form.father_occupation(class="form-control") }}
+                        {% for error in form.father_occupation.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+
+            <h5 class="card-title mt-4">Educational Background</h5>
+            <hr>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.elem_school_name.label(class="form-label") }}
+                        {{ form.elem_school_name(class="form-control") }}
+                        {% for error in form.elem_school_name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.elem_school_addr.label(class="form-label") }}
+                        {{ form.elem_school_addr(class="form-select", id="elem_school_city_select") }}
+                        <input type="hidden" name="elem_school_address_text" id="elem_school_city_text"
+                               required/>
+                        {% for error in form.elem_school_addr.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.elem_year_grad.label(class="form-label") }}
+                        {{ form.elem_year_grad(class="form-select") }}
+                        {% for error in form.elem_year_grad.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.junior_hs_school_name.label(class="form-label") }}
+                        {{ form.junior_hs_school_name(class="form-control") }}
+                        {% for error in form.junior_hs_school_name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.junior_hs_school_addr.label(class="form-label") }}
+                        {{ form.junior_hs_school_addr(class="form-select", id="junior_hs_school_city_select") }}
+                        <input type="hidden" name="junior_hs_school_addr_text" id="junior_hs_school_city_text"
+                               required/>
+                        {% for error in form.junior_hs_school_addr.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.junior_hs_year_grad.label(class="form-label") }}
+                        {{ form.junior_hs_year_grad(class="form-control") }}
+                        {% for error in form.junior_hs_year_grad.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.senior_hs_school_name.label(class="form-label") }}
+                        {{ form.senior_hs_school_name(class="form-control") }}
+                        {% for error in form.senior_hs_school_name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.senior_hs_school_addr.label(class="form-label") }}
+                        {{ form.senior_hs_school_addr(class="form-select", id="senior_hs_school_city_select") }}
+                        <input type="hidden" name="senior_hs_school_addr_text" id="senior_hs_school_city_text"
+                               required/>
+                        {% for error in form.senior_hs_school_addr.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.senior_hs_year_grad.label(class="form-label") }}
+                        {{ form.senior_hs_year_grad(class="form-control") }}
+                        {% for error in form.senior_hs_year_grad.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.senior_strand.label(class="form-label") }}
+                        {{ form.senior_strand(class="form-control") }}
+                        {% for error in form.senior_strand.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.tertiary_school_name.label(class="form-label") }}
+                        {{ form.tertiary_school_name(class="form-control") }}
+                        {% for error in form.tertiary_school_name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.tertiary_school_addr.label(class="form-label", for="tertiary_school_city_select") }}
+                        {{ form.tertiary_school_addr(class="form-control", id="tertiary_school_city_select") }}
+                        <input type="hidden" name="tertiary_school_addr_text" id="tertiary_school_city_text"
+                               required/>
+                        {% for error in form.tertiary_school_addr.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.tertiary_year_grad.label(class="form-label") }}
+                        {{ form.tertiary_year_grad(class="form-control") }}
+                        {% for error in form.tertiary_year_grad.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.tertiary_course.label(class="form-label") }}
+                        {{ form.tertiary_course(class="form-control") }}
+                        {% for error in form.tertiary_course.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Submit</button>
+
         </form>
     </div>
 

@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title_block %}
+    Subject Course Details
+{% endblock %}
+
+{% block extra_styles %}
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script defer src="{{ url_for('static', filename='js/manage_course.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/faculties-multiple.js') }}"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+{% endblock %}
+
+{% block content %}
+    {% for message in get_flashed_messages(with_categories=true) %}
+        {% if message[0] == 'success' %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {% elif message[0] == 'error' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {% else %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {% endif %}
+    {{ message[1] }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    <h2 class="text-xl mt-5">Subject Course Details</h2>
+    <form method="GET" action="{{ url_for('subject.subject_details') }}">
+        <label for="course_filter" class="block  font-medium mb-2">Filter by Course:</label>
+        <select id="course_filter" name="course" onchange="this.form.submit()"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 form-control">
+            <option value="">-- Select Course --</option>
+            {% for course in courses %}
+                <option value="{{ course.id }}"
+                        {% if course.id == selected_course %}selected{% endif %}>{{ course.course_name }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
+    <form method="POST" action="{{ url_for('subject.assign_faculties') }}" class="was-validated">
+        {{ assign_form.hidden_tag() }}
+        <table class="table table-striped" id="manage_course">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th><label for="select_all"></label><input type="checkbox" id="select_all"></th>
+                <th>Subject</th>
+                <th>Year Level</th>
+                <th>Semester</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for detail in details %}
+                <tr>
+                    <td></td>
+                    <td><label>
+                        <input type="checkbox" name="subject_ids[]" value="{{ detail.subject.id }}">
+                    </label></td>
+                    <td>{{ detail.subject.subject_name | title }}</td>
+                    <td>{{ detail.year_level.display_name | upper }}</td>
+                    <td>{{ detail.semester.display_name | upper }}</td>
+                    <td>
+                        <a href="#" class="btn btn-sm btn-danger" data-bs-toggle="modal"
+                           data-bs-target="#deleteModal{{ detail.id }}">
+                            <img src="/static/images/icons/trash-fill.svg" alt="Trash Icon">
+                        </a>
+
+                        <!-- Delete Confirmation Modal -->
+                        <div class="modal fade" id="deleteModal{{ detail.id }}" tabindex="-1"
+                             aria-labelledby="deleteModalLabel{{ detail.id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="deleteModalLabel{{ detail.id }}">Confirm
+                                            Delete</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Are you sure you want to delete {{ detail.subject.subject_name | title }}?
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel
+                                        </button>
+                                        <form method="POST"
+                                              action="{{ url_for('subject.delete_subject_detail', detail_id=detail.id) }}">
+                                            {{ delete_form.hidden_tag() }}
+                                            <button type="submit" class="btn btn-danger">Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <div class="mb-3">
+            <label for="selectFaculties" class="form-label">Select Faculties:</label>
+            <select id="selectFaculties" name="faculty_ids[]" multiple="multiple" required class="faculties-multiple">
+                {% for value, label in assign_form.faculty.choices %}
+                    <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Assign Faculties</button>
+    </form>
+
+
+{% endblock %}

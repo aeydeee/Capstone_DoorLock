@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title_block %}
+    Verify TOTP
+{% endblock %}
+
+{% block content %}
+    {% for message in get_flashed_messages(with_categories=true) %}
+        {% if message[0] == 'success' %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {% elif message[0] == 'error' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {% else %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {% endif %}
+    {{ message[1] }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    <h1>Verify your TOTP</h1>
+    <form action="{{ url_for('totp.verify_totp') }}" method="POST" class="was-validated">
+        {{ form.csrf_token }}
+        <div>
+            {{ form.totp.label(class="form-label") }}
+            {{ form.totp(class="form-control") }}
+            {% for error in form.totp.errors %}
+                <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <div>
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+    <form action="{{ url_for('totp.two_factor_setup') }}" method="GET">
+        <button type="submit" class="btn btn-secondary mt-3">Go Back to Setup</button>
+    </form>
+{% endblock %}

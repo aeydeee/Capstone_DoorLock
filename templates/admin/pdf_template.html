@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratory Logbook</title>
+    <style>
+        @page {
+            size: legal landscape;
+            margin: 1in 0.75in;
+        }
+
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+        }
+
+        header {
+            text-align: center;
+            position: running(header);
+            font-size: 10px;
+            margin-bottom: 20px;
+        }
+
+        footer {
+            position: running(footer);
+            font-size: 9px;
+            text-align: center;
+            border-top: 1px solid black;
+            padding-top: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <img src="{{ url_for('static', filename='images/logo/cspc.png') }}" width="50" height="50" style="float:left;">
+    <div>
+        <strong>Republic of the Philippines</strong><br>
+        <b>CAMARINES SUR POLYTECHNIC COLLEGES</b><br>
+        Nabua, Camarines Sur<br>
+        <small>ISO 9001:2015 | CSPC-LB-CCS-23</small>
+    </div>
+</header>
+
+<footer>
+    System-generated report. No Signature required.<br>
+    Effectivity Date: January 2022 | Rev. 0 | Page: <span class="page"></span>
+</footer>
+
+<main>
+    <h2 style="text-align: center;"><b>LABORATORY LOGBOOK</b></h2>
+
+    <table>
+        <thead>
+        <tr>
+            <th>DATE</th>
+            <th>NAME</th>
+            <th>PC #</th>
+            <th>STUDENT ID #</th>
+            <th>YEAR COURSE & SECTION</th>
+            <th>INSTRUCTOR</th>
+            <th>TIME</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for attendance in attendances %}
+            <tr>
+                <td>{{ attendance.time_in.strftime('%m-%d-%Y') if attendance.time_in else '' }}</td>
+                <td>{{ attendance.student_name.title() }}</td>
+                <td></td>
+                <td>{{ attendance.student_number }}</td>
+                <td>{{ attendance.course_code.upper() }}
+                    {{ attendance.level_code }}{{ attendance.section.upper() if attendance.section else '' }}</td>
+                <td>{{ attendance.faculty_name.title() }}</td>
+                <td>{{ attendance.time_in.strftime('%I:%M %p') if attendance.time_in else '' }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</main>
+
+</body>
+</html>

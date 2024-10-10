@@ -1,0 +1,7 @@
+.hover-effect:hover {
+    color: #1c1b1b !important; /* Text color on hover */
+    background-color: #0080ff !important; /* Background color on hover */
+    transition: color 0.3s ease, background-color 0.3s ease !important; /* Smooth transition */
+    border-radius: 10px !important; /* Adjust this value to make the background round */
+    padding: 5px 15px !important; /* Add some padding for a better look */
+}

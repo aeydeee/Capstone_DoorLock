@@ -18,18 +18,56 @@
 <nav>
     <i class='bx bx-menu'></i>
     <form action="#">
-        <div class="form-input">
-            <input type="search" placeholder="Search...">
-            <button class="search-btn" type="submit"><i class='bx bx-search'></i></button>
-        </div>
+        {#        <div class="form-input">#}
+        {#            <input type="search" placeholder="Search...">#}
+        {#            <button class="search-btn" type="submit"><i class='bx bx-search'></i></button>#}
+        {#        </div>#}
     </form>
     <input type="checkbox" id="theme-toggle" hidden>
     <label for="theme-toggle" class="theme-toggle"></label>
-    <a href="#" class="notif">
-        <i class='bx bx-bell'></i>
-        <span class="count">12</span>
-    </a>
-    <a href="#" class="profile">
-        <img src="images/logo.png">
-    </a>
+    {#    <a href="#" class="notif">#}
+    {#        <i class='bx bx-bell'></i>#}
+    {#        <span class="count">12</span>#}
+    {#    </a>#}
+    {% if current_user.is_authenticated %}
+        {% if current_user.profile_pic %}
+            <a href="#" class="profile">
+                <img src="{{ current_user.profile_pic }}" alt="profile pic">
+            </a>
+        {% endif %}
+        <ul class="nav navbar-nav">
+            <li class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                    {% if current_user.faculty_details %}
+                        {{ current_user.faculty_details.full_name | title }}
+                    {% elif current_user.student_details %}
+                        {{ current_user.student_details.full_name | title }}
+                    {% elif current_user.admin_details %}
+                        {{ current_user.admin_details.full_name | title }}
+                    {% endif %}
+                </a>
+                <div class="dropdown-menu dropdown-menu-end">
+                    <a class="dropdown-item">{{ current_user.email }}</a> <!-- Added email here -->
+                    <div class="dropdown-divider"></div>
+                    {% if current_user.student_details %}
+                        <a href="{{ url_for('student_acc.student_profile', student_id=current_user.student_details.id) }}"
+                           class="dropdown-item">View Profile</a>
+                    {% elif current_user.faculty_details %}
+                        <a href="{{ url_for('faculty_acc.faculty_profile', faculty_id=current_user.faculty_details.id) }}"
+                           class="dropdown-item">View Profile</a>
+                    {% elif current_user.admin_details %}
+                        <a href="{{ url_for('admin_acc.admin_profile', admin_id=current_user.admin_details.id) }}"
+                           class="dropdown-item">View Profile</a>
+                    {% endif %}
+                    <div class="dropdown-divider"></div>
+                    <a href="{{ url_for('request_totp_reset') }}" class="dropdown-item bg-warning">Reset TOTP</a>
+                    <div class="dropdown-divider"></div>
+                    <a href="{{ url_for('login.logout') }}" class="dropdown-item bg-danger text-light">Logout</a>
+                </div>
+            </li>
+        </ul>
+    {% endif %}
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </nav>

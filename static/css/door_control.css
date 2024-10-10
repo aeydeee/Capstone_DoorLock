@@ -1,0 +1,60 @@
+
+.door-control-container {
+
+    padding: 50px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.lock-icon {
+    font-size: 120px;
+    color: #495057;
+    transition: transform 0.5s ease, color 0.5s ease;
+}
+
+.unlocked {
+    transform: rotate(0deg);
+    color: #28a745;
+}
+
+.locked {
+    transform: rotate(-90deg);
+    color: #dc3545;
+}
+
+.control-buttons {
+    margin-top: 30px;
+}
+
+.control-buttons form {
+    display: inline-block;
+}
+
+.control-buttons button {
+    padding: 15px 30px;
+    font-size: 18px;
+    border-radius: 30px;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.control-buttons button:active {
+    box-shadow: none;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+.flash-messages {
+    margin-top: 20px;
+}
+
+.flash-messages .alert {
+    border-radius: 50px;
+    font-size: 16px;
+}

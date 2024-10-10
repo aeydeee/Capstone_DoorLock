@@ -17,5 +17,5 @@ class SelectScheduleForm(FlaskForm):
 
     def set_schedule_choices(self, subject_id):
         schedules = Schedule.query.filter_by(subject_id=subject_id).all()
-        self.schedule_id.choices = [(schedule.id, f"{schedule.day} {schedule.schedule_from} - {schedule.schedule_to}")
+        self.schedule_id.choices = [(schedule.id, f"{schedule.day.name} {schedule.start_time} - {schedule.end_time}")
                                     for schedule in schedules]

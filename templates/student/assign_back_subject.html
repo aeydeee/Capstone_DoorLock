@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title_block %}
+    Assign Back Subjects
+{% endblock %}
+
+{% block extra_styles %}
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+{% endblock %}
+
+{% block extra_scripts %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+{% endblock %}
+
+
+{% block content %}
+    {% for message in get_flashed_messages(with_categories=true) %}
+        {% if message[0] == 'success' %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {% elif message[0] == 'error' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {% else %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {% endif %}
+    {{ message[1] }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+
+    <div class="container mt-5">
+        <h1>Manual Assign Subject to Student</h1>
+        <form method="POST" action="{{ url_for('student.assign_back_subject') }}">
+            {{ form.hidden_tag() }}
+
+            <div class="form-group">
+                {{ form.student_id.label(class="form-label") }}
+                {{ form.student_id(class="form-control") }}
+                {% if form.student_id.errors %}
+                    <div class="text-danger">{{ form.student_id.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.faculty_id.label(class="form-label") }}
+                {{ form.faculty_id(class="form-control") }}
+                {% if form.faculty_id.errors %}
+                    <div class="text-danger">{{ form.faculty_id.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+
+            <div class="form-group">
+                {{ form.schedule_id.label(class="form-label") }}
+                {{ form.schedule_id(class="form-control") }}
+                {% if form.schedule_id.errors %}
+                    <div class="text-danger">{{ form.schedule_id.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('student.manage_student') }}"
+               class="btn btn-secondary">Cancel</a>
+
+        </form>
+    </div>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#faculty_id').change(function () {
+                let facultyId = $(this).val();
+                if (facultyId) {
+                    $.ajax({
+                        url: 'faculty_schedules/' + facultyId,
+                        type: 'GET',
+                        success: function (data) {
+                            let scheduleSelect = $('#schedule_id');
+                            scheduleSelect.empty();  // Clear previous options
+                            scheduleSelect.append(new Option('Select Schedule', ''));  // Add a placeholder option
+
+                            // Populate with new options
+                            $.each(data, function (index, item) {
+                                scheduleSelect.append(new Option(item.display_text, item.id));
+                            });
+                        }
+                    });
+                } else {
+                    $('#schedule_id').empty();  // Clear options if no faculty is selected
+                    $('#schedule_id').append(new Option('Select Schedule', ''));
+                }
+            });
+        });
+    </script>
+
+
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+{% endblock %}

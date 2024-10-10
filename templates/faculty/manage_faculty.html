@@ -5,11 +5,12 @@
 {% endblock %}
 
 {% block extra_styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/faculty.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/faculty.css') }}">.
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
 {% endblock %}
 
 {% block extra_scripts %}
-    <script defer src="{{ url_for('static', filename='js/manage_faculties.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/manage_faculties.js') }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -26,10 +27,24 @@
     </div>
     {% endfor %}
 
-    <div class="d-flex justify-content-between align-items-center">
+    <!-- Heading Section -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>Manage Faculties</h1>
-        <a href="{{ url_for('faculty.add_faculty') }}" class="btn btn-primary">Add Faculties</a>
+        <a href="{{ url_for('faculty.add_faculty') }}" class="btn btn-primary d-flex align-items-center">
+            <i class='bx bxs-user-plus'></i>
+            <span class="ms-2">Add Faculty</span>
+        </a>
     </div>
+
+    <div class="btn-group mb-3" role="group" aria-label="Manage Actions">
+        {% include 'upload.html' %}
+        <a href="{{ url_for('schedule.view_schedules') }}" class="btn btn-outline-primary d-flex align-items-center">
+            <i class="fa-regular fa-eye"></i>
+            <span class="ms-2">View all schedules</span>
+        </a>
+    </div>
+
+    <br/>
 
     <table class="table table-hover" id="manage_faculties">
         <thead>
@@ -45,4 +60,5 @@
         </tr>
         </thead>
     </table>
+
 {% endblock %}

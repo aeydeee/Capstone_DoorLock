@@ -1,1 +1,0 @@
-new DataTable('table.manage_department_details');

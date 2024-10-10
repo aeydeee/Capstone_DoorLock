@@ -1,12 +1,13 @@
 from flask_wtf import FlaskForm
-from wtforms.fields.choices import SelectField
-from wtforms.fields.simple import PasswordField, SubmitField, EmailField
-from wtforms.validators import DataRequired, Email, Length
+
+from wtforms.fields.simple import PasswordField, SubmitField, StringField, EmailField
+from wtforms.validators import DataRequired, Length
+
+from webforms.validators import strong_password, totp_length
 
 
 class LoginForm(FlaskForm):
-    # role = SelectField('Role', choices=[('student', 'Student'), ('faculty', 'Faculty'), ('admin', 'Admin')],
-    #                    validators=[DataRequired()])
-    email = EmailField('Email', validators=[DataRequired(), Email(), Length(max=100)])
-    password = PasswordField('Password', validators=[DataRequired()])
-    submit = SubmitField('Submit')
+    email = EmailField('Email', validators=[DataRequired(), Length(1, 64)])
+    # password = PasswordField('Password', validators=[DataRequired(), strong_password])
+    totp_code = StringField('TOTP Code ', validators=[DataRequired(), totp_length])
+    submit = SubmitField('Login')

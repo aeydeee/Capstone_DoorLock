@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.js') }}">
+{% endblock %}
+
+{% block extra_scripts %}
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        const labels = {{ labels|tojson }};
+        const data = {{ data|tojson }};
+    </script>
+    <script defer src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
+
+
+{% block content %}
+    {% for message in get_flashed_messages(with_categories=true) %}
+        {% if message[0] == 'success' %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {% elif message[0] == 'error' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {% else %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {% endif %}
+    {{ message[1] }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+
+    <div class="header">
+        <div class="left">
+            <h1>Dashboard</h1>
+        </div>
+    </div>
+
+    <!-- Insights -->
+    <ul class="insights">
+        <li>
+            <i class='bx bx-user-voice'></i>
+            <span class="info">
+            <h3>{{ total_faculties }}</h3>
+            <p>Total Faculties</p>
+        </span>
+        </li>
+        <li><i class='bx bx-user-check'></i></i>
+            <span class="info">
+            <h3>{{ total_students }}</h3>
+            <p>Total Students</p>
+        </span>
+        </li>
+        <li><i class='bx bx-line-chart'></i>
+            <span class="info">
+            <h3>{{ total_attendances }}</h3>
+            <p>Total Attendances</p>
+        </span>
+        </li>
+        <li><i class='bx bx-line-chart'></i>
+            <span class="info">
+            <h3>{{ todays_attendance }}</h3>
+            <p>Today's Attendance</p>
+        </span>
+        </li>
+    </ul>
+    <!-- End of Insights -->
+
+    <div class="bottom-data">
+        <div class="orders">
+            <div class="header">
+                <i class='bx bx-receipt'></i>
+                <h3>Recent Attendances</h3>
+                <i class='bx bx-slideshow'></i>
+            </div>
+            <table>
+                <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Course & Section</th>
+                    <th>Time In</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for attendance in recent_attendances %}
+                    <tr>
+                        <td>
+                            {#                            <img src="{{ attendance.student.user.profile_pic }}" alt="Profile Picture">#}
+                            <p>{{ attendance.student.full_name | title }}</p>
+                        </td>
+                        <td>{{ attendance.student.course_section | upper }}</td>
+                        <td>
+                            <span class="status completed text-light fs-6">
+                                {{ attendance.time_in.strftime('%I:%M %p') }}
+                            </span>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+
+        <!-- Chart -->
+        <div class="reminders">
+            <div class="header">
+                <i class='bx bx-bar-chart-alt-2'></i>
+                <h3>Attendance History Chart</h3>
+            </div>
+            <div class="chart-container">
+                <canvas id="attendanceChart"></canvas>
+            </div>
+        </div>
+        <!-- End of Chart-->
+    </div>
+{% endblock %}

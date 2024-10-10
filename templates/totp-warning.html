@@ -1,0 +1,108 @@
+{#<div class="alert alert-danger text-center font-weight-bold p-5" role="alert"#}
+{#     style="font-size: 1.5rem; border: 3px solid red; background-color: #ff0000; color: #fff; box-shadow: 0 0 10px red;">#}
+{#    ⚠️⚠️ <strong>EXTREME WARNING:</strong> The next page will reveal highly sensitive information.#}
+{#    Ensure ABSOLUTELY no one can see your screen before you press the <strong>Submit</strong> button! ⚠️⚠️#}
+{#</div>#}
+
+<!-- Modal -->
+<div class="modal fade" id="warningModal" tabindex="-1" role="dialog" aria-labelledby="warningModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content" style="background: black; color: red; border: 3px solid darkred;">
+            <div class="modal-header" style="background-color: darkred;">
+                <h5 class="modal-title" id="warningModalLabel" style="color: #ff0000; text-shadow: 0 0 5px #ff0000;">
+                    ☠️ DANGER ☠️
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    {#                    <span aria-hidden="true" style="font-size: 0.7rem; color: #ff9999;">&times;</span>#}
+                </button>
+            </div>
+            <div class="modal-body" style="font-size: 1.2rem; text-align: center;">
+                <p style="animation: blinkText 1s infinite;">
+                    ⚠️⚠️ <strong style="font-size: 1.5rem;">EXTREME WARNING:</strong> ⚠️⚠️
+                </p>
+                <p style="color: white;">
+                    The next page contains <span
+                        style="text-decoration: underline; font-weight: bold;">highly sensitive</span> and dangerous
+                    information.
+                    <strong>Ensure NO ONE</strong> can see your screen or severe consequences may follow!
+                </p>
+                <p style="font-size: 1.3rem; font-weight: bold; color: #ff3333;">
+                    Proceeding means you take FULL RESPONSIBILITY!
+                </p>
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+                <button type="button" class="btn btn-danger" id="confirmSubmit"
+                        style="font-size: 1.2rem; width: 100%; background: linear-gradient(45deg, darkred, red);">
+                    Confirm & Submit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Blinking warning effect */
+    @keyframes blinkText {
+        0% {
+            color: red;
+        }
+        50% {
+            color: darkred;
+        }
+        100% {
+            color: red;
+        }
+    }
+
+    /* Glitch effect */
+    .modal-body p {
+        position: relative;
+        display: inline-block;
+    }
+
+    .modal-body p:before {
+        content: attr(data-text);
+        position: absolute;
+        left: 2px;
+        text-shadow: -1px 0 red;
+        top: 0;
+        color: red;
+        background: black;
+        overflow: hidden;
+        clip: rect(0, 100%, 0, 0);
+        animation: glitch 1s infinite linear alternate-reverse;
+    }
+
+    @keyframes glitch {
+        0% {
+            clip: rect(42px, 9999px, 44px, 0);
+        }
+        10% {
+            clip: rect(30px, 9999px, 56px, 0);
+        }
+        20% {
+            clip: rect(50px, 9999px, 25px, 0);
+        }
+        30% {
+            clip: rect(60px, 9999px, 80px, 0);
+        }
+        40% {
+            clip: rect(0px, 9999px, 100px, 0);
+        }
+    }
+</style>
+
+
+<!-- JavaScript -->
+<script>
+    // Show the modal when the Proceed button is clicked
+    document.getElementById('proceedButton').addEventListener('click', function () {
+        $('#warningModal').modal('show');
+    });
+
+    // Submit the form when the Confirm button in the modal is clicked
+    document.getElementById('confirmSubmit').addEventListener('click', function () {
+        document.getElementById('myForm').submit();
+    });
+</script>

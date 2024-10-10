@@ -26,8 +26,9 @@
 
     <br/><br>
     {% for (course_id, year_level_id, semester_id), subjects in grouped_subjects.items() %}
-        <h2>{{ Course.query.get(course_id).course_name }} - {{ YearLevel.query.get(year_level_id).display_name }}
-            - {{ Semester.query.get(semester_id).semester_name }}</h2>
+        <h2>{{ Course.query.get(course_id).course_name | title }}
+            - {{ YearLevel.query.get(year_level_id).display_name | title }}
+            - {{ Semester.query.get(semester_id).semester_name | title }}</h2>
         <table class="table table-hover">
             <thead class="table-dark">
             <tr>
@@ -39,8 +40,8 @@
             <tbody>
             {% for subject in subjects %}
                 <tr>
-                    <td>{{ subject.subject_name }}</td>
-                    <td>{{ subject.subject_code }}</td>
+                    <td>{{ subject.subject_name | title }}</td>
+                    <td>{{ subject.subject_code | upper }}</td>
                     <td>
                         {#                        <a href="{{ url_for('subject.edit_subject', id=subject.id) }}" class="btn btn-sm btn-info">#}
                         {#                            <i class="bi bi-pencil-square"></i> Edit#}
