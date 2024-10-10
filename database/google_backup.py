@@ -9,17 +9,19 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
 
-# Function to perform MySQL dump and save the file
+# Function to perform MySQL dump and save the file without exposing the password in the command
 def backup_database_with_retry(db_user, db_password, db_name, db_host='localhost', retries=3, delay=5):
-    backup_filename = f"{db_name}_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql"
+    backup_filename = os.path.join(os.path.dirname(__file__),
+                                   f"{db_name}_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql")
 
-    if db_password:
-        dump_command = f"mysqldump -u {db_user} -p{db_password} -h {db_host} {db_name} > {backup_filename}"
-    else:
-        dump_command = f"mysqldump -u {db_user} -h {db_host} {db_name} > {backup_filename}"
+    # Set the MYSQL_PWD environment variable temporarily
+    env = os.environ.copy()
+    env["MYSQL_PWD"] = db_password  # Securely pass the password via environment variable
+
+    dump_command = f"mysqldump -u {db_user} -h {db_host} {db_name} > {backup_filename}"
 
     for attempt in range(retries):
-        result = subprocess.run(dump_command, shell=True)
+        result = subprocess.run(dump_command, shell=True, env=env)  # Pass the env variable here
         if result.returncode == 0:
             return backup_filename
         else:
