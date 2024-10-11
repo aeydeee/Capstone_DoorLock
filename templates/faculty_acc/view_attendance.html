@@ -233,7 +233,7 @@
         {% for attendance in attendances %}
             <tr>
                 <td></td>
-                <td>{{ attendance.time_in.strftime('%m-%d-%Y') if attendance.time_in else 'N/A' }}</td>
+               <td>{{ attendance.time_in.strftime('%b. %d, %Y') if attendance.time_in else 'N/A' }}</td>
                 <td>{{ attendance.student.full_name | title }}</td>
                 <td>{{ attendance.student.student_number | title }}</td>
                 <td>{{ attendance.subject.subject_name |title }}</td>
