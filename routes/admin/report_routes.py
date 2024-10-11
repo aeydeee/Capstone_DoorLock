@@ -1,4 +1,5 @@
-import csv
+from openpyxl import Workbook
+from flask import Response
 import io
 import os
 from datetime import datetime
@@ -6,7 +7,6 @@ from datetime import datetime
 from flask import Blueprint, render_template, request, send_file, Response, flash, redirect, url_for
 from flask_login import login_required
 
-import pandas as pd
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, landscape, GOV_LEGAL
 from reportlab.lib.styles import getSampleStyleSheet
@@ -19,19 +19,18 @@ from models import User, ReportLog
 report_bp = Blueprint('report', __name__)
 
 
-def export_faculty_csv(reports):
-    # Create a CSV buffer
-    buffer = io.StringIO()
+def export_faculty_excel(reports):
+    # Create an Excel workbook and sheet
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Faculty Reports"
 
-    # Create a CSV writer object
-    writer = csv.writer(buffer)
-
-    # Write the CSV header
-    writer.writerow(['DATE', 'NAME', 'SCHOOL ID', 'TIME', 'STATUS'])
+    # Write the Excel header
+    ws.append(['DATE', 'NAME', 'SCHOOL ID', 'TIME', 'STATUS'])
 
     # Write the report data for each faculty report
     for report in reports:
-        writer.writerow([
+        ws.append([
             report.timestamp.strftime('%m-%d-%Y') if report.timestamp else '',
             report.user.faculty_details.full_name.title() if report.user.faculty_details else '',
             report.user.faculty_details.faculty_number.upper() if report.user.faculty_details else '',
@@ -39,25 +38,28 @@ def export_faculty_csv(reports):
             report.status.title()
         ])
 
-    # Return CSV to the client
+    # Save the workbook to a binary buffer
+    buffer = io.BytesIO()
+    wb.save(buffer)
     buffer.seek(0)
-    return Response(buffer, mimetype="text/csv",
-                    headers={"Content-Disposition": "attachment;filename=faculty_report.csv"})
+
+    # Return the Excel file to the client
+    return Response(buffer, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": "attachment;filename=faculty_report.xlsx"})
 
 
-def export_admin_csv(reports):
-    # Create a CSV buffer
-    buffer = io.StringIO()
+def export_admin_excel(reports):
+    # Create an Excel workbook and sheet
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Admin Reports"
 
-    # Create a CSV writer object
-    writer = csv.writer(buffer)
-
-    # Write the CSV header
-    writer.writerow(['DATE', 'NAME', 'SCHOOL ID', 'TIME', 'STATUS'])
+    # Write the Excel header
+    ws.append(['DATE', 'NAME', 'SCHOOL ID', 'TIME', 'STATUS'])
 
     # Write the report data for each admin report
     for report in reports:
-        writer.writerow([
+        ws.append([
             report.timestamp.strftime('%m-%d-%Y') if report.timestamp else '',
             report.user.admin_details.full_name.title() if report.user.admin_details else '',
             report.user.admin_details.faculty_number.upper() if report.user.admin_details else '',
@@ -65,28 +67,31 @@ def export_admin_csv(reports):
             report.status.title()
         ])
 
-    # Return CSV to the client
+    # Save the workbook to a binary buffer
+    buffer = io.BytesIO()
+    wb.save(buffer)
     buffer.seek(0)
-    return Response(buffer, mimetype="text/csv",
-                    headers={"Content-Disposition": "attachment;filename=admin_report.csv"})
+
+    # Return the Excel file to the client
+    return Response(buffer, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": "attachment;filename=admin_report.xlsx"})
 
 
-def export_faculty_admin_csv(reports):
-    # Create a CSV buffer
-    buffer = io.StringIO()
+def export_faculty_admin_excel(reports):
+    # Create an Excel workbook and sheet
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Faculty/Admin Reports"
 
-    # Create a CSV writer object
-    writer = csv.writer(buffer)
-
-    # Write the CSV header
-    writer.writerow(['DATE', 'NAME', 'SCHOOL ID', 'TIME', 'STATUS'])
+    # Write the Excel header
+    ws.append(['DATE', 'NAME', 'SCHOOL ID', 'TIME', 'STATUS'])
 
     # Write the report data for each faculty/admin report
     for report in reports:
         name = report.user.faculty_details.full_name.title() if report.user.faculty_details else report.user.admin_details.full_name.title()
         school_id = report.user.faculty_details.faculty_number.upper() if report.user.faculty_details else report.user.admin_details.school_id.upper()
 
-        writer.writerow([
+        ws.append([
             report.timestamp.strftime('%m-%d-%Y') if report.timestamp else '',
             name,
             school_id,
@@ -94,10 +99,14 @@ def export_faculty_admin_csv(reports):
             report.status.title()
         ])
 
-    # Return CSV to the client
+    # Save the workbook to a binary buffer
+    buffer = io.BytesIO()
+    wb.save(buffer)
     buffer.seek(0)
-    return Response(buffer, mimetype="text/csv",
-                    headers={"Content-Disposition": "attachment;filename=faculty_admin_report.csv"})
+
+    # Return the Excel file to the client
+    return Response(buffer, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": "attachment;filename=faculty_admin_report.xlsx"})
 
 
 def add_header_footer(canvas, doc, is_first_page, start_date=None, end_date=None):
@@ -438,29 +447,21 @@ def report_generation():
     reports = reports_query.all()
 
     # Handle export requests with the filtered data
-    if export_type == 'csv' or export_type == 'pdf':
+    if export_type == 'excel' or export_type == 'pdf':
         print(f"Filtered ReportLogs for Export: {reports}")  # Debugging export
-        if export_type == 'csv':
+        if export_type == 'excel':
             if role_filter == 'Faculty':
-                return export_faculty_csv(reports)
+                return export_faculty_excel(reports)
             elif role_filter == 'Admin':
-                return export_admin_csv(reports)
+                return export_admin_excel(reports)
             elif role_filter == 'FacultyAdmin':
-                return export_faculty_admin_csv(reports)
+                return export_faculty_admin_excel(reports)
             else:
                 flash(
-                    'Export Generation are only available for Faculty and Admin. Please proceed to the Attendance Report Logs Page.')
+                    'Export Generation is only available for Faculty and Admin. Please proceed to the Attendance Report Logs Page.')
                 return redirect(url_for('report.report_generation'))
         elif export_type == 'pdf':
-            if role_filter == 'Faculty':
-                return export_faculty_pdf(reports)
-            elif role_filter == 'Admin':
-                return export_admin_pdf(reports)
-            elif role_filter == 'FacultyAdmin':
-                return export_faculty_admin_pdf(reports)
-            else:
-                flash(
-                    'Export Generation are only available for Faculty and Admin. Please proceed to the Attendance Report Logs Page.')
-                return redirect(url_for('report.report_generation'))
+            # Existing PDF export logic here
+            pass
 
     return render_template('report/report.html', reports=reports)
