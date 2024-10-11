@@ -62,14 +62,15 @@
 
 
 <br>
-<a href="{{ url_for('report.report_generation', export='csv', start_date=request.args.get('start_date'), end_date=request.args.get('end_date'), role=request.args.get('role')) }}"
+<a href="{{ url_for('report.report_generation', export='excel', start_date=request.args.get('start_date'), end_date=request.args.get('end_date'), role=request.args.get('role')) }}"
    class="btn btn-outline-primary btn-sm">
-    <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
+    <i class="bi bi-file-earmark-excel"></i> Export Excel
 </a>
 <a href="{{ url_for('report.report_generation', export='pdf', start_date=request.args.get('start_date'), end_date=request.args.get('end_date'), role=request.args.get('role')) }}"
    class="btn btn-outline-danger btn-sm">
     <i class="bi bi-file-earmark-pdf"></i> Export PDF
 </a>
+
 
 <br/>
 
