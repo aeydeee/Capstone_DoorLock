@@ -1,4 +1,5 @@
 import os
+import socket
 
 
 class Config(object):
@@ -6,7 +7,7 @@ class Config(object):
     DB_USERNAME = os.environ.get('DB_USERNAME')
     DB_PASSWORD = os.environ.get('DB_PASSWORD')
     DB_NAME = os.environ.get('DB_NAME')
-    DB_HOST = os.environ.get('DB_HOST')
+    DB_HOST = os.environ.get('DB_HOST', 'localhost')
     SECRET_KEY = os.environ.get('SECRET_KEY')
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
     UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER')
