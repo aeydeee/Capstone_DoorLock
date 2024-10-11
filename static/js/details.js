@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const courseSelect = document.getElementById('course');
+    const courseSelect = document.getElementById('program');
     const yearLevelSelect = document.getElementById('year_level');
     const semesterSelect = document.getElementById('semester');
 

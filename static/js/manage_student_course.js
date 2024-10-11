@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    $('#selectSubjects').select2({
+    $('#selectCourses').select2({
         width: '100%'
     });
 });

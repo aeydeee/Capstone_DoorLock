@@ -23,12 +23,12 @@ from reportlab.pdfgen import canvas
 from app import db
 from decorators import cspc_acc_required, admin_required
 from models import User, Student, \
-    Subject, Attendance, CourseYearLevelSemesterSubject, Section, Course, YearLevel, Semester, \
-    student_subject_association, Schedule, FacultySubjectSchedule, YearLevelEnum, SectionEnum, SemesterEnum, Faculty
+    Course, Attendance, ProgramYearLevelSemesterCourse, Section, Program, YearLevel, Semester, \
+    student_course_association, Schedule, FacultyCourseSchedule, YearLevelEnum, SectionEnum, SemesterEnum, Faculty
 
 from webforms.delete_form import DeleteForm
 from webforms.search_form import AssignStudentForm
-from webforms.student_form import StudentForm, EditStudentForm, AssignBackSubjectForm
+from webforms.student_form import StudentForm, EditStudentForm, AssignBackCourseForm
 from webforms.upload_form import UploadForm
 
 student_bp = Blueprint('student', __name__)
@@ -152,9 +152,9 @@ def student_qrcode(student_id):
 @admin_required
 def reset_schedules():
     try:
-        db.session.execute(student_subject_association.delete())
+        db.session.execute(student_course_association.delete())
         db.session.commit()
-        flash('All student subjects and schedules have been reset.', 'success')
+        flash('All student courses and schedules have been reset.', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Error occurred: {str(e)}', 'danger')
@@ -271,9 +271,9 @@ def manage_student():
                                 continue  # Skip this row and move to the next one
 
                             # Define helper functions
-                            def get_course_id(course_code):
-                                course = Course.query.filter_by(course_code=course_code.upper()).first()
-                                return course.id if course else None
+                            def get_program_id(program_code):
+                                program = Program.query.filter_by(program_code=program_code.upper()).first()
+                                return program.id if program else None
 
                             def get_year_level_id(level_name):
                                 level_enum = get_enum_name(YEAR_LEVEL_MAPPING, level_name)
@@ -293,14 +293,14 @@ def manage_student():
                                 return semester.id if semester else None
 
                             # Retrieve IDs based on CSV values
-                            course_id = get_course_id(row['course_code'])
+                            program_id = get_program_id(row['program_code'])
                             year_level_id = get_year_level_id(row['level_name'])
                             section_id = get_section_id(row['section_name'])
                             semester_id = get_semester_id(row['semester_name'])
 
                             # Validate the existence of required entities
-                            if not course_id:
-                                flash(f"Course code {row['course_code']} not found.", 'error')
+                            if not program_id:
+                                flash(f"Program code {row['program_code']} not found.", 'error')
                                 continue
                             if not year_level_id:
                                 flash(f"Year Level '{row['level_name']}' not found.", 'error')
@@ -331,7 +331,7 @@ def manage_student():
 
                             student = Student(
                                 student_number=row['student_number'],
-                                course_id=course_id,
+                                program_id=program_id,
                                 year_level_id=year_level_id,
                                 section_id=section_id,
                                 semester_id=semester_id,
@@ -371,24 +371,24 @@ def manage_student():
             flash(f'An error occurred: {str(e)}', 'danger')
             print(f"Exception at row {index + 1}: {e}")
 
-    # Populate the subject dropdown with subject name and student names
-    subjects = Subject.query.all()
-    assign_form.subject.choices = [
-        # (subject.id, f"{subject.subject_name} - {', '.join(student.full_name for student in subject.faculties)}")
-        (subject.id, f"{subject.subject_name}")
-        for subject in subjects
+    # Populate the program dropdown with program name and student names
+    courses = Course.query.all()
+    assign_form.course.choices = [
+        # (program.id, f"{program.course_name} - {', '.join(student.full_name for student in program.faculties)}")
+        (course.id, f"{course.course_name}")
+        for course in courses
     ]
 
-    # Retrieve all students or filter by course, year level, and section
-    course_section = request.args.get('course_section', '')
-    print(f"course_section: {course_section}")  # Debugging line
+    # Retrieve all students or filter by program, year level, and section
+    program_section = request.args.get('program_section', '')
+    print(f"program_section: {program_section}")  # Debugging line
 
-    if course_section:
-        parts = course_section.rsplit(' ', 3)  # Adjusted to expect 4 parts including the semester
+    if program_section:
+        parts = program_section.rsplit(' ', 3)  # Adjusted to expect 4 parts including the semester
         print(f"parts: {parts}")  # Debugging line
 
         if len(parts) == 4:
-            course_name, year_level_code, section_id, semester_name = parts
+            program_name, year_level_code, section_id, semester_name = parts
 
             # Handle possible prefix in year level and section
             if year_level_code.startswith('YearLevelEnum.'):
@@ -398,11 +398,11 @@ def manage_student():
                 section_id = section_id.replace('SectionEnum.', '')
 
             print(
-                f"course_name: {course_name}, year_level_code: {year_level_code}, section_name: {section_id}, semester_name: {semester_name}")  # Debugging line
+                f"program_name: {program_name}, year_level_code: {year_level_code}, section_name: {section_id}, semester_name: {semester_name}")  # Debugging line
 
             # Ensure Enum values are handled correctly in queries
-            students = Student.query.join(Course).join(YearLevel).join(Section).join(Semester).filter(
-                Course.course_code == course_name.strip(),
+            students = Student.query.join(Program).join(YearLevel).join(Section).join(Semester).filter(
+                Program.program_code == program_name.strip(),
                 YearLevel.level_name == YearLevelEnum.code(year_level_code.strip()),
                 Section.section_name == SectionEnum.code(section_id.strip()),
                 Semester.semester_name == SemesterEnum.code(semester_name.strip())
@@ -422,20 +422,20 @@ def manage_student():
     )
 
 
-@student_bp.route('/assign_students_to_subject', methods=['POST'])
+@student_bp.route('/assign_students_to_course', methods=['POST'])
 @login_required
 @cspc_acc_required
 @admin_required
-def assign_students_to_subject():
+def assign_students_to_course():
     assign_form = AssignStudentForm()
-    assign_form.subject.choices = [
-        (subject.id, f"{subject.subject_name} - {', '.join(student.full_name for student in subject.faculties)}")
-        # (subject.id, f"{subject.subject_name}")
-        for subject in Subject.query.all()
+    assign_form.course.choices = [
+        (course.id, f"{course.course_name} - {', '.join(student.full_name for student in course.faculties)}")
+        # (program.id, f"{program.course_name}")
+        for course in Course.query.all()
     ]
 
     if assign_form.validate_on_submit():
-        selected_subject_ids = assign_form.subject.data  # Use .data directly for multiple selections
+        selected_course_ids = assign_form.course.data  # Use .data directly for multiple selections
         selected_student_ids = request.form.getlist('student_ids')
 
         if not selected_student_ids:
@@ -443,21 +443,21 @@ def assign_students_to_subject():
                   'error')
             return redirect(url_for('student.manage_student'))
 
-        if not selected_subject_ids:
-            flash('No subjects selected for assignment.', 'error')
+        if not selected_course_ids:
+            flash('No courses selected for assignment.', 'error')
             return redirect(url_for('student.manage_student'))
 
         for student_id in selected_student_ids:
             student = Student.query.get(student_id)
             if student:
-                for subject_id in selected_subject_ids:
-                    subject = Subject.query.get(subject_id)
-                    if subject and subject not in student.subjects:
-                        student.subjects.append(subject)
+                for course_id in selected_course_ids:
+                    course = Course.query.get(course_id)
+                    if course and course not in student.courses:
+                        student.courses.append(course)
                 db.session.add(student)
 
         db.session.commit()
-        flash('Students successfully assigned to the selected subjects.', 'success')
+        flash('Students successfully assigned to the selected courses.', 'success')
         return redirect(url_for('student.manage_student'))
     else:
         for field, errors in assign_form.errors.items():
@@ -466,20 +466,20 @@ def assign_students_to_subject():
         return redirect(url_for('student.manage_student'))
 
 
-@student_bp.route("/subject/<int:student_id>/delete/<int:subject_id>", methods=["POST"])
+@student_bp.route("/course/<int:student_id>/delete/<int:course_id>", methods=["POST"])
 @login_required
 @cspc_acc_required
 @admin_required
-def delete_student_subject(student_id, subject_id):
+def delete_student_course(student_id, course_id):
     student = Student.query.get_or_404(student_id)
-    subject = Subject.query.get_or_404(subject_id)
+    course = Course.query.get_or_404(course_id)
 
-    # Remove the subject association with the student
-    student.subjects.remove(subject)
+    # Remove the program association with the student
+    student.courses.remove(course)
     db.session.commit()
 
-    flash(f"Successfully removed {subject.subject_name} from {student.full_name}.", "success")
-    return redirect(url_for('student.manage_students_schedule_subjects', student_id=student_id))
+    flash(f"Successfully removed {course.course_name} from {student.full_name}.", "success")
+    return redirect(url_for('student.manage_students_schedule_courses', student_id=student_id))
 
 
 @student_bp.route("/add", methods=["GET", "POST"])
@@ -489,7 +489,7 @@ def delete_student_subject(student_id, subject_id):
 def add_student():
     form = StudentForm()
     form.year_level_id.choices = [(y.id, y.display_name) for y in YearLevel.query.all()]
-    form.course_id.choices = [(c.id, c.course_name) for c in Course.query.all()]
+    form.program_id.choices = [(c.id, c.program_name) for c in Program.query.all()]
     form.section_id.choices = [(s.id, s.display_name) for s in Section.query.all()]
     form.semester_id.choices = [(sem.id, sem.display_name) for sem in Semester.query.all()]
 
@@ -638,7 +638,7 @@ def add_student():
                     #     # tertiary_school=clean_field(form.tertiary_school_name.data.lower()),
                     #     # tertiary_address=clean_field(form.tertiary_school_addr_text.data.lower()),
                     #     # tertiary_graduated=form.tertiary_year_grad.data,
-                    #     # tertiary_course=clean_field(form.tertiary_course.data.lower())
+                    #     # tertiary_program=clean_field(form.tertiary_program.data.lower())
                     # )
                     # db.session.add(educational_background)
 
@@ -647,7 +647,7 @@ def add_student():
                         student_number=clean_field(form.student_number.data.lower()),
                         # password_hash=hashed_pw,
                         year_level_id=form.year_level_id.data,
-                        course_id=form.course_id.data,
+                        program_id=form.program_id.data,
                         section_id=form.section_id.data,
                         semester_id=form.semester_id.data,
                         user_id=user.id
@@ -744,7 +744,7 @@ def edit_student(id):
             return rfid_uid.lower()  # Return as lowercase hex
 
     form.year_level_id.choices = [(y.id, y.display_name) for y in YearLevel.query.all()]
-    form.course_id.choices = [(c.id, c.course_name) for c in Course.query.all()]
+    form.program_id.choices = [(c.id, c.program_name) for c in Program.query.all()]
     form.section_id.choices = [(s.id, s.display_name) for s in Section.query.all()]
     form.semester_id.choices = [(sem.id, sem.display_name) for sem in Semester.query.all()]
 
@@ -773,7 +773,7 @@ def edit_student(id):
         # Populate Student-specific data
         form.student_number.data = student.student_number or ''
         form.year_level_id.data = student.year_level_id or None
-        form.course_id.data = student.course_id or None
+        form.program_id.data = student.program_id or None
         form.section_id.data = student.section_id or None
         form.semester_id.data = student.semester_id or None
 
@@ -828,7 +828,7 @@ def edit_student(id):
         # form.tertiary_school_name.data = educational_background.tertiary_school or ''
         # form.tertiary_school_addr_text.data = educational_background.tertiary_address or ''
         # form.tertiary_year_grad.data = educational_background.tertiary_graduated or ''
-        # form.tertiary_course.data = educational_background.tertiary_course or ''
+        # form.tertiary_program.data = educational_background.tertiary_program or ''
 
     if form.validate_on_submit():
         print("Form is valid")
@@ -953,7 +953,7 @@ def edit_student(id):
                     # educational_background.tertiary_address = clean_field(
                     #     form.tertiary_school_addr_text.data.lower())
                     # educational_background.tertiary_graduated = form.tertiary_year_grad.data
-                    # educational_background.tertiary_course = clean_field(form.tertiary_course.data.lower())
+                    # educational_background.tertiary_program = clean_field(form.tertiary_program.data.lower())
 
                     # # Update the password hash only if it's changed
                     # if form.password.data:
@@ -963,7 +963,7 @@ def edit_student(id):
                     student.student_number = form.student_number.data
                     student.year_level_id = form.year_level_id.data
                     student.section_id = form.section_id.data
-                    student.course_id = form.course_id.data
+                    student.program_id = form.program_id.data
                     student.semester_id = form.semester_id.data
 
                 db.session.commit()
@@ -1013,10 +1013,10 @@ def delete_student(id):
         # FamilyBackground.query.filter_by(user_id=student.user.id).delete()
         # EducationalBackground.query.filter_by(user_id=student.user.id).delete()
 
-        # Remove student from subjects without deleting subjects
-        subjects = student.subjects
-        for subject in subjects:
-            student.subjects.remove(subject)
+        # Remove student from courses without deleting courses
+        courses = student.courses
+        for course in courses:
+            student.courses.remove(course)
 
         db.session.delete(student)
         db.session.delete(user)
@@ -1034,33 +1034,33 @@ def delete_student(id):
 @cspc_acc_required
 @admin_required
 def irregular_students():
-    # Get all students with their course, year level, semester, and enrolled subjects
+    # Get all students with their program, year level, semester, and enrolled courses
     students = Student.query.options(
-        joinedload(Student.course),
+        joinedload(Student.program),
         joinedload(Student.year_level),
         joinedload(Student.semester),
-        joinedload(Student.subjects)
+        joinedload(Student.courses)
     ).all()
 
-    # List to store students with incorrect subject enrollment
+    # List to store students with incorrect program enrollment
     incorrect_enrollments = []
 
-    # Check each student's enrolled subjects
+    # Check each student's enrolled courses
     for student in students:
-        # Get correct subjects
-        correct_subjects = db.session.query(CourseYearLevelSemesterSubject).filter_by(
-            course_id=student.course_id,
+        # Get correct courses
+        correct_courses = db.session.query(ProgramYearLevelSemesterCourse).filter_by(
+            program_id=student.program_id,
             year_level_id=student.year_level_id,
             semester_id=student.semester_id
         ).all()
 
-        correct_subject_ids = {cs.subject_id for cs in correct_subjects}
-        enrolled_subject_ids = {subject.id for subject in student.subjects}
+        correct_course_ids = {cs.course_id for cs in correct_courses}
+        enrolled_course_ids = {course.id for course in student.courses}
 
-        # Find subjects the student is enrolled in that are not in the correct subjects list
-        if not enrolled_subject_ids.issubset(correct_subject_ids):
-            # Add the correct subjects to the student object for template usage
-            student.correct_subjects = [cs.subject for cs in correct_subjects]
+        # Find courses the student is enrolled in that are not in the correct courses list
+        if not enrolled_course_ids.issubset(correct_course_ids):
+            # Add the correct courses to the student object for template usage
+            student.correct_courses = [cs.course for cs in correct_courses]
             incorrect_enrollments.append(student)
 
     # Debug: Print or log the students to ensure they are being correctly populated
@@ -1068,98 +1068,98 @@ def irregular_students():
     for student in incorrect_enrollments:
         print(f"Student ID: {student.student_number}")
         print(f"Full Name: {student.full_name}")
-        print(f"Course: {student.course.course_name}")
+        print(f"Program: {student.program.program_name}")
         print(f"Year Level: {student.year_level.display_name}")
         print(f"Semester: {student.semester.display_name}")
-        print(f"Subjects: {[subject.subject_name for subject in student.subjects]}")
+        print(f"Courses: {[course.course_name for course in student.courses]}")
 
     return render_template('student/irregular_student.html', students=incorrect_enrollments)
 
 
-@student_bp.route("/subject/<int:student_id>", methods=["GET", "POST"])
+@student_bp.route("/course/<int:student_id>", methods=["GET", "POST"])
 @login_required
 @cspc_acc_required
 @admin_required
-def manage_students_schedule_subjects(student_id):
+def manage_students_schedule_courses(student_id):
     delete_form = DeleteForm()
     student = Student.query.get_or_404(student_id)
 
-    # Query regular subjects matching student's course, year level, and semester
-    regular_subjects = Subject.query \
-        .join(CourseYearLevelSemesterSubject, Subject.id == CourseYearLevelSemesterSubject.subject_id) \
-        .filter(CourseYearLevelSemesterSubject.course_id == student.course_id) \
-        .filter(CourseYearLevelSemesterSubject.year_level_id == student.year_level_id) \
-        .filter(CourseYearLevelSemesterSubject.semester_id == student.semester_id) \
-        .join(student_subject_association, Subject.id == student_subject_association.c.subject_id) \
-        .filter(student_subject_association.c.student_id == student_id) \
+    # Query regular courses matching student's program, year level, and semester
+    regular_courses = Course.query \
+        .join(ProgramYearLevelSemesterCourse, Course.id == ProgramYearLevelSemesterCourse.course_id) \
+        .filter(ProgramYearLevelSemesterCourse.program_id == student.program_id) \
+        .filter(ProgramYearLevelSemesterCourse.year_level_id == student.year_level_id) \
+        .filter(ProgramYearLevelSemesterCourse.semester_id == student.semester_id) \
+        .join(student_course_association, Course.id == student_course_association.c.course_id) \
+        .filter(student_course_association.c.student_id == student_id) \
         .all()
 
-    # Query all subjects the student is enrolled in using the student_subject_association table
-    all_subjects = Subject.query \
-        .join(student_subject_association, Subject.id == student_subject_association.c.subject_id) \
-        .filter(student_subject_association.c.student_id == student_id) \
+    # Query all courses the student is enrolled in using the student_course_association table
+    all_courses = Course.query \
+        .join(student_course_association, Course.id == student_course_association.c.course_id) \
+        .filter(student_course_association.c.student_id == student_id) \
         .all()
 
-    # Identify irregular subjects by excluding regular subjects
-    regular_subject_ids = {sub.id for sub in regular_subjects}
-    irregular_subjects = [sub for sub in all_subjects if sub.id not in regular_subject_ids]
+    # Identify irregular courses by excluding regular courses
+    regular_course_ids = {sub.id for sub in regular_courses}
+    irregular_courses = [sub for sub in all_courses if sub.id not in regular_course_ids]
 
-    # Get schedule details including faculty for regular subjects
+    # Get schedule details including faculty for regular courses
     schedule_details = Schedule.query \
-        .join(FacultySubjectSchedule, FacultySubjectSchedule.schedule_id == Schedule.id) \
-        .filter(Schedule.subject_id.in_([subject.id for subject in regular_subjects])) \
-        .filter(FacultySubjectSchedule.course_id == student.course_id,
-                FacultySubjectSchedule.year_level_id == student.year_level_id,
-                FacultySubjectSchedule.semester_id == student.semester_id) \
+        .join(FacultyCourseSchedule, FacultyCourseSchedule.schedule_id == Schedule.id) \
+        .filter(Schedule.course_id.in_([course.id for course in regular_courses])) \
+        .filter(FacultyCourseSchedule.program_id == student.program_id,
+                FacultyCourseSchedule.year_level_id == student.year_level_id,
+                FacultyCourseSchedule.semester_id == student.semester_id) \
         .filter(Schedule.section_id == student.section_id) \
         .all()
 
-    # Prepare a mapping of subject_id to schedule and faculty details for regular subjects
+    # Prepare a mapping of course_id to schedule and faculty details for regular courses
     schedule_map = {}
     for schedule in schedule_details:
-        for faculty_schedule in schedule.faculty_subject_schedules:
-            if schedule.subject_id not in schedule_map:
-                schedule_map[schedule.subject_id] = []
+        for faculty_schedule in schedule.faculty_course_schedules:
+            if schedule.course_id not in schedule_map:
+                schedule_map[schedule.course_id] = []
             formatted_start_time = datetime.strptime(str(schedule.start_time), "%H:%M:%S").strftime("%I:%M %p")
             formatted_end_time = datetime.strptime(str(schedule.end_time), "%H:%M:%S").strftime("%I:%M %p")
-            schedule_map[schedule.subject_id].append({
+            schedule_map[schedule.course_id].append({
                 'formatted_start_time': formatted_start_time,
                 'formatted_end_time': formatted_end_time,
                 'day': schedule.day.name,
                 'faculty_name': faculty_schedule.faculty.full_name
             })
 
-    # Assign the formatted schedule details to each regular subject
-    for sub in regular_subjects:
+    # Assign the formatted schedule details to each regular program
+    for sub in regular_courses:
         sub.schedule_details_formatted = schedule_map.get(sub.id, [])
 
-    # The same for irregular subjects, filtering by the student_subject_association's schedule_id
+    # The same for irregular courses, filtering by the student_course_association's schedule_id
     irregular_schedule_details = Schedule.query \
-        .join(student_subject_association, Schedule.id == student_subject_association.c.schedule_id) \
-        .filter(student_subject_association.c.student_id == student_id) \
-        .filter(Schedule.subject_id.in_([subject.id for subject in irregular_subjects])) \
+        .join(student_course_association, Schedule.id == student_course_association.c.schedule_id) \
+        .filter(student_course_association.c.student_id == student_id) \
+        .filter(Schedule.course_id.in_([course.id for course in irregular_courses])) \
         .all()
 
     irregular_schedule_map = {}
     for schedule in irregular_schedule_details:
-        for faculty_schedule in schedule.faculty_subject_schedules:
-            if schedule.subject_id not in irregular_schedule_map:
-                irregular_schedule_map[schedule.subject_id] = []
+        for faculty_schedule in schedule.faculty_course_schedules:
+            if schedule.course_id not in irregular_schedule_map:
+                irregular_schedule_map[schedule.course_id] = []
             formatted_start_time = datetime.strptime(str(schedule.start_time), "%H:%M:%S").strftime("%I:%M %p")
             formatted_end_time = datetime.strptime(str(schedule.end_time), "%H:%M:%S").strftime("%I:%M %p")
-            irregular_schedule_map[schedule.subject_id].append({
+            irregular_schedule_map[schedule.course_id].append({
                 'formatted_start_time': formatted_start_time,
                 'formatted_end_time': formatted_end_time,
                 'day': schedule.day.name,
                 'faculty_name': faculty_schedule.faculty.full_name
             })
 
-    for sub in irregular_subjects:
+    for sub in irregular_courses:
         sub.schedule_details_formatted = irregular_schedule_map.get(sub.id, [])
 
-    return render_template('student/manage_student_subject.html', student=student,
-                           regular_subjects=regular_subjects,
-                           irregular_subjects=irregular_subjects, delete_form=delete_form)
+    return render_template('student/manage_student_course.html', student=student,
+                           regular_courses=regular_courses,
+                           irregular_courses=irregular_courses, delete_form=delete_form)
 
 
 @student_bp.route('/assign-students', methods=['GET'])
@@ -1168,45 +1168,45 @@ def assign_students():
         students = Student.query.all()
 
         for student in students:
-            # Get all subjects for the student's course, year level, and semester
-            subjects = CourseYearLevelSemesterSubject.query.filter_by(
-                course_id=student.course_id,
+            # Get all courses for the student's program, year level, and semester
+            courses = ProgramYearLevelSemesterCourse.query.filter_by(
+                program_id=student.program_id,
                 year_level_id=student.year_level_id,
                 semester_id=student.semester_id
             ).all()
 
-            for subject_entry in subjects:
-                # Step 1: Find all schedules for the subject that match the student's section
+            for course_entry in courses:
+                # Step 1: Find all schedules for the program that match the student's section
                 schedules = Schedule.query.filter_by(
-                    subject_id=subject_entry.subject_id,
+                    course_id=course_entry.course_id,
                     section_id=student.section_id  # Match the student's section
                 ).all()
 
                 if not schedules:
                     # Handle the case where no schedules exist (optional)
-                    flash(f"No schedule found for subject {subject_entry.subject.subject_name.title()}", 'warning')
+                    flash(f"No schedule found for program {course_entry.course.course_name.title()}", 'warning')
                     continue
 
                 # Step 2: Iterate over all matching schedules and assign them
                 for schedule in schedules:
                     # Check if the association already exists for this schedule
-                    existing_association = db.session.query(student_subject_association).filter_by(
+                    existing_association = db.session.query(student_course_association).filter_by(
                         student_id=student.id,
-                        subject_id=subject_entry.subject_id,
+                        course_id=course_entry.course_id,
                         schedule_id=schedule.id
                     ).first()
 
                     # Step 3: If no association exists, create it
                     if not existing_association:
-                        student_subject = student_subject_association.insert().values(
+                        student_course = student_course_association.insert().values(
                             student_id=student.id,
-                            subject_id=subject_entry.subject_id,
+                            course_id=course_entry.course_id,
                             schedule_id=schedule.id  # Add the schedule_id
                         )
-                        db.session.execute(student_subject)
+                        db.session.execute(student_course)
 
         db.session.commit()
-        flash('Students assigned to subjects successfully!', 'success')
+        flash('Students assigned to courses successfully!', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'An error occurred: {e}', 'danger')
@@ -1217,37 +1217,37 @@ def assign_students():
 @student_bp.route('/faculty_schedules/<int:faculty_id>', methods=['GET'])
 def load_faculty_schedules(faculty_id):
     faculty_schedules = db.session.query(
-        FacultySubjectSchedule.subject_id,
-        FacultySubjectSchedule.section_id,
-        FacultySubjectSchedule.course_id,
-        FacultySubjectSchedule.year_level_id,
+        FacultyCourseSchedule.course_id,
+        FacultyCourseSchedule.section_id,
+        FacultyCourseSchedule.program_id,
+        FacultyCourseSchedule.year_level_id,
         Schedule.id,  # Use the schedule ID
         Schedule.day,
         Schedule.start_time,
         Schedule.end_time
     ).join(Schedule).filter(
-        FacultySubjectSchedule.faculty_id == faculty_id
+        FacultyCourseSchedule.faculty_id == faculty_id
     ).all()
 
     schedule_options = []
     for schedule in faculty_schedules:
-        subject = Subject.query.get(schedule.subject_id)
-        section = Section.query.get(schedule.section_id)
         course = Course.query.get(schedule.course_id)
+        section = Section.query.get(schedule.section_id)
+        program = Program.query.get(schedule.program_id)
         year_level = YearLevel.query.get(schedule.year_level_id)
 
         # Convert Enum (DayOfWeek) to string
         day_of_week = schedule.day.name  # or `schedule.day.value` if using values
 
-        # Construct the display for course, year level, and section (e.g., "BSIT 1B")
-        course_year_section = f"{course.course_code.upper()} {year_level.code}{section.display_name}"
+        # Construct the display for program, year level, and section (e.g., "BSIT 1B")
+        program_year_section = f"{program.program_code.upper()} {year_level.code}{section.display_name}"
 
-        # Construct the display text including subject, day, and time
-        display_text = f"{subject.subject_name.title()} - {course_year_section} ({day_of_week}, {schedule.start_time.strftime('%I:%M %p')} - {schedule.end_time.strftime('%I:%M %p')})"
+        # Construct the display text including program, day, and time
+        display_text = f"{course.course_name.title()} - {program_year_section} ({day_of_week}, {schedule.start_time.strftime('%I:%M %p')} - {schedule.end_time.strftime('%I:%M %p')})"
 
         schedule_options.append({
             'id': schedule.id,  # Add the schedule ID here
-            'subject_id': schedule.subject_id,
+            'course_id': schedule.course_id,
             'section_id': schedule.section_id,
             'day': day_of_week,  # Use string instead of Enum
             'start_time': schedule.start_time.strftime('%H:%M'),
@@ -1258,9 +1258,9 @@ def load_faculty_schedules(faculty_id):
     return jsonify(schedule_options)
 
 
-@student_bp.route('/assign_back_subject', methods=['GET', 'POST'])
-def assign_back_subject():
-    form = AssignBackSubjectForm()
+@student_bp.route('/assign_back_course', methods=['GET', 'POST'])
+def assign_back_course():
+    form = AssignBackCourseForm()
 
     # Prepend "Please select..." as the first choice for both student and faculty
     form.student_id.choices = [(0, 'Please select...')] + [(student.id, student.full_name.title()) for student in
@@ -1272,14 +1272,14 @@ def assign_back_subject():
     if form.validate_on_submit() or request.method == 'POST':
         faculty_id = form.faculty_id.data
         if faculty_id:
-            schedules = db.session.query(Schedule).join(FacultySubjectSchedule).filter(
-                FacultySubjectSchedule.faculty_id == faculty_id
+            schedules = db.session.query(Schedule).join(FacultyCourseSchedule).filter(
+                FacultyCourseSchedule.faculty_id == faculty_id
             ).all()
 
             # Update the schedule choices
             form.schedule_id.choices = [
                 (schedule.id,
-                 f"{schedule.subject.subject_name} ({schedule.day.name} {schedule.start_time.strftime('%H:%M')}-{schedule.end_time.strftime('%H:%M')})")
+                 f"{schedule.course.course_name} ({schedule.day.name} {schedule.start_time.strftime('%H:%M')}-{schedule.end_time.strftime('%H:%M')})")
                 for schedule in schedules
             ]
         else:
@@ -1294,25 +1294,25 @@ def assign_back_subject():
             schedule = Schedule.query.get(schedule_id)
             if not schedule:
                 flash("Selected schedule does not exist.", "error")
-                return redirect(url_for('student.assign_back_subject'))
+                return redirect(url_for('student.assign_back_course'))
 
             # Process the assignment
             try:
-                student_subject_association_entry = student_subject_association.insert().values(
+                student_course_association_entry = student_course_association.insert().values(
                     student_id=student_id,
-                    subject_id=schedule.subject_id,
+                    course_id=schedule.course_id,
                     schedule_id=schedule_id
                 )
-                db.session.execute(student_subject_association_entry)
+                db.session.execute(student_course_association_entry)
                 db.session.commit()
 
-                flash('Back subject assigned successfully!', "success")
-                return redirect(url_for('student.assign_back_subject'))
+                flash('Back program assigned successfully!', "success")
+                return redirect(url_for('student.assign_back_course'))
 
             except IntegrityError:
                 db.session.rollback()  # Roll back the session to avoid partial commits
-                flash("This subject has already been assigned to the student.", "error")
-                return redirect(url_for('student.assign_back_subject'))
+                flash("This program has already been assigned to the student.", "error")
+                return redirect(url_for('student.assign_back_course'))
 
         else:
             # Flash any form validation errors
@@ -1320,4 +1320,4 @@ def assign_back_subject():
                 for error in errors:
                     flash(f"Error in {getattr(form, field).label.text}: {error}", "error")
 
-    return render_template('student/assign_back_subject.html', form=form)
+    return render_template('student/assign_back_course.html', form=form)

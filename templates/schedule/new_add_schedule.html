@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block extra_styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/subject_schedule.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/course_schedule.css') }}">
     <script defer src="{{ url_for('static', filename='js/view_schedules.js') }}"></script>
 
 {% endblock %}
@@ -54,7 +54,7 @@
                         <tr>
                             <th scope="col"></th>
                             <th scope="col">Faculty</th>
-                            <th scope="col">Subject</th>
+                            <th scope="col">Course</th>
                             <th scope="col">Day</th>
                             <th scope="col">Start Time</th>
                             <th scope="col">End Time</th>
@@ -62,12 +62,12 @@
                         </tr>
                         </thead>
                         <tbody>
-                        {% for subject in faculty.subjects %}
-                            {% for schedule in subject.schedule_details %}
+                        {% for course in faculty.courses %}
+                            {% for schedule in course.schedule_details %}
                                 <tr>
                                     <td></td>
                                     <td>{{ faculty.user.f_name }} {{ faculty.user.l_name }}</td>
-                                    <td>{{ subject.subject_name }}</td>
+                                    <td>{{ course.course_name }}</td>
                                     <td>{{ schedule.schedule_day }}</td>
                                     <td>{{ schedule.schedule_time_from }}</td>
                                     <td>{{ schedule.schedule_time_to }}</td>
@@ -80,12 +80,12 @@
                                 </tr>
                             {% else %}
                                 <tr>
-                                    <td colspan="6">No schedule available for this subject</td>
+                                    <td colspan="6">No schedule available for this course</td>
                                 </tr>
                             {% endfor %}
                         {% else %}
                             <tr>
-                                <td colspan="6">No subjects available for this faculty</td>
+                                <td colspan="6">No courses available for this faculty</td>
                             </tr>
                         {% endfor %}
                         </tbody>

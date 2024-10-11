@@ -1,42 +1,51 @@
 from flask_wtf import FlaskForm
-from wtforms import SelectField, SubmitField
+from wtforms.fields.choices import SelectField
+
 from wtforms.fields.numeric import IntegerField
-from wtforms.fields.simple import StringField
-from wtforms.validators import DataRequired, Length
-from models import Course, YearLevel, Semester, Subject, Section
+from wtforms.fields.simple import StringField, SubmitField
+from wtforms.validators import DataRequired, NumberRange
+
+from models import Program, Semester, YearLevel
 
 
 class CourseForm(FlaskForm):
-    course_name = StringField('Course Name', validators=[DataRequired(), Length(max=255)])
-    course_code = StringField('Course Code', validators=[Length(max=255)])
+    name = StringField('Course Name', validators=[DataRequired()])
+    code = StringField('Course Code', validators=[DataRequired()])
+    units = IntegerField('Course Units', validators=[DataRequired(), NumberRange(min=1)])
+
     submit = SubmitField('Submit')
 
 
-class YearLevelForm(FlaskForm):
-    level_name = StringField('Year Level', validators=[DataRequired(), Length(max=255)])
-    level_code = IntegerField('Year Code', validators=[DataRequired()])
-    submit = SubmitField('Add Year Level')
-
-
-class SemesterForm(FlaskForm):
-    semester_name = StringField('Semester Name', validators=[DataRequired(), Length(max=255)])
-    semester_code = IntegerField('Semester Code', validators=[DataRequired()])
-    submit = SubmitField('Add Semester')
-
-
-class SubjectForm(FlaskForm):
-    subject_code = StringField('Subject Code', validators=[DataRequired(), Length(max=255)])
-    subject_name = StringField('Subject Name', validators=[DataRequired(), Length(max=255)])
-    subject_units = StringField('Subject Units', validators=[DataRequired(), Length(max=255)])
-    subject_description = StringField('Subject Description', validators=[Length(max=255)])
-    submit = SubmitField('Add Subject')
-
-
-class SectionForm(FlaskForm):
-    section_range = StringField('Section Name or Range (e.g., A or A-F)', validators=[DataRequired()])
-    submit = SubmitField('Add Section(s)')
-
-
-class EditSectionForm(FlaskForm):
-    section_name = StringField('Section Name', validators=[DataRequired(), Length(max=255)])
+class EditCourseForm(FlaskForm):
+    name = StringField('Course Name', validators=[DataRequired()])
+    code = StringField('Course Code', validators=[DataRequired()])
+    units = IntegerField('Course Units', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Submit')
+
+
+class ProgramYearLevelSemesterCourseForm(FlaskForm):
+    program = SelectField('Program', coerce=int, validators=[DataRequired()])
+    year_level = SelectField('Year Level', coerce=int, validators=[DataRequired()])
+    semester = SelectField('Semester', coerce=int, validators=[DataRequired()])
+    submit = SubmitField('Add Details')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.program.choices = self.get_choices(Program, 'program_name')
+        self.year_level.choices = self.get_choices(YearLevel, 'level_name')
+        self.semester.choices = self.get_choices(Semester, 'semester_name')
+
+    @staticmethod
+    def get_choices(model, attribute):
+        choices = []
+        for item in model.query.all():
+            if model.__name__ == 'YearLevel':
+                choice = (item.id, item.level_name.name)  # Assuming `level_name` is an enum
+            elif model.__name__ == 'Semester':
+                choice = (item.id, item.semester_name.name)  # Assuming `semester_name` is an enum
+            elif model.__name__ == 'Section':
+                choice = (item.id, item.section_name.name)  # Assuming `section_name` is an enum
+            else:
+                choice = (item.id, getattr(item, attribute))
+            choices.append(choice)
+        return choices

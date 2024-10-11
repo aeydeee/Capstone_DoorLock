@@ -1,5 +1,10 @@
 {% extends 'base.html' %}
 
+{% block title_block %}
+    Add Course
+{% endblock %}
+
+
 {% block content %}
 
     {% for message in get_flashed_messages(with_categories=true) %}
@@ -15,14 +20,23 @@
     </div>
     {% endfor %}
 
-    <h1>Edit Subject!</h1>
+    <h1>Add Course!</h1>
     <br/><br>
 
-    <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
-        <form method="POST" action="">
+    <div class="shadow-lg p-3 mb-5 rounded">
+        <form action="" method="post">
             {{ form.hidden_tag() }}
 
 
+            <div class="form-group">
+                {{ form.code.label(class="form-label") }}
+                {{ form.code(class="form-control") }}
+                {% for error in form.code.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <br/>
+            <br/>
             <div class="form-group">
                 {{ form.name.label(class="form-label") }}
                 {{ form.name(class="form-control") }}
@@ -31,13 +45,6 @@
                 {% endfor %}
             </div>
             <br/>
-            <div class="form-group">
-                {{ form.code.label(class="form-label") }}
-                {{ form.code(class="form-control") }}
-                {% for error in form.code.errors %}
-                    <span class="text-danger">{{ error }}</span>
-                {% endfor %}
-            </div>
             <br/>
             <div class="form-group">
                 {{ form.units.label(class="form-label") }}
@@ -47,9 +54,12 @@
                 {% endfor %}
             </div>
             <br/>
-
-            {{ form.submit(class="btn btn-primary") }}
-            <a href="{{ url_for('subject.subject_lists') }}" class="btn btn-secondary">Cancel</a>
+            <br/>
+            <br/>
+            <div class="form-group">
+                {{ form.submit(class="btn btn-secondary") }}
+                <a href="{{ url_for('course.manage_courses') }}" class="btn btn-secondary">Cancel</a>
+            </div>
         </form>
     </div>
 {% endblock %}

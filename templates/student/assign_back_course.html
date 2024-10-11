@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title_block %}
-    Assign Back Subjects
+    Assign Back Courses
 {% endblock %}
 
 {% block extra_styles %}
@@ -29,8 +29,8 @@
     {% endfor %}
 
     <div class="container mt-5">
-        <h1>Manual Assign Subject to Student</h1>
-        <form method="POST" action="{{ url_for('student.assign_back_subject') }}">
+        <h1>Manual Assign Course to Student</h1>
+        <form method="POST" action="{{ url_for('student.assign_back_course') }}">
             {{ form.hidden_tag() }}
 
             <div class="form-group">

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title_block %}
+    Edit {{ program_type.replace('_', ' ').title() }}
+{% endblock %}
+
+{% block content %}
+    <h1>Edit {{ program_type.replace('_', ' ').title() }}</h1>
+
+    <form method="POST" action="">
+        {{ form.hidden_tag() }}
+        {% if program_type == 'program' %}
+            <div class="form-group">
+                {{ form.program_name.label(class="form-control-label") }}
+                {{ form.program_name(class="form-control") }}
+                {% for error in form.program_name.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <br>
+            <div class="form-group">
+                {{ form.program_code.label(class="form-control-label") }}
+                {{ form.program_code(class="form-control") }}
+                {% for error in form.program_code.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+        {% elif program_type == 'year_level' %}
+            <div class="form-group">
+                {{ form.level_name.label(class="form-control-label") }}
+                {{ form.level_name(class="form-control") }}
+                {% for error in form.level_name.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% elif program_type == 'semester' %}
+            <div class="form-group">
+                {{ form.semester_name.label(class="form-control-label") }}
+                {{ form.semester_name(class="form-control") }}
+                {% for error in form.semester_name.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <br>
+        {{ form.submit(class="btn btn-primary") }}
+        <a href="{{ url_for('program.manage_program') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+{% endblock %}

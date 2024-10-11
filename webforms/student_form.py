@@ -2,7 +2,7 @@ from flask_login import current_user
 
 from wtforms.validators import ValidationError
 
-from models import YearLevel, Section, Course, Semester, User, Student, DayOfWeek
+from models import YearLevel, Section, Program, Semester, User, Student, DayOfWeek
 from webforms.faculty_form import current_year
 from webforms.validators import contact_num_length, strong_password
 
@@ -133,13 +133,13 @@ class StudentForm(FlaskForm):
     # tertiary_school_addr_text = HiddenField('Tertiary School Address Text', validators=[Length(max=255)],
     #                                         filters=[none_to_empty_string])
     # tertiary_year_grad = IntegerField('Tertiary Year Graduated', validators=[NumberRange(min=1900, max=current_year)])
-    # tertiary_course = StringField('Tertiary School Course', validators=[Length(max=255)],
+    # tertiary_program = StringField('Tertiary School Program', validators=[Length(max=255)],
     #                               filters=[none_to_empty_string])
 
     student_number = StringField('School ID', validators=[DataRequired(), Length(max=100)],
                                  filters=[none_to_empty_string])
 
-    course_id = SelectField('Course', coerce=int, validators=[DataRequired()], filters=[none_to_empty_string])
+    program_id = SelectField('Program', coerce=int, validators=[DataRequired()], filters=[none_to_empty_string])
     section_id = SelectField('Section', coerce=int, validators=[DataRequired()], filters=[none_to_empty_string])
     year_level_id = SelectField('Year Level', coerce=int, validators=[DataRequired()], filters=[none_to_empty_string])
     semester_id = SelectField('Semester', coerce=int, validators=[DataRequired()], filters=[none_to_empty_string])
@@ -263,7 +263,7 @@ class EditStudentForm(FlaskForm):
     # tertiary_school_name = StringField('Tertiary School Name', validators=[Length(max=255)])
     # tertiary_school_addr_text = HiddenField('Tertiary School Address Text', validators=[Length(max=255)])
     # tertiary_year_grad = IntegerField('Tertiary Year Graduated', validators=[NumberRange(min=1900, max=current_year)])
-    # tertiary_course = StringField('Tertiary School Course', validators=[Length(max=255)])
+    # tertiary_program = StringField('Tertiary School Program', validators=[Length(max=255)])
 
     # Student
     student_number = StringField('School ID', validators=[DataRequired(), Length(max=100)])
@@ -273,8 +273,8 @@ class EditStudentForm(FlaskForm):
     # ])
     # password_2 = PasswordField('Confirm Password', validators=[Optional(), strong_password])
 
-    # Course and Year
-    course_id = SelectField('Course', coerce=coerce_int_or_none, validators=[DataRequired()])
+    # Program and Year
+    program_id = SelectField('Program', coerce=coerce_int_or_none, validators=[DataRequired()])
     section_id = SelectField('Section', coerce=coerce_int_or_none, validators=[DataRequired()])
     year_level_id = SelectField('Year Level', coerce=coerce_int_or_none, validators=[DataRequired()])
     semester_id = SelectField('Semester', coerce=coerce_int_or_none, validators=[DataRequired()])
@@ -289,7 +289,7 @@ class EditStudentForm(FlaskForm):
 
     def __init__(self, *args, **kwargs):
         super(EditStudentForm, self).__init__(*args, **kwargs)
-        self.course_id.choices = [(0, 'Please select a course')] + [(c.id, c.course_name) for c in Course.query.all()]
+        self.program_id.choices = [(0, 'Please select a program')] + [(c.id, c.program_name) for c in Program.query.all()]
         self.section_id.choices = [(0, 'Please select a section')] + [(s.id, s.section_name) for s in
                                                                       Section.query.all()]
         self.year_level_id.choices = [(0, 'Please select a year level')] + [(yl.id, yl.display_name) for yl in
@@ -301,9 +301,9 @@ class EditStudentForm(FlaskForm):
         # else:
         #     self.password.flags.hidden = False  # Show the password field if no password_hash
 
-    def validate_course_id(self, field):
+    def validate_program_id(self, field):
         if field.data == 0:
-            raise ValidationError('Please select a valid course.')
+            raise ValidationError('Please select a valid program.')
 
     def validate_section_id(self, field):
         if field.data == 0:
@@ -324,10 +324,10 @@ class EditStudentForm(FlaskForm):
             raise ValidationError('Email must be an @my.cspc.edu.ph address.')
 
 
-class AssignBackSubjectForm(FlaskForm):
+class AssignBackCourseForm(FlaskForm):
     student_id = SelectField('Student', coerce=int, choices=[(0, 'Please select...')])
     faculty_id = SelectField('Faculty', coerce=int, choices=[(0, 'Please select...')])
-    schedule_id = SelectField('Subject Schedule', coerce=str, choices=[])  # The dynamically loaded field
+    schedule_id = SelectField('Course Schedule', coerce=str, choices=[])  # The dynamically loaded field
     submit = SubmitField('Assign')
 
     def validate_student_id(self, field):

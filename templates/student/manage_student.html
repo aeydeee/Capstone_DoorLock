@@ -11,7 +11,7 @@
 
 {% block extra_scripts %}
 
-    <script defer src="{{ url_for('static', filename='js/manage_student_subject.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/manage_student_course.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/manage_student.js') }}"></script>
 
     <script defer src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -58,10 +58,10 @@
         <div class="btn-group" role="group" aria-label="Manage Actions">
             {% include 'upload.html' %}
             <a href="{{ url_for('student.assign_students') }}" class="btn btn-outline-primary">
-                <i class="fas fa-tasks"></i> Auto Assign Subjects
+                <i class="fas fa-tasks"></i> Auto Assign Courses
             </a>
-            <a href="{{ url_for('student.assign_back_subject') }}" class="btn btn-outline-primary">
-                <i class="fa-solid fa-book"></i> Manual Assign Subjects
+            <a href="{{ url_for('student.assign_back_course') }}" class="btn btn-outline-primary">
+                <i class="fa-solid fa-book"></i> Manual Assign Courses
             </a>
         </div>
 
@@ -84,7 +84,7 @@
     {##}
 
 
-    <form method="POST" action="{{ url_for('student.assign_students_to_subject') }}">
+    <form method="POST" action="{{ url_for('student.assign_students_to_course') }}">
         {{ assign_form.hidden_tag() }}
         <table class="table table-hover" id="manage_student">
             <thead>
@@ -96,7 +96,7 @@
                 <th>First Name</th>
                 <th>Middle Name</th>
                 <th>Email</th>
-                <th>Course & Section</th>
+                <th>Program & Section</th>
                 <th>Actions</th>
             </tr>
             </thead>
@@ -111,11 +111,11 @@
                     <td>{{ student.user.f_name|title }}</td>
                     <td>{{ student.user.m_name|title }}</td>
                     <td>{{ student.user.email|lower }}</td>
-                    <td>{{ student.course_section|upper }}</td>
+                    <td>{{ student.program_section|upper }}</td>
                     <td>
-                        <a href="{{ url_for('student.manage_students_schedule_subjects', student_id=student.id) }}"
+                        <a href="{{ url_for('student.manage_students_schedule_courses', student_id=student.id) }}"
                            class="btn btn-sm view-button"
-                           data-tooltip="View Subjects">
+                           data-tooltip="View Courses">
                             <img src="/static/images/icons/view.png" alt="Eye Icon" class="icon-small">
                         </a>
                         <a href="{{ url_for('student.edit_student', id=student.id) }}"

@@ -57,21 +57,21 @@
                 </a>
             </li>
 
-            <li class="nav-item {% if request.path == url_for('course.manage_course') %}active{% endif %}">
+            <li class="nav-item {% if request.path == url_for('program.manage_program') %}active{% endif %}">
+                <a href="{{ url_for('program.manage_program') }}">
+                    <i class='bx bxs-school'></i> Manage Program
+                </a>
+            </li>
+
+            <li class="nav-item {% if request.path ==  url_for('course.manage_course') %}active{% endif %}">
                 <a href="{{ url_for('course.manage_course') }}">
-                    <i class='bx bxs-school'></i> Manage Course
+                    <i class='bx bx-book-content'></i> Manage Courses
                 </a>
             </li>
 
-            <li class="nav-item {% if request.path ==  url_for('subject.manage_sub') %}active{% endif %}">
-                <a href="{{ url_for('subject.manage_sub') }}">
-                    <i class='bx bx-book-content'></i> Manage Subjects
-                </a>
-            </li>
-
-            <li class="nav-item {% if request.path == url_for('subject.subject_lists') %}active{% endif %}">
-                <a href="{{ url_for('subject.subject_lists') }}">
-                    <i class='bx bx-book'></i> Subject Lists
+            <li class="nav-item {% if request.path == url_for('course.course_lists') %}active{% endif %}">
+                <a href="{{ url_for('course.course_lists') }}">
+                    <i class='bx bx-book'></i> Course Lists
                 </a>
             </li>
 
@@ -106,7 +106,7 @@
             </li>
             <li class="nav-item {% if request.path == url_for('attendance.view_attendance') %}active{% endif %}">
                 <a href="{{ url_for('attendance.view_attendance') }}">
-                    <i class='bx bxl-blogger'></i> Attendances
+                    <i class='bx bxl-blogger'></i> Attendance
                 </a>
             </li>
         </ul>

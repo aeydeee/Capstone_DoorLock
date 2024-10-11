@@ -23,8 +23,8 @@ from werkzeug.utils import secure_filename
 
 from app import db
 from decorators import cspc_acc_required, faculty_required, own_faculty_account_required, check_totp_verified
-from models import Faculty, User, Student, Attendance, Schedule, Subject, \
-    student_subject_association, faculty_subject_association, Section, FacultySubjectSchedule, Course, YearLevel, \
+from models import Faculty, User, Student, Attendance, Schedule, Course, \
+    student_course_association, faculty_course_association, Section, FacultyCourseSchedule, Program, YearLevel, \
     Semester
 from webforms.attendance_form import SelectScheduleForm
 from webforms.delete_form import DeleteForm
@@ -40,11 +40,11 @@ def export_csv(attendances):
     attendance_data = [{
         'Student Name': attendance.student_name,
         'Student ID': attendance.student_number,
-        'Course Code': attendance.course_code,
+        'Program Code': attendance.program_code,
         'Year Level': attendance.level_code,
         'Section': attendance.section,
         'Semester': attendance.semester,
-        'Subject': attendance.subject_name,
+        'Course': attendance.course_name,
         'Faculty': attendance.faculty_name,
         'Time In': attendance.time_in.strftime("%Y-%m-%d %H:%M:%S") if attendance.time_in else '',
         'Time Out': attendance.time_out.strftime("%Y-%m-%d %H:%M:%S") if attendance.time_out else '',
@@ -146,7 +146,7 @@ def export_pdf(attendances, selected_columns, start_date=None, end_date=None):
     styles = getSampleStyleSheet()
     elements = []
     elements.append(Spacer(1, 30))  # Spacer to push the title down
-    title = Paragraph("<b>ATTENDANCE RECORD LOGS</b>", styles['Title'])
+    title = Paragraph("<b>ATTENDANCE RECORDS LOGS</b>", styles['Title'])
     title.hAlign = 'CENTER'
     elements.append(title)
     elements.append(Spacer(1, 10))
@@ -155,9 +155,9 @@ def export_pdf(attendances, selected_columns, start_date=None, end_date=None):
     column_mapping = {
         'student_name': 'Student Name',
         'student_number': 'Student ID',
-        'subject': 'Subject',
+        'course': 'Course',
         'date': 'Date',
-        'course_section': 'Course & Section',
+        'program_section': 'Program & Section',
         'semester': 'Semester',
         'time_in': 'Time In',
         'time_out': 'Time Out',
@@ -175,14 +175,14 @@ def export_pdf(attendances, selected_columns, start_date=None, end_date=None):
             row.append(Paragraph(attendance.student_name.title(), styles['Normal']))
         if 'student_number' in selected_columns:
             row.append(Paragraph(attendance.student_number.title(), styles['Normal']))
-        if 'subject' in selected_columns:
-            row.append(Paragraph(attendance.subject_name.title(), styles['Normal']))
+        if 'course' in selected_columns:
+            row.append(Paragraph(attendance.course_name.title(), styles['Normal']))
         if 'date' in selected_columns:
             row.append(
                 Paragraph(attendance.time_in.strftime('%m-%d-%Y') if attendance.time_in else '', styles['Normal']))
-        if 'course_section' in selected_columns:
+        if 'program_section' in selected_columns:
             row.append(Paragraph(
-                f'{attendance.course_code.upper()} {attendance.level_code}{attendance.section.upper() if attendance.section else ""}',
+                f'{attendance.program_code.upper()} {attendance.level_code}{attendance.section.upper() if attendance.section else ""}',
                 styles['Normal']))
         if 'semester' in selected_columns:
             row.append(Paragraph(attendance.semester, styles['Normal']))
@@ -200,9 +200,9 @@ def export_pdf(attendances, selected_columns, start_date=None, end_date=None):
     column_widths = {
         'student_name': 180,
         'student_number': 65,
-        'subject': 120,
+        'course': 120,
         'date': 70,
-        'course_section': 100,
+        'program_section': 100,
         'semester': 90,
         'time_in': 65,  # Specific width for Time In
         'time_out': 65,  # Specific width for Time Out
@@ -245,10 +245,10 @@ def export_pdf(attendances, selected_columns, start_date=None, end_date=None):
 def view_students():
     # Query all students joined with necessary tables and filtered by faculty_id
     students = Student.query.join(User, Student.user_id == User.id).join(
-        student_subject_association, Student.id == student_subject_association.c.student_id
-    ).join(Subject, student_subject_association.c.subject_id == Subject.id).join(
-        faculty_subject_association, Subject.id == faculty_subject_association.c.subject_id
-    ).join(Faculty, faculty_subject_association.c.faculty_id == Faculty.id).filter(
+        student_course_association, Student.id == student_course_association.c.student_id
+    ).join(Course, student_course_association.c.course_id == Course.id).join(
+        faculty_course_association, Course.id == faculty_course_association.c.course_id
+    ).join(Faculty, faculty_course_association.c.faculty_id == Faculty.id).filter(
         Faculty.id == current_user.faculty_details.id
     ).all()
 
@@ -284,16 +284,16 @@ def view_attendance():
 
     # Ensure selected_columns is a list and not empty
     if not selected_columns:
-        selected_columns = ['student_name', 'student_number', 'subject', 'date', 'course_section', 'semester',
+        selected_columns = ['student_name', 'student_number', 'course', 'date', 'program_section', 'semester',
                             'time_in', 'time_out',
                             'status']  # default columns
 
     faculty = Faculty.query.filter_by(user_id=current_user.id).first()
-    subjects = faculty.subjects
+    courses = faculty.courses
 
-    # Get student IDs for subjects taught by this faculty
-    student_ids = db.session.query(Student.id).join(student_subject_association).filter(
-        student_subject_association.c.subject_id.in_([subject.id for subject in subjects])
+    # Get student IDs for courses taught by this faculty
+    student_ids = db.session.query(Student.id).join(student_course_association).filter(
+        student_course_association.c.course_id.in_([course.id for course in courses])
     ).distinct().all()
     student_ids = [student_id[0] for student_id in student_ids]
 
@@ -486,19 +486,19 @@ def view_schedule(faculty_id):
     faculty = Faculty.query.get_or_404(faculty_id)
 
     # Query schedules joined with necessary tables and filtered by faculty_id
-    schedules = Schedule.query.join(Subject, Schedule.subject_id == Subject.id) \
-        .join(FacultySubjectSchedule, Schedule.id == FacultySubjectSchedule.schedule_id) \
-        .join(Faculty, FacultySubjectSchedule.faculty_id == Faculty.id) \
-        .join(Course, FacultySubjectSchedule.course_id == Course.id) \
-        .join(YearLevel, FacultySubjectSchedule.year_level_id == YearLevel.id) \
-        .join(Section, FacultySubjectSchedule.section_id == Section.id) \
-        .join(Semester, FacultySubjectSchedule.semester_id == Semester.id) \
+    schedules = Schedule.query.join(Course, Schedule.course_id == Course.id) \
+        .join(FacultyCourseSchedule, Schedule.id == FacultyCourseSchedule.schedule_id) \
+        .join(Faculty, FacultyCourseSchedule.faculty_id == Faculty.id) \
+        .join(Program, FacultyCourseSchedule.program_id == Program.id) \
+        .join(YearLevel, FacultyCourseSchedule.year_level_id == YearLevel.id) \
+        .join(Section, FacultyCourseSchedule.section_id == Section.id) \
+        .join(Semester, FacultyCourseSchedule.semester_id == Semester.id) \
         .filter(Faculty.id == faculty_id).all()
 
     # Format start and end times to 12-hour format and remove SemesterEnum prefix
     for sched in schedules:
         sched.formatted_start_time = datetime.strptime(str(sched.start_time), "%H:%M:%S").strftime("%I:%M %p")
         sched.formatted_end_time = datetime.strptime(str(sched.end_time), "%H:%M:%S").strftime("%I:%M %p")
-        sched.formatted_semester_name = str(sched.faculty_subject_schedules[0].semester.display_name)
+        sched.formatted_semester_name = str(sched.faculty_course_schedules[0].semester.display_name)
 
     return render_template('faculty_acc/view_schedule.html', faculty=faculty, schedules=schedules)

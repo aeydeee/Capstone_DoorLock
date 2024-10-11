@@ -107,8 +107,8 @@
                                     </div>
                                     <div class="form-check form-switch mb-3">
                                         <input class="form-check-input column-checkbox" type="checkbox" name="columns"
-                                               value="subject" id="columnSubject" checked>
-                                        <label class="form-check-label" for="columnSubject">Subject</label>
+                                               value="course" id="columnCourse" checked>
+                                        <label class="form-check-label" for="columnCourse">Course</label>
                                     </div>
                                     <div class="form-check form-switch mb-3">
                                         <input class="form-check-input column-checkbox" type="checkbox" name="columns"
@@ -118,8 +118,8 @@
                                     </div>
                                     <div class="form-check form-switch mb-3">
                                         <input class="form-check-input column-checkbox" type="checkbox" name="columns"
-                                               value="course_section" id="columnCourseSection" checked>
-                                        <label class="form-check-label" for="columnCourseSection">Course &
+                                               value="program_section" id="columnProgramSection" checked>
+                                        <label class="form-check-label" for="columnProgramSection">Program &
                                             Section</label>
                                     </div>
                                 </div>
@@ -220,8 +220,8 @@
             <th>Date</th>
             <th>Student Name</th>
             <th>Student ID</th>
-            <th>Subject</th>
-            <th>Course & Section</th>
+            <th>Course</th>
+            <th>Program & Section</th>
             <th>Semester</th>
             <th>Time in</th>
             <th>Time out</th>
@@ -236,8 +236,8 @@
                <td>{{ attendance.time_in.strftime('%b. %d, %Y') if attendance.time_in else 'N/A' }}</td>
                 <td>{{ attendance.student.full_name | title }}</td>
                 <td>{{ attendance.student.student_number | title }}</td>
-                <td>{{ attendance.subject.subject_name |title }}</td>
-                <td>{{ attendance.course_code | upper }}
+                <td>{{ attendance.course.course_name |title }}</td>
+                <td>{{ attendance.program_code | upper }}
                     {{ attendance.level_code }}{{ attendance.section | upper }}</td>
                 <td>{{ attendance.semester }}</td>
                 <td>{{ attendance.time_in.strftime('%I:%M %p') if attendance.time_in else '' }}</td>

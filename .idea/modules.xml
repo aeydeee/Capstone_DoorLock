@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/nwe_door_lock.iml" filepath="$PROJECT_DIR$/.idea/nwe_door_lock.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/Capstone_DoorLock.iml" filepath="$PROJECT_DIR$/.idea/Capstone_DoorLock.iml" />
     </modules>
   </component>
 </project>

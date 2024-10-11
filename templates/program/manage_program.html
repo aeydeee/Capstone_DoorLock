@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title_block %}
+    Manage Programs
+{% endblock %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/manage_program.css') }}">
+{% endblock %}
+
+{% block extra_scripts %}
+    <script defer src="{{ url_for('static', filename='js/manage_program.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+    {% for message in get_flashed_messages(with_categories=true) %}
+        {% if message[0] == 'success' %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {% elif message[0] == 'error' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {% else %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {% endif %}
+    {{ message[1] }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+
+    <div class="d-flex justify-content-between align-items-center">
+        <h1>Manage Program</h1>
+        <a href=""
+           class="btn btn-primary d-flex align-items-center" type="button"
+           data-bs-toggle="modal" data-bs-target="#addProgramModal">
+            <i class='bx bx-add-to-queue'></i>
+            <span class="ms-2">Add Program</span>
+        </a>
+    </div>
+
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="modal fade" id="addProgramModal" tabindex="-1" aria-labelledby="addProgramModalLabel"
+                     aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="addProgramModalLabel">Add Program</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form method="POST" action="{{ url_for('program.manage_program') }}">
+                                    {{ program_form.hidden_tag() }}
+                                    <div class="form-group">
+                                        {{ program_form.program_name.label(class="form-control-label") }}
+                                        {{ program_form.program_name(class="form-control") }}
+                                        {% for error in program_form.program_name.errors %}
+                                            <div class="text-danger">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="form-group">
+                                        {{ program_form.program_code.label(class="form-control-label") }}
+                                        {{ program_form.program_code(class="form-control") }}
+                                        {% for error in program_form.program_code.errors %}
+                                            <div class="text-danger">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                    <br>
+                                    {{ program_form.submit(class="btn btn-primary") }}
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="">
+            <table class="table table-bordered" id="manage_program">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Program Name</th>
+                    <th>Program Code</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for program in programs %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ program.program_name | title }}</td>
+                        <td>{{ program.program_code | upper or 'N/A' }}</td>
+                        <td>
+
+                            <a href="{{ url_for('program.edit_program', program_type='program', program_id=program.id) }}"
+                               class="btn btn-sm btn-info">
+                                <img src="/static/images/icons/pencil-fill.svg" alt="Pencil Icon">
+                            </a>
+                            <a href="#" class="btn btn-sm btn-danger" data-bs-toggle="modal"
+                               data-bs-target="#deleteModalProgram{{ program.id }}">
+                                <img src="{{ url_for('static', filename='images/icons/trash-fill.svg') }}"
+                                     alt="Trash Icon">
+                            </a>
+                            <div class="modal fade" id="deleteModalProgram{{ program.id }}" tabindex="-1"
+                                 aria-labelledby="deleteModalLabelProgram{{ program.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deleteModalLabelProgram{{ program.id }}">Confirm
+                                                Delete</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            Are you sure you want to delete {{ program.program_name | title }}?
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                Cancel
+                                            </button>
+                                            <form method="POST"
+                                                  action="{{ url_for('program.delete_program', program_type='program', program_id=program.id) }}">
+                                                {{ delete_form.hidden_tag() }}
+                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

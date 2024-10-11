@@ -30,17 +30,17 @@
             </div>
             <br/>
 
-            <!-- Subject Selection -->
+            <!-- Course Selection -->
             <div class="form-group">
-                <label class="form-label">Subject</label>
-                <label for="subject_id"></label><select class="form-control" id="subject_id" name="subject_id">
-                {% for subject_id, subject_name in form.subject_id.choices %}
-                    <option value="{{ subject_id }}" {% if subject_id == schedule.subject_id %}selected{% endif %}>
-                        {{ subject_name | title }}
+                <label class="form-label">Course</label>
+                <label for="course_id"></label><select class="form-control" id="course_id" name="course_id">
+                {% for course_id, course_name in form.course_id.choices %}
+                    <option value="{{ course_id }}" {% if course_id == schedule.course_id %}selected{% endif %}>
+                        {{ course_name | title }}
                     </option>
                 {% endfor %}
             </select>
-                {% for error in form.subject_id.errors %}
+                {% for error in form.course_id.errors %}
                     <span class="text-danger">{{ error }}</span>
                 {% endfor %}
             </div>

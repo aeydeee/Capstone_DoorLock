@@ -13,7 +13,7 @@
         <th>Day</th>
         <th>Start Time</th>
         <th>End Time</th>
-        <th>Subject</th>
+        <th>Course</th>
         <th>Section</th>
     </tr>
     </thead>
@@ -23,7 +23,7 @@
             <td>{{ schedule_item.day.name }}</td>
             <td>{{ schedule_item.start_time }}</td>
             <td>{{ schedule_item.end_time }}</td>
-            <td>{{ schedule_item.subject.subject_name }}</td>
+            <td>{{ schedule_item.course.course_name }}</td>
             <td>{{ schedule_item.section.display_name }}</td>
         </tr>
     {% endfor %}

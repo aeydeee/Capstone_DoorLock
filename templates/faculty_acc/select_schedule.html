@@ -9,8 +9,8 @@
     <form method="POST" action="{{ url_for('faculty_acc.select_schedule') }}">
         {{ form.hidden_tag() }}
         <div>
-            {{ form.subject_id.label }}<br>
-            {{ form.subject_id(class_="form-control", onchange="fetchSchedules(this.value);") }}
+            {{ form.course_id.label }}<br>
+            {{ form.course_id(class_="form-control", onchange="fetchSchedules(this.value);") }}
         </div>
         <div>
             {{ form.schedule_id.label }}<br>
@@ -30,8 +30,8 @@
     </form>
 
     <script>
-        function fetchSchedules(subject_id) {
-            fetch(`/faculty_acc/get_schedules/${subject_id}`)
+        function fetchSchedules(course_id) {
+            fetch(`/faculty_acc/get_schedules/${course_id}`)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);

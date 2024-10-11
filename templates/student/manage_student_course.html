@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
 
 {% block title_block %}
-    Manage Student Subjects
+    Manage Student Courses
 {% endblock %}
 
 {% block extra_styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/manage_student_subject.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/manage_student_course.css') }}">
 {% endblock %}
 
 {% block extra_scripts %}
-    <script defer src="{{ url_for('static', filename='js/manage_student_subject.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/manage_student_course.js') }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -32,13 +32,13 @@
     </div>
 
     <div class="container mt-4">
-        <h1>Current Subjects of {{ student.full_name|title }}</h1>
-        <!-- Regular Subjects Table -->
-        <h2>Regular Subjects</h2>
-        <table class="table table-hover" id="manage_student_subject">
+        <h1>Current Courses of {{ student.full_name|title }}</h1>
+        <!-- Regular Courses Table -->
+        <h2>Regular Courses</h2>
+        <table class="table table-hover" id="manage_student_course">
             <thead>
             <tr>
-                <th>Subject</th>
+                <th>Course</th>
                 <th>Day</th>
                 <th>Start Time</th>
                 <th>End Time</th>
@@ -47,12 +47,12 @@
             </tr>
             </thead>
             <tbody>
-            {% for sub in regular_subjects %}
+            {% for sub in regular_courses %}
                 {% if sub.schedule_details_formatted %}
                     {% for schedule in sub.schedule_details_formatted %}
                         <tr>
                             {% if loop.first %}
-                                <td rowspan="{{ sub.schedule_details_formatted|length }}">{{ sub.subject_name | title }}</td>
+                                <td rowspan="{{ sub.schedule_details_formatted|length }}">{{ sub.course_name | title }}</td>
                             {% endif %}
                             <td>{{ schedule.day }}</td>
                             <td>{{ schedule.formatted_start_time }}</td>
@@ -61,23 +61,23 @@
                             {% if loop.first %}
                                 <td rowspan="{{ sub.schedule_details_formatted|length }}">
                                     <a href="#" class="btn btn-sm btn-danger" data-bs-toggle="modal"
-                                       data-bs-target="#deleteSubjectModal{{ sub.id }}">
+                                       data-bs-target="#deleteCourseModal{{ sub.id }}">
                                         <img src="{{ url_for('static', filename='images/icons/trash-fill.svg') }}"
                                              alt="Trash Icon">
                                     </a>
-                                    <!-- Delete Subject Modal -->
-                                    <div class="modal fade" id="deleteSubjectModal{{ sub.id }}" tabindex="-1"
-                                         aria-labelledby="deleteSubjectModalLabel{{ sub.id }}" aria-hidden="true">
+                                    <!-- Delete Course Modal -->
+                                    <div class="modal fade" id="deleteCourseModal{{ sub.id }}" tabindex="-1"
+                                         aria-labelledby="deleteCourseModalLabel{{ sub.id }}" aria-hidden="true">
                                         <div class="modal-dialog">
                                             <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <h5 class="modal-title" id="deleteSubjectModalLabel{{ sub.id }}">
+                                                    <h5 class="modal-title" id="deleteCourseModalLabel{{ sub.id }}">
                                                         Confirm Delete</h5>
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"
                                                             aria-label="Close"></button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    Are you sure you want to remove {{ sub.subject_name | title }}
+                                                    Are you sure you want to remove {{ sub.course_name | title }}
                                                     from {{ student.full_name }}?
                                                 </div>
                                                 <div class="modal-footer">
@@ -85,7 +85,7 @@
                                                             data-bs-dismiss="modal">Cancel
                                                     </button>
                                                     <form method="POST"
-                                                          action="{{ url_for('student.delete_student_subject', student_id=student.id, subject_id=sub.id) }}">
+                                                          action="{{ url_for('student.delete_student_course', student_id=student.id, course_id=sub.id) }}">
                                                         {{ delete_form.hidden_tag() }}
                                                         <button type="submit" class="btn btn-danger">Delete</button>
                                                     </form>
@@ -99,27 +99,27 @@
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td>{{ sub.subject_name | title }}</td>
+                        <td>{{ sub.course_name | title }}</td>
                         <td colspan="4">No schedule available</td>
                         <td>
                             <a href="#" class="btn btn-sm btn-danger" data-bs-toggle="modal"
-                               data-bs-target="#deleteSubjectModal{{ sub.id }}">
+                               data-bs-target="#deleteCourseModal{{ sub.id }}">
                                 <img src="{{ url_for('static', filename='images/icons/trash-fill.svg') }}"
                                      alt="Trash Icon">
                             </a>
-                            <!-- Delete Subject Modal -->
-                            <div class="modal fade" id="deleteSubjectModal{{ sub.id }}" tabindex="-1"
-                                 aria-labelledby="deleteSubjectModalLabel{{ sub.id }}" aria-hidden="true">
+                            <!-- Delete Course Modal -->
+                            <div class="modal fade" id="deleteCourseModal{{ sub.id }}" tabindex="-1"
+                                 aria-labelledby="deleteCourseModalLabel{{ sub.id }}" aria-hidden="true">
                                 <div class="modal-dialog">
                                     <div class="modal-content">
                                         <div class="modal-header">
-                                            <h5 class="modal-title" id="deleteSubjectModalLabel{{ sub.id }}">Confirm
+                                            <h5 class="modal-title" id="deleteCourseModalLabel{{ sub.id }}">Confirm
                                                 Delete</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal"
                                                     aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
-                                            Are you sure you want to remove {{ sub.subject_name | title }}
+                                            Are you sure you want to remove {{ sub.course_name | title }}
                                             from {{ student.full_name | title }}?
                                         </div>
                                         <div class="modal-footer">
@@ -127,7 +127,7 @@
                                                 Cancel
                                             </button>
                                             <form method="POST"
-                                                  action="{{ url_for('student.delete_student_subject', student_id=student.id, subject_id=sub.id) }}">
+                                                  action="{{ url_for('student.delete_student_course', student_id=student.id, course_id=sub.id) }}">
                                                 {{ delete_form.hidden_tag() }}
                                                 <button type="submit" class="btn btn-danger">Delete</button>
                                             </form>
@@ -142,12 +142,12 @@
             </tbody>
         </table>
 
-        <!-- Irregular Subjects Table -->
-        <h2>Irregular Subjects</h2>
+        <!-- Irregular Courses Table -->
+        <h2>Irregular Courses</h2>
         <table class="table table-hover">
             <thead>
             <tr>
-                <th>Subject</th>
+                <th>Course</th>
                 <th>Day</th>
                 <th>Start Time</th>
                 <th>End Time</th>
@@ -156,12 +156,12 @@
             </tr>
             </thead>
             <tbody>
-            {% for sub in irregular_subjects %}
+            {% for sub in irregular_courses %}
                 {% if sub.schedule_details_formatted %}
                     {% for schedule in sub.schedule_details_formatted %}
                         <tr>
                             {% if loop.first %}
-                                <td rowspan="{{ sub.schedule_details_formatted|length }}">{{ sub.subject_name | title }}</td>
+                                <td rowspan="{{ sub.schedule_details_formatted|length }}">{{ sub.course_name | title }}</td>
                             {% endif %}
                             <td>{{ schedule.day }}</td>
                             <td>{{ schedule.formatted_start_time }}</td>
@@ -170,25 +170,25 @@
                             {% if loop.first %}
                                 <td rowspan="{{ sub.schedule_details_formatted|length }}">
                                     <a href="#" class="btn btn-sm btn-danger" data-bs-toggle="modal"
-                                       data-bs-target="#deleteIrregularSubjectModal{{ sub.id }}">
+                                       data-bs-target="#deleteIrregularCourseModal{{ sub.id }}">
                                         <img src="{{ url_for('static', filename='images/icons/trash-fill.svg') }}"
                                              alt="Trash Icon">
                                     </a>
-                                    <!-- Delete Irregular Subject Modal -->
-                                    <div class="modal fade" id="deleteIrregularSubjectModal{{ sub.id }}" tabindex="-1"
-                                         aria-labelledby="deleteIrregularSubjectModalLabel{{ sub.id }}"
+                                    <!-- Delete Irregular Course Modal -->
+                                    <div class="modal fade" id="deleteIrregularCourseModal{{ sub.id }}" tabindex="-1"
+                                         aria-labelledby="deleteIrregularCourseModalLabel{{ sub.id }}"
                                          aria-hidden="true">
                                         <div class="modal-dialog">
                                             <div class="modal-content">
                                                 <div class="modal-header">
                                                     <h5 class="modal-title"
-                                                        id="deleteIrregularSubjectModalLabel{{ sub.id }}">
+                                                        id="deleteIrregularCourseModalLabel{{ sub.id }}">
                                                         Confirm Delete</h5>
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"
                                                             aria-label="Close"></button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    Are you sure you want to remove {{ sub.subject_name | title }}
+                                                    Are you sure you want to remove {{ sub.course_name | title }}
                                                     from {{ student.full_name | title }}?
                                                 </div>
                                                 <div class="modal-footer">
@@ -196,7 +196,7 @@
                                                             data-bs-dismiss="modal">Cancel
                                                     </button>
                                                     <form method="POST"
-                                                          action="{{ url_for('student.delete_student_subject', student_id=student.id, subject_id=sub.id) }}">
+                                                          action="{{ url_for('student.delete_student_course', student_id=student.id, course_id=sub.id) }}">
                                                         {{ delete_form.hidden_tag() }}
                                                         <button type="submit" class="btn btn-danger">Delete</button>
                                                     </form>
@@ -210,28 +210,28 @@
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td>{{ sub.subject_name | title }}</td>
+                        <td>{{ sub.course_name | title }}</td>
                         <td colspan="4">No schedule available</td>
                         <td>
                             <a href="#" class="btn btn-sm btn-danger" data-bs-toggle="modal"
-                               data-bs-target="#deleteIrregularSubjectModal{{ sub.id }}">
+                               data-bs-target="#deleteIrregularCourseModal{{ sub.id }}">
                                 <img src="{{ url_for('static', filename='images/icons/trash-fill.svg') }}"
                                      alt="Trash Icon">
                             </a>
-                            <!-- Delete Irregular Subject Modal -->
-                            <div class="modal fade" id="deleteIrregularSubjectModal{{ sub.id }}" tabindex="-1"
-                                 aria-labelledby="deleteIrregularSubjectModalLabel{{ sub.id }}" aria-hidden="true">
+                            <!-- Delete Irregular Course Modal -->
+                            <div class="modal fade" id="deleteIrregularCourseModal{{ sub.id }}" tabindex="-1"
+                                 aria-labelledby="deleteIrregularCourseModalLabel{{ sub.id }}" aria-hidden="true">
                                 <div class="modal-dialog">
                                     <div class="modal-content">
                                         <div class="modal-header">
-                                            <h5 class="modal-title" id="deleteIrregularSubjectModalLabel{{ sub.id }}">
+                                            <h5 class="modal-title" id="deleteIrregularCourseModalLabel{{ sub.id }}">
                                                 Confirm
                                                 Delete</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal"
                                                     aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
-                                            Are you sure you want to remove {{ sub.subject_name | title }}
+                                            Are you sure you want to remove {{ sub.course_name | title }}
                                             from {{ student.full_name | title }}?
                                         </div>
                                         <div class="modal-footer">
@@ -239,7 +239,7 @@
                                                 Cancel
                                             </button>
                                             <form method="POST"
-                                                  action="{{ url_for('student.delete_student_subject', student_id=student.id, subject_id=sub.id) }}">
+                                                  action="{{ url_for('student.delete_student_course', student_id=student.id, course_id=sub.id) }}">
                                                 {{ delete_form.hidden_tag() }}
                                                 <button type="submit" class="btn btn-danger">Delete</button>
                                             </form>

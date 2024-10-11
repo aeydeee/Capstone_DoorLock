@@ -1,4 +1,4 @@
-const table = new DataTable('#subject_details', {
+const table = new DataTable('#course_details', {
     columnDefs: [
         {
             searchable: true,

@@ -4,8 +4,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const csrfToken = document.getElementById('csrf_token').value;
 
     function format(d) {
-        let subjects = d.subjects.map(subj => `<li>${subj.code}: ${subj.name}</li>`).join('');
-        return ('<dl>' + '<dt>Full name:</dt>' + '<dd>' + d.full_name + '</dd>' + '<dt>Designation:</dt>' + '<dd>' + d.designation + '</dd>' + '<dt>Department:</dt>' + '<dd>' + d.faculty_department + '</dd>' + '<dt>Email:</dt>' + '<dd>' + d.email + '</dd>' + '<dt>Current Subjects Handled:</dt>' + '<dd><ul>' + subjects + '</ul></dd>' + '</dl>');
+        let courses = d.courses.map(subj => `<li>${subj.code}: ${subj.name}</li>`).join('');
+        return ('<dl>' + '<dt>Full name:</dt>' + '<dd>' + d.full_name + '</dd>' + '<dt>Designation:</dt>' + '<dd>' + d.designation + '</dd>' + '<dt>Department:</dt>' + '<dd>' + d.faculty_department + '</dd>' + '<dt>Email:</dt>' + '<dd>' + d.email + '</dd>' + '<dt>Current Courses Handled:</dt>' + '<dd><ul>' + courses + '</ul></dd>' + '</dl>');
     }
 
     const table = new DataTable('#manage_faculties', {

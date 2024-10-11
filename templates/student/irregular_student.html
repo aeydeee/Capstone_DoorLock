@@ -33,9 +33,9 @@
         <th scope="col">Last Name</th>
         <th scope="col">First Name</th>
         <th scope="col">Middle Name</th>
-        <th scope="col">Course & Section</th>
-        <th scope="col">Enrolled Subjects</th>
-        <th scope="col">Correct Subjects</th>
+        <th scope="col">Program & Section</th>
+        <th scope="col">Enrolled Courses</th>
+        <th scope="col">Correct Courses</th>
     </tr>
     </thead>
     <tbody>
@@ -45,20 +45,20 @@
             <td>{{ student.user.l_name | title }}</td>
             <td>{{ student.user.f_name | title }}</td>
             <td>{{ student.user.m_name | title }}</td>
-            <td>{{ student.course_section | upper }}</td>
+            <td>{{ student.program_section | upper }}</td>
             <td>
-                {% for subject in student.subjects %}
-                    <span class="badge bg-info text-dark fs-6">{{ subject.subject_name | title }}</span><br>
+                {% for course in student.courses %}
+                    <span class="badge bg-info text-dark fs-6">{{ course.course_name | title }}</span><br>
                 {% endfor %}
             </td>
             <td>
-                {% if student.correct_subjects %}
-                    {% for subject in student.correct_subjects %}
-                        <span class="badge bg-success fs-6">{{ subject.subject_name | title }}</span><br>
+                {% if student.correct_courses %}
+                    {% for course in student.correct_courses %}
+                        <span class="badge bg-success fs-6">{{ course.course_name | title }}</span><br>
 
                     {% endfor %}
                 {% else %}
-                    <span class="text-danger">No subjects available</span>
+                    <span class="text-danger">No courses available</span>
                 {% endif %}
             </td>
 

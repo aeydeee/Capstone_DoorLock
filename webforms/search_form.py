@@ -4,7 +4,7 @@ from wtforms.fields.simple import StringField, SubmitField, HiddenField
 from wtforms.validators import Length, DataRequired
 from wtforms.widgets.core import Select
 
-from models import Subject, Faculty
+from models import Course, Faculty
 
 
 class SearchForm(FlaskForm):
@@ -20,15 +20,15 @@ class CustomSelect(Select):
 
 
 class AssignStudentForm(FlaskForm):
-    subject = SelectMultipleField('Subjects', coerce=int)
+    course = SelectMultipleField('Courses', coerce=int)
     submit = SubmitField('Assign')
 
     def __init__(self, *args, **kwargs):
         super(AssignStudentForm, self).__init__(*args, **kwargs)
-        self.subject.choices = [
-            (subject.id, f"{subject.subject_name} - {', '.join(faculty.full_name for faculty in subject.faculties)}")
-            # (subject.id, f"{subject.subject_name}")
-            for subject in Subject.query.all()
+        self.course.choices = [
+            (course.id, f"{course.course_name} - {', '.join(faculty.full_name for faculty in course.faculties)}")
+            # (program.id, f"{program.course_name}")
+            for course in Course.query.all()
         ]
 
 

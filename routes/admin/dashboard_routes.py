@@ -10,7 +10,7 @@ from werkzeug.utils import secure_filename
 
 from app import db
 from decorators import cspc_acc_required, admin_required
-from models import Faculty, Attendance, Student, User, Section, Semester, Course, YearLevel
+from models import Faculty, Attendance, Student, User, Section, Semester, Program, YearLevel
 from webforms.student_form import EditStudentForm
 
 dashboard_bp = Blueprint('dashboard', __name__)
@@ -59,4 +59,4 @@ def dashboard():
 
 # @dashboard_bp.route('/dashboard2')
 # def dashboard2():
-#     return render_template('manage_subjects.html')
+#     return render_template('manage_courses.html')

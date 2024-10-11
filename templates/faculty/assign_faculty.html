@@ -30,7 +30,7 @@
     <div class="container mt-5">
         <div class="card shadow">
             <div class="card-body">
-                <h2 class="card-title">Assign Faculty to Subjects</h2>
+                <h2 class="card-title">Assign Faculty to Courses</h2>
 
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
@@ -46,8 +46,8 @@
 
                 <form method="POST">
                     <div class="mb-3">
-                        <label for="selectSubjects" class="form-label">Select Faculties:</label>
-                        <select id="selectSubjects" name="states[]" multiple="multiple" required
+                        <label for="selectCourses" class="form-label">Select Faculties:</label>
+                        <select id="selectCourses" name="states[]" multiple="multiple" required
                                 class="faculties-multiple">
                             {% for value, label in assign_form.faculty.choices %}
                                 <option value="{{ value }}">{{ label }}</option>
@@ -56,17 +56,17 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="subjects" class="form-label">Select Subjects:</label>
-                        <select name="subject_ids" id="subjects" multiple class="form-select">
-                            {% for subject in subjects %}
-                                <option value="{{ subject.id }}">{{ subject.subject_name }}</option>
+                        <label for="courses" class="form-label">Select Courses:</label>
+                        <select name="course_ids" id="courses" multiple class="form-select">
+                            {% for course in courses %}
+                                <option value="{{ course.id }}">{{ course.course_name }}</option>
                             {% endfor %}
                         </select>
                     </div>
 
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">
-                            Assign Subjects
+                            Assign Courses
                         </button>
                     </div>
                 </form>

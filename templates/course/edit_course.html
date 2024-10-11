@@ -1,50 +1,55 @@
 {% extends 'base.html' %}
 
-{% block title_block %}
-    Edit {{ course_type.replace('_', ' ').title() }}
-{% endblock %}
-
 {% block content %}
-    <h1>Edit {{ course_type.replace('_', ' ').title() }}</h1>
 
-    <form method="POST" action="">
-        {{ form.hidden_tag() }}
-        {% if course_type == 'course' %}
-            <div class="form-group">
-                {{ form.course_name.label(class="form-control-label") }}
-                {{ form.course_name(class="form-control") }}
-                {% for error in form.course_name.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                {% endfor %}
-            </div>
-            <br>
-            <div class="form-group">
-                {{ form.course_code.label(class="form-control-label") }}
-                {{ form.course_code(class="form-control") }}
-                {% for error in form.course_code.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                {% endfor %}
-            </div>
-
-        {% elif course_type == 'year_level' %}
-            <div class="form-group">
-                {{ form.level_name.label(class="form-control-label") }}
-                {{ form.level_name(class="form-control") }}
-                {% for error in form.level_name.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                {% endfor %}
-            </div>
-        {% elif course_type == 'semester' %}
-            <div class="form-group">
-                {{ form.semester_name.label(class="form-control-label") }}
-                {{ form.semester_name(class="form-control") }}
-                {% for error in form.semester_name.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                {% endfor %}
-            </div>
+    {% for message in get_flashed_messages(with_categories=true) %}
+        {% if message[0] == 'success' %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {% elif message[0] == 'error' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {% else %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
         {% endif %}
-        <br>
-        {{ form.submit(class="btn btn-primary") }}
-        <a href="{{ url_for('course.manage_course') }}" class="btn btn-secondary">Cancel</a>
-    </form>
+    {{ message[1] }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+
+    <h1>Edit Course!</h1>
+    <br/><br>
+
+    <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+
+
+            <div class="form-group">
+                {{ form.name.label(class="form-label") }}
+                {{ form.name(class="form-control") }}
+                {% for error in form.name.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <br/>
+            <div class="form-group">
+                {{ form.code.label(class="form-label") }}
+                {{ form.code(class="form-control") }}
+                {% for error in form.code.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <br/>
+            <div class="form-group">
+                {{ form.units.label(class="form-label") }}
+                {{ form.units(class="form-control") }}
+                {% for error in form.units.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <br/>
+
+            {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('program.course_lists') }}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
 {% endblock %}

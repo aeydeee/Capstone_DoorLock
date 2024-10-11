@@ -51,8 +51,8 @@ def create_app():
     migrate = Migrate(app, db)
     mail = Mail(app)
 
-    from models import User, Attendance, Schedule, FacultySubjectSchedule, Faculty, Subject, Course, YearLevel, Section, \
-        Semester, FacultySession, ReportLog, student_subject_association, delete_null_status_logs, \
+    from models import User, Attendance, Schedule, FacultyCourseSchedule, Faculty, Course, Program, YearLevel, Section, \
+        Semester, FacultySession, ReportLog, student_course_association, delete_null_status_logs, \
         delete_old_faculty_sessions
     from flask import request
     from datetime import datetime, timedelta
@@ -79,7 +79,7 @@ def create_app():
     scheduler.add_job(func=lambda: delete_old_faculty_sessions(app), trigger="interval", hours=24)
 
     # Schedule full backups at the end of the day (midnight)
-    scheduler.add_job(func=lambda: trigger_full_backup_job(app), trigger="cron", hour=23, minute=59)
+    scheduler.add_job(func=lambda: trigger_full_backup_job(app), trigger="cron", hour=17, minute=4)
 
     scheduler.start()
 
@@ -366,9 +366,9 @@ def create_app():
                         print(f"Current day: {current_day}")
 
                         # Fetch the latest schedule for the current day
-                        user_schedule = Schedule.query.join(FacultySubjectSchedule,
-                                                            FacultySubjectSchedule.schedule_id == Schedule.id).filter(
-                            FacultySubjectSchedule.faculty_id == user.faculty_details.id,
+                        user_schedule = Schedule.query.join(FacultyCourseSchedule,
+                                                            FacultyCourseSchedule.schedule_id == Schedule.id).filter(
+                            FacultyCourseSchedule.faculty_id == user.faculty_details.id,
                             Schedule.start_time <= current_time, Schedule.day == current_day).order_by(
                             desc(Schedule.start_time)).first()  # Fetch only the latest schedule
 
@@ -380,7 +380,7 @@ def create_app():
 
                                 user_schedule = user_schedule
                                 print(
-                                    f"Schedule found: {user_schedule.subject.subject_name} for {user_schedule.section.display_name}")
+                                    f"Schedule found: {user_schedule.course.course_name} for {user_schedule.section.display_name}")
                                 print(f"Scheduled day: {user_schedule.day}")
                                 print(f"Scheduled start time: {user_schedule.start_time}")
                                 print(f"Scheduled end time: {user_schedule.end_time}")
@@ -458,7 +458,7 @@ def create_app():
                                             faculty_id=user.faculty_details.id,
                                             authenticated_time=datetime.now(timezone),
                                             schedule_id=user_schedule.id,
-                                            subject_id=user_schedule.subject_id,
+                                            course_id=user_schedule.course_id,
                                             section_id=user_schedule.section_id,
                                             active=True
                                         )
@@ -479,7 +479,7 @@ def create_app():
 
                                         if unlock_status == 'success':
                                             display_message(
-                                                f"Door unlocked at {formatted_time} for {user_schedule.subject.subject_name.title()} Scheduled at {user_schedule.start_time}",
+                                                f"Door unlocked at {formatted_time} for {user_schedule.course.course_name.title()} Scheduled at {user_schedule.start_time}",
                                                 "unlock")
                                             response_data = {'status': 'faculty_authenticated', 'email': user.email}
                                             response_status = 200
@@ -625,18 +625,18 @@ def create_app():
                                 # Continue the logic
 
                                 schedule_id = faculty_session.schedule_id
-                                subject_id = faculty_session.subject_id
+                                course_id = faculty_session.course_id
                                 section_id = faculty_session.section_id
-                                # Verify the student is associated with the subject and schedule (regular or irregular)
-                                enrolled_in_subject = db.session.query(student_subject_association).filter_by(
+                                # Verify the student is associated with the program and schedule (regular or irregular)
+                                enrolled_in_course = db.session.query(student_course_association).filter_by(
                                     student_id=user.student_details.id,
-                                    subject_id=subject_id,
+                                    course_id=course_id,
                                     schedule_id=schedule_id,
 
                                 ).first()
 
-                                if not enrolled_in_subject:
-                                    print("Student is not authorized for this subject or schedule")
+                                if not enrolled_in_course:
+                                    print("Student is not authorized for this program or schedule")
                                     display_message("Unauthorized access", "lock")
 
                                     lock_response = lock()
@@ -665,13 +665,13 @@ def create_app():
                                     current_schedule = Schedule.query.filter_by(id=faculty_session.schedule_id).first()
                                     attendance = Attendance.query.filter_by(
                                         student_id=user.student_details.id,
-                                        subject_id=subject_id
+                                        course_id=course_id
                                     ).filter(db.func.date(Attendance.time_in) == today).first()
 
-                                    subject = Subject.query.filter_by(id=subject_id).first()
+                                    course = Course.query.filter_by(id=course_id).first()
                                     student = user.student_details  # Assuming this already includes student details
                                     student_number = student.student_number  # Assuming this already includes student details
-                                    course_code = student.course.course_code  # Assuming course relationship exists
+                                    program_code = student.program.program_code  # Assuming program relationship exists
                                     level_code = student.year_level.level_code  # Assuming level relationship exists
                                     section = student.section.display_name  # Assuming section relationship exists
                                     semester = student.semester.display_name  # Assuming semester relationship exists
@@ -725,11 +725,11 @@ def create_app():
                                                 attendance = Attendance(
                                                     time_in=datetime.now(timezone),
                                                     student_id=user.student_details.id,
-                                                    subject_id=subject_id,
-                                                    subject_name=subject.subject_name,
+                                                    course_id=course_id,
+                                                    course_name=course.course_name,
                                                     student_name=f"{student.user.f_name} {student.user.m_name} {student.user.l_name}",
                                                     student_number=student_number,
-                                                    course_code=course_code,
+                                                    program_code=program_code,
                                                     level_code=level_code,
                                                     section=section,
                                                     semester=semester,
@@ -782,10 +782,10 @@ def create_app():
                                     elif reader_type == "out":
                                         if attendance and not attendance.time_out:
                                             attendance.time_out = datetime.now(timezone)
-                                            attendance.subject_name = subject.subject_name  # Ensure subject name is updated
+                                            attendance.course_name = course.course_name  # Ensure program name is updated
                                             attendance.student_name = f"{student.user.f_name} {student.user.m_name} {student.user.l_name}"  # Ensure student name is updated
                                             attendance.student_number = student_number,
-                                            attendance.course_code = course_code  # Ensure course code is updated
+                                            attendance.program_code = program_code  # Ensure program code is updated
                                             attendance.level_code = level_code  # Ensure level code is updated
                                             attendance.section = section  # Ensure section is updated
                                             attendance.semester = semester  # Ensure semester is updated
@@ -800,7 +800,7 @@ def create_app():
 
                                             if unlock_status == 'success':
                                                 display_message(
-                                                    f"Time-out recorded for {user.f_name.title()} {user.student_details.course_section} Door unlocked at {formatted_time}",
+                                                    f"Time-out recorded for {user.f_name.title()} {user.student_details.program_section} Door unlocked at {formatted_time}",
                                                     "unlock")
                                                 response_data = {'status': 'checkout_recorded', 'email': user.email}
                                                 response_status = 200
@@ -925,13 +925,13 @@ def create_app():
         print(f"Current time: {current_time}")
 
         # Query schedules for the faculty
-        schedules = Schedule.query.join(Subject, Schedule.subject_id == Subject.id) \
-            .join(FacultySubjectSchedule, Schedule.id == FacultySubjectSchedule.schedule_id) \
-            .join(Faculty, FacultySubjectSchedule.faculty_id == Faculty.id) \
-            .join(Course, FacultySubjectSchedule.course_id == Course.id) \
-            .join(YearLevel, FacultySubjectSchedule.year_level_id == YearLevel.id) \
-            .join(Section, FacultySubjectSchedule.section_id == Section.id) \
-            .join(Semester, FacultySubjectSchedule.semester_id == Semester.id) \
+        schedules = Schedule.query.join(Course, Schedule.course_id == Course.id) \
+            .join(FacultyCourseSchedule, Schedule.id == FacultyCourseSchedule.schedule_id) \
+            .join(Faculty, FacultyCourseSchedule.faculty_id == Faculty.id) \
+            .join(Program, FacultyCourseSchedule.program_id == Program.id) \
+            .join(YearLevel, FacultyCourseSchedule.year_level_id == YearLevel.id) \
+            .join(Section, FacultyCourseSchedule.section_id == Section.id) \
+            .join(Semester, FacultyCourseSchedule.semester_id == Semester.id) \
             .filter(Faculty.id == faculty.id).all()
 
         # Check if the current time and day is within any of the faculty's scheduled times

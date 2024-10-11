@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block extra_styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/subject_schedule.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/program_schedule.css') }}">
 {% endblock %}
 
 {% block extra_scripts %}
@@ -33,11 +33,11 @@
             <thead>
             <tr>
                 <th></th>
-                <th>Subject</th>
+                <th>Course</th>
                 <th>Day</th>
                 <th>Start Time</th>
                 <th>End Time</th>
-                <th>Course & Section</th>
+                <th>Program & Section</th>
                 <th>Semester</th>
 
             </tr>
@@ -46,12 +46,12 @@
             {% for sched in schedules %}
                 <tr>
                     <td></td>
-                    <td>{{ sched.subject.subject_name | title }}</td>
+                    <td>{{ sched.course.course_name | title }}</td>
                     <td>{{ sched.day.name | upper }}</td>
                     <td>{{ sched.formatted_start_time | upper }}</td>
                     <td>{{ sched.formatted_end_time | upper }}</td>
-                    <td>{{ sched.faculty_subject_schedules[0].course.course_code | upper }}
-                        {{ sched.faculty_subject_schedules[0].year_level.level_code }}{{ sched.faculty_subject_schedules[0].section.display_name | upper }}</td>
+                    <td>{{ sched.faculty_course_schedules[0].program.program_code | upper }}
+                        {{ sched.faculty_course_schedules[0].year_level.level_code }}{{ sched.faculty_course_schedules[0].section.display_name | upper }}</td>
                     <td>{{ sched.formatted_semester_name }}</td>
                 </tr>
             {% endfor %}

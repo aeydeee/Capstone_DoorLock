@@ -11,59 +11,59 @@ from werkzeug.utils import secure_filename
 
 from app import db
 from decorators import student_required, email_required, own_student_account_required, check_totp_verified
-from models import Subject, student_subject_association, Schedule, Student, YearLevel, Course, Section, Semester, User, \
-    FacultySubjectSchedule, CourseYearLevelSemesterSubject
+from models import Program, student_course_association, Schedule, Student, YearLevel, Program, Section, Semester, User, \
+    FacultyCourseSchedule, ProgramYearLevelSemesterCourse
 from webforms.student_form import EditStudentForm
 
 student_acc_bp = Blueprint('student_acc', __name__)
 
 
-@student_acc_bp.route("/subject/<int:student_id>", methods=["GET", "POST"])
+@student_acc_bp.route("/course/<int:student_id>", methods=["GET", "POST"])
 @login_required
 @student_required
 @check_totp_verified
 def view_student_account_schedule(student_id):
     student = Student.query.get_or_404(current_user.student_details.id)
 
-    # Query regular subjects matching student's course, year level, and semester
-    regular_subjects = Subject.query \
-        .join(CourseYearLevelSemesterSubject, Subject.id == CourseYearLevelSemesterSubject.subject_id) \
-        .filter(CourseYearLevelSemesterSubject.course_id == student.course_id) \
-        .filter(CourseYearLevelSemesterSubject.year_level_id == student.year_level_id) \
-        .filter(CourseYearLevelSemesterSubject.semester_id == student.semester_id) \
-        .join(student_subject_association, Subject.id == student_subject_association.c.subject_id) \
-        .filter(student_subject_association.c.student_id == student_id) \
+    # Query regular courses matching student's program, year level, and semester
+    regular_courses = Program.query \
+        .join(ProgramYearLevelSemesterCourse, Program.id == ProgramYearLevelSemesterCourse.course_id) \
+        .filter(ProgramYearLevelSemesterCourse.program_id == student.program_id) \
+        .filter(ProgramYearLevelSemesterCourse.year_level_id == student.year_level_id) \
+        .filter(ProgramYearLevelSemesterCourse.semester_id == student.semester_id) \
+        .join(student_course_association, Program.id == student_course_association.c.course_id) \
+        .filter(student_course_association.c.student_id == student_id) \
         .all()
 
-    # Query all subjects the student is enrolled in using the student_subject_association table
-    all_subjects = Subject.query \
-        .join(student_subject_association, Subject.id == student_subject_association.c.subject_id) \
-        .filter(student_subject_association.c.student_id == student_id) \
+    # Query all courses the student is enrolled in using the student_course_association table
+    all_courses = Program.query \
+        .join(student_course_association, Program.id == student_course_association.c.course_id) \
+        .filter(student_course_association.c.student_id == student_id) \
         .all()
 
-    # Identify irregular subjects by excluding regular subjects
-    regular_subject_ids = {sub.id for sub in regular_subjects}
-    irregular_subjects = [sub for sub in all_subjects if sub.id not in regular_subject_ids]
+    # Identify irregular courses by excluding regular courses
+    regular_course_ids = {sub.id for sub in regular_courses}
+    irregular_courses = [sub for sub in all_courses if sub.id not in regular_course_ids]
 
-    # Get schedule details including faculty for regular subjects
+    # Get schedule details including faculty for regular courses
     schedule_details = Schedule.query \
-        .join(FacultySubjectSchedule, FacultySubjectSchedule.schedule_id == Schedule.id) \
-        .filter(Schedule.subject_id.in_([subject.id for subject in regular_subjects])) \
-        .filter(FacultySubjectSchedule.course_id == student.course_id,
-                FacultySubjectSchedule.year_level_id == student.year_level_id,
-                FacultySubjectSchedule.semester_id == student.semester_id) \
+        .join(FacultyCourseSchedule, FacultyCourseSchedule.schedule_id == Schedule.id) \
+        .filter(Schedule.course_id.in_([course.id for course in regular_courses])) \
+        .filter(FacultyCourseSchedule.program_id == student.program_id,
+                FacultyCourseSchedule.year_level_id == student.year_level_id,
+                FacultyCourseSchedule.semester_id == student.semester_id) \
         .filter(Schedule.section_id == student.section_id) \
         .all()
 
-    # Prepare a mapping of subject_id to schedule and faculty details for regular subjects
+    # Prepare a mapping of course_id to schedule and faculty details for regular courses
     schedule_map = {}
     for schedule in schedule_details:
-        for faculty_schedule in schedule.faculty_subject_schedules:
-            if schedule.subject_id not in schedule_map:
-                schedule_map[schedule.subject_id] = []
+        for faculty_schedule in schedule.faculty_course_schedules:
+            if schedule.course_id not in schedule_map:
+                schedule_map[schedule.course_id] = []
             formatted_start_time = datetime.strptime(str(schedule.start_time), "%H:%M:%S").strftime("%I:%M %p")
             formatted_end_time = datetime.strptime(str(schedule.end_time), "%H:%M:%S").strftime("%I:%M %p")
-            schedule_map[schedule.subject_id].append({
+            schedule_map[schedule.course_id].append({
                 'formatted_start_time': formatted_start_time,
                 'formatted_end_time': formatted_end_time,
                 'day': schedule.day.name,
@@ -71,25 +71,25 @@ def view_student_account_schedule(student_id):
                 'faculty_email': faculty_schedule.faculty.user.email
             })
 
-    # Assign the formatted schedule details to each regular subject
-    for sub in regular_subjects:
+    # Assign the formatted schedule details to each regular program
+    for sub in regular_courses:
         sub.schedule_details_formatted = schedule_map.get(sub.id, [])
 
-    # The same for irregular subjects, filtering by the student_subject_association's schedule_id
+    # The same for irregular courses, filtering by the student_course_association's schedule_id
     irregular_schedule_details = Schedule.query \
-        .join(student_subject_association, Schedule.id == student_subject_association.c.schedule_id) \
-        .filter(student_subject_association.c.student_id == student_id) \
-        .filter(Schedule.subject_id.in_([subject.id for subject in irregular_subjects])) \
+        .join(student_course_association, Schedule.id == student_course_association.c.schedule_id) \
+        .filter(student_course_association.c.student_id == student_id) \
+        .filter(Schedule.course_id.in_([course.id for course in irregular_courses])) \
         .all()
 
     irregular_schedule_map = {}
     for schedule in irregular_schedule_details:
-        for faculty_schedule in schedule.faculty_subject_schedules:
-            if schedule.subject_id not in irregular_schedule_map:
-                irregular_schedule_map[schedule.subject_id] = []
+        for faculty_schedule in schedule.faculty_course_schedules:
+            if schedule.course_id not in irregular_schedule_map:
+                irregular_schedule_map[schedule.course_id] = []
             formatted_start_time = datetime.strptime(str(schedule.start_time), "%H:%M:%S").strftime("%I:%M %p")
             formatted_end_time = datetime.strptime(str(schedule.end_time), "%H:%M:%S").strftime("%I:%M %p")
-            irregular_schedule_map[schedule.subject_id].append({
+            irregular_schedule_map[schedule.course_id].append({
                 'formatted_start_time': formatted_start_time,
                 'formatted_end_time': formatted_end_time,
                 'day': schedule.day.name,
@@ -97,12 +97,12 @@ def view_student_account_schedule(student_id):
                 'faculty_email': faculty_schedule.faculty.user.email
             })
 
-    for sub in irregular_subjects:
+    for sub in irregular_courses:
         sub.schedule_details_formatted = irregular_schedule_map.get(sub.id, [])
 
     return render_template('student_acc/view_schedule.html', student=student,
-                           regular_subjects=regular_subjects,
-                           irregular_subjects=irregular_subjects)
+                           regular_courses=regular_courses,
+                           irregular_courses=irregular_courses)
 
 
 @student_acc_bp.route("/profile/<int:student_id>", methods=["GET", "POST"])
@@ -129,7 +129,7 @@ def student_profile(student_id):
 
     # Populate choices for form fields with a default "Select..." option
     form.year_level_id.choices = [('', 'Select Year Level')] + [(y.id, y.display_name) for y in YearLevel.query.all()]
-    form.course_id.choices = [('', 'Select Course')] + [(c.id, c.course_name.title()) for c in Course.query.all()]
+    form.program_id.choices = [('', 'Select Program')] + [(c.id, c.program_name.title()) for c in Program.query.all()]
     form.section_id.choices = [('', 'Select Section')] + [(s.id, s.display_name) for s in Section.query.all()]
     form.semester_id.choices = [('', 'Select Semester')] + [(sem.id, sem.display_name) for sem in Semester.query.all()]
 
@@ -147,7 +147,7 @@ def student_profile(student_id):
         form.gender.data = user.gender or ''
         form.student_number.data = student.student_number.upper() or ''
         form.year_level_id.data = student.year_level_id or None
-        form.course_id.data = student.course_id or None
+        form.program_id.data = student.program_id or None
         form.section_id.data = student.section_id or None
         form.semester_id.data = student.semester_id or None
 
@@ -183,7 +183,7 @@ def student_profile(student_id):
 
                     student.student_number = student_number_clean
                     student.year_level_id = form.year_level_id.data
-                    student.course_id = form.course_id.data
+                    student.program_id = form.program_id.data
                     student.section_id = form.section_id.data
                     student.semester_id = form.semester_id.data
 

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block extra_styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/manage_sub.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/manage_course.css') }}">
 {% endblock %}
 
 {% block extra_scripts %}
@@ -21,12 +21,12 @@
     </div>
     {% endfor %}
 
-    <h1 class="mb-lg-5 text-xl">Manage Course Subjects</h1>
+    <h1 class="mb-lg-5 text-xl">Manage Program Course</h1>
 
-    {% for course in courses %}
+    {% for program in programs %}
         <div class="header mt-5">
             <div class="left">
-                <h2>{{ course.course_name | title }}</h2>
+                <h2>{{ program.program_name | title }}</h2>
             </div>
         </div>
         <!-- Insights -->
@@ -36,11 +36,11 @@
                     <i class='bx bxs-book-content'></i>
                     <span class="info">
                     <h2>{{ year }}{{ 'st' if year == 1 else 'nd' if year == 2 else 'rd' if year == 3 else 'th' }} Year</h2>
-                    <a href="{{ url_for('add_sub_per_course.add_subject', course_id=course.id, year=year, sem=1) }}"
+                    <a href="{{ url_for('add_course_per_program.add_course', program_id=program.id, year=year, sem=1) }}"
                        class="text-decoration-none">
                         <p class="m-0 hover-effect">1st Sem</p>
                     </a>
-                    <a href="{{ url_for('add_sub_per_course.add_subject', course_id=course.id, year=year, sem=2) }}"
+                    <a href="{{ url_for('add_course_per_program.add_course', program_id=program.id, year=year, sem=2) }}"
                        class="text-decoration-none">
                         <p class="m-0 hover-effect">2nd Sem</p>
                     </a>

@@ -4,12 +4,12 @@ from wtforms.fields.datetime import TimeField
 from wtforms.fields.simple import SubmitField, StringField
 from wtforms.validators import DataRequired, ValidationError
 
-from models import Faculty, Subject, Course, YearLevel, Semester, Section, DayOfWeek, YearLevelEnum
+from models import Faculty, Program, Program, YearLevel, Semester, Section, DayOfWeek, YearLevelEnum
 
 
 class ScheduleForm(FlaskForm):
     faculty = SelectField('Faculty', validators=[DataRequired()])
-    subject = SelectField('Subject', validators=[DataRequired()])
+    course = SelectField('Course', validators=[DataRequired()])
     schedule_day = SelectField('Day', choices=[
         ('sunday', 'Sunday'),
         ('monday', 'Monday'),
@@ -36,7 +36,7 @@ class EditScheduleForm(FlaskForm):
     ], validators=[DataRequired()])
     start_time = TimeField('Start Time', format='%H:%M', validators=[DataRequired()])
     end_time = TimeField('End Time', format='%H:%M', validators=[DataRequired()])
-    subject_id = SelectField('Subject', coerce=int, validators=[DataRequired()])
+    course_id = SelectField('Course', coerce=int, validators=[DataRequired()])
     section_id = SelectField('Section', coerce=int, validators=[DataRequired()])
     submit = SubmitField('Submit')
 
@@ -54,9 +54,9 @@ class NewScheduleForm(FlaskForm):
                       validators=[DataRequired()])
     start_time = TimeField('Start Time', validators=[DataRequired()])
     end_time = TimeField('End Time', validators=[DataRequired()])
-    subject_id = SelectField('Subject', coerce=int, validators=[DataRequired()])
-    section_id = SelectField('Section', coerce=int, validators=[DataRequired()])
     course_id = SelectField('Course', coerce=int, validators=[DataRequired()])
+    section_id = SelectField('Section', coerce=int, validators=[DataRequired()])
+    program_id = SelectField('Program', coerce=int, validators=[DataRequired()])
     year_level_id = SelectField('Year Level', coerce=int, validators=[DataRequired()])
     semester_id = SelectField('Semester', coerce=int, validators=[DataRequired()])
     submit = SubmitField('Add Schedule')

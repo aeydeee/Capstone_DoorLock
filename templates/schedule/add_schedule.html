@@ -44,11 +44,11 @@
             </div>
             <br/>
 
-            <!-- Subject Selection -->
+            <!-- Course Selection -->
             <div class="form-group">
-                <label class="form-label">Subject</label>
+                <label class="form-label">Course</label>
                 <div class="border p-2 rounded bg-light">
-                    {{ form.subject_id(class_="form-control select2") }}
+                    {{ form.course_id(class_="form-control select2") }}
                 </div>
             </div>
 
@@ -78,11 +78,11 @@
             </div>
             <br/>
 
-            <!-- Course Selection -->
+            <!-- Program Selection -->
             <div class="form-group">
-                {{ form.course_id.label }}<br>
-                <label for="course_id"></label><select id="course_id" name="course_id" class="form-control">
-                <option value="">-- Select a Subject First --</option>
+                {{ form.program_id.label }}<br>
+                <label for="program_id"></label><select id="program_id" name="program_id" class="form-control">
+                <option value="">-- Select a Course First --</option>
             </select>
             </div>
             <br>
@@ -91,7 +91,7 @@
             <div class="form-group">
                 {{ form.year_level_id.label }}<br>
                 <label for="year_level_id"></label><select id="year_level_id" name="year_level_id" class="form-control">
-                <option value="">-- Select a Course First --</option>
+                <option value="">-- Select a Program First --</option>
             </select>
             </div>
             <br>
@@ -100,7 +100,7 @@
             <div class="form-group">
                 {{ form.semester_id.label }}<br>
                 <label for="semester_id"></label><select id="semester_id" name="semester_id" class="form-control">
-                <option value="">-- Select a Course First --</option>
+                <option value="">-- Select a Program First --</option>
             </select>
             </div>
             <br>
@@ -121,36 +121,36 @@
         <!-- JavaScript -->
         <script>
             $(document).ready(function () {
-                // Initialize Select2 for the subject dropdown
+                // Initialize Select2 for the program dropdown
                 $('.select2').select2();
 
-                // On subject change, fetch the associated courses
-                $('#subject_id').on('change', function () {
-                    let subjectId = $(this).val();
-                    if (subjectId) {
-                        fetch(`/schedules/get_options/${subjectId}`)
+                // On program change, fetch the associated programs
+                $('#course_id').on('change', function () {
+                    let courseId = $(this).val();
+                    if (courseId) {
+                        fetch(`/schedules/get_options/${courseId}`)
                             .then(response => response.json())
                             .then(data => {
-                                let courseSelect = document.getElementById("course_id");
-                                courseSelect.innerHTML = '<option value="">Select Course</option>';
+                                let programSelect = document.getElementById("program_id");
+                                programSelect.innerHTML = '<option value="">Select Program</option>';
 
-                                data.courses.forEach(function (course) {
+                                data.programs.forEach(function (program) {
                                     let option = document.createElement("option");
-                                    option.value = course[0];
-                                    option.text = course[1];
-                                    courseSelect.appendChild(option);
+                                    option.value = program[0];
+                                    option.text = program[1];
+                                    programSelect.appendChild(option);
                                 });
                             })
-                            .catch(error => console.error('Error fetching courses:', error));
+                            .catch(error => console.error('Error fetching programs:', error));
                     }
                 });
 
-                // On course change, fetch the year levels and semesters for the selected course
-                $('#course_id').on('change', function () {
-                    let subjectId = $('#subject_id').val();
-                    let courseId = $(this).val();
-                    if (courseId) {
-                        fetch(`/schedules/get_year_levels_and_semesters/${subjectId}/${courseId}`)
+                // On program change, fetch the year levels and semesters for the selected program
+                $('#program_id').on('change', function () {
+                    let courseId = $('#course_id').val();
+                    let programId = $(this).val();
+                    if (programId) {
+                        fetch(`/schedules/get_year_levels_and_semesters/${courseId}/${programId}`)
                             .then(response => response.json())
                             .then(data => {
                                 let yearLevelSelect = document.getElementById("year_level_id");

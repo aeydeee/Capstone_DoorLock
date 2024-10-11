@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title_block %}
-    Manage Subjects
+    Manage Courses
 {% endblock %}
 
 {% block extra_styles %}
@@ -9,11 +9,11 @@
 {% endblock %}
 
 {% block extra_scripts %}
-    <script defer src="{{ url_for('static', filename='js/manage_subject.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/manage_course.js') }}"></script>
 
     <script defer src="https://cdn.datatables.net/rowgroup/1.5.0/js/dataTables.rowGroup.js"></script>
     <script defer src="https://cdn.datatables.net/rowgroup/1.5.0/js/rowGroup.dataTables.js"></script>
-    <script defer src="{{ url_for('static', filename='js/subject_details.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/course_details.js') }}"></script>
 
 {% endblock %}
 
@@ -32,31 +32,31 @@
     {% endfor %}
 
     <div class="d-flex justify-content-between align-items-center mb-5">
-        <h1>Subject Lists per Course</h1>
-        <a href="{{ url_for('subject.subject_lists') }}" class="btn btn-secondary">Go Back</a>
+        <h1>Course Lists per Program</h1>
+        <a href="{{ url_for('course.course_lists') }}" class="btn btn-secondary">Go Back</a>
     </div>
 
-    <form method="GET" action="{{ url_for('subject.course_sub_lists') }}">
-        <label for="course_filter" class="block  font-medium mb-2">Filter by Course:</label>
-        <select id="course_filter" name="course" onchange="this.form.submit()"
+    <form method="GET" action="{{ url_for('course.program_course_lists') }}">
+        <label for="program_filter" class="block  font-medium mb-2">Filter by Program:</label>
+        <select id="program_filter" name="program" onchange="this.form.submit()"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 form-control">
-            <option value="">-- Select Course --</option>
-            {% for course in courses %}
-                <option value="{{ course.id }}"
-                        {% if course.id == selected_course %}selected{% endif %}>{{ course.course_name }}</option>
+            <option value="">-- Select Program --</option>
+            {% for program in programs %}
+                <option value="{{ program.id }}"
+                        {% if program.id == selected_program %}selected{% endif %}>{{ program.program_name }}</option>
             {% endfor %}
         </select>
     </form>
 
-    <table class="table table-striped" id="subject_details">
+    <table class="table table-striped" id="course_details">
         <thead>
         <tr>
             <th>#</th>
             <th>Code</th>
-            <th>Subject</th>
+            <th>Course</th>
             <th>Year Level</th>
             <th>Semester</th>
-            <th>Course</th>
+            <th>Program</th>
             <th>Action</th>
         </tr>
         </thead>
@@ -64,11 +64,11 @@
         {% for detail in details %}
             <tr>
                 <td>{{ loop.index }}</td>
-                <td>{{ detail.subject.subject_code | upper }}</td>
-                <td>{{ detail.subject.subject_name | title }}</td>
+                <td>{{ detail.course.course_code | upper }}</td>
+                <td>{{ detail.course.course_name | title }}</td>
                 <td>{{ detail.year_level.display_name | upper }}</td>
                 <td>{{ detail.semester.display_name | upper }}</td>
-                <td>{{ detail.course.course_code | upper }}</td>
+                <td>{{ detail.program.program_code | upper }}</td>
                 <td>
                     <a href="#" class="btn btn-sm btn-danger" data-bs-toggle="modal"
                        data-bs-target="#deleteModal{{ detail.id }}">
@@ -87,13 +87,13 @@
                                             aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
-                                    Are you sure you want to delete {{ detail.subject.subject_name | title }}?
+                                    Are you sure you want to delete {{ detail.course.course_name | title }}?
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel
                                     </button>
                                     <form method="POST"
-                                          action="{{ url_for('subject.delete_subject_detail', detail_id=detail.id) }}">
+                                          action="{{ url_for('course.delete_course_detail', detail_id=detail.id) }}">
                                         {{ delete_form.hidden_tag() }}
                                         <button type="submit" class="btn btn-danger">Delete</button>
                                     </form>

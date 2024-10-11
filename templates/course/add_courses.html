@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title_block %}
-    Add Subjects
+    Add Courses
 {% endblock %}
 
 {% block content %}
@@ -19,7 +19,7 @@
     </div>
     {% endfor %}
 
-<h1>Add Subjects to {{ course_code | upper }} {{ year_level.level_code }} - {{ semester.display_name }}!</h1>
+<h1>Add Courses to {{ program_code | upper }} {{ year_level.level_code }} - {{ semester.display_name }}!</h1>
 <br/>
 
 {% include 'upload.html' %}
@@ -61,7 +61,7 @@
         <br/>
         <div class="form-group">
             {{ form.submit(class="btn btn-primary") }}
-            <a href="{{ url_for('subject.manage_sub') }}" class="btn btn-secondary">Cancel</a>
+            <a href="{{ url_for('course.manage_course') }}" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
 </div>

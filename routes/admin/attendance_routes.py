@@ -27,11 +27,11 @@ def export_csv(attendances):
     attendance_data = [{
         'Student Name': attendance.student_name,
         'Student ID': attendance.student_number,
-        'Course Code': attendance.course_code,
+        'Program Code': attendance.program_code,
         'Year Level': attendance.level_code,
         'Section': attendance.section,
         'Semester': attendance.semester,
-        'Subject': attendance.subject_name,
+        'Course': attendance.course_name,
         'Faculty': attendance.faculty_name,
         'Time In': attendance.time_in.strftime("%Y-%m-%d %H:%M:%S") if attendance.time_in else '',
         'Time Out': attendance.time_out.strftime("%Y-%m-%d %H:%M:%S") if attendance.time_out else '',
@@ -142,9 +142,9 @@ def export_pdf(attendances, selected_columns, start_date=None, end_date=None):
     column_mapping = {
         'student_name': 'Student Name',
         'student_number': 'Student ID',
-        'subject': 'Subject',
+        'program': 'Course',
         'date': 'Date',
-        'course_section': 'Course & Section',
+        'program_section': 'Program & Section',
         'semester': 'Semester',
         'time_in': 'Time In',
         'time_out': 'Time Out',
@@ -162,14 +162,14 @@ def export_pdf(attendances, selected_columns, start_date=None, end_date=None):
             row.append(Paragraph(attendance.student_name.title(), styles['Normal']))
         if 'student_number' in selected_columns:
             row.append(Paragraph(attendance.student_number.title(), styles['Normal']))
-        if 'subject' in selected_columns:
-            row.append(Paragraph(attendance.subject_name.title(), styles['Normal']))
+        if 'program' in selected_columns:
+            row.append(Paragraph(attendance.course_name.title(), styles['Normal']))
         if 'date' in selected_columns:
             row.append(
                 Paragraph(attendance.time_in.strftime('%m-%d-%Y') if attendance.time_in else '', styles['Normal']))
-        if 'course_section' in selected_columns:
+        if 'program_section' in selected_columns:
             row.append(Paragraph(
-                f'{attendance.course_code.upper()} {attendance.level_code}{attendance.section.upper() if attendance.section else ""}',
+                f'{attendance.program_code.upper()} {attendance.level_code}{attendance.section.upper() if attendance.section else ""}',
                 styles['Normal']))
         if 'semester' in selected_columns:
             row.append(Paragraph(attendance.semester, styles['Normal']))
@@ -187,9 +187,9 @@ def export_pdf(attendances, selected_columns, start_date=None, end_date=None):
     column_widths = {
         'student_name': 180,
         'student_number': 65,
-        'subject': 120,
+        'program': 120,
         'date': 70,
-        'course_section': 100,
+        'program_section': 100,
         'semester': 90,
         'time_in': 65,  # Specific width for Time In
         'time_out': 65,  # Specific width for Time Out
@@ -236,7 +236,7 @@ def view_attendance():
     selected_columns = request.args.getlist('columns')  # Capture selected columns from form
 
     if not selected_columns:
-        selected_columns = ['student_name', 'student_number', 'subject', 'date', 'course_section', 'semester',
+        selected_columns = ['student_name', 'student_number', 'program', 'date', 'program_section', 'semester',
                             'time_in', 'time_out',
                             'status']  # Default columns
 

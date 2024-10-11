@@ -196,7 +196,7 @@ def export_faculty_pdf(reports, start_date=None, end_date=None):
     elements.append(Spacer(1, 30))  # Spacer to push the title down
 
     # Add the document title at the top
-    title = Paragraph("<b>FACULTIES REPORT GENERATION LOGS</b>", styles['Title'])
+    title = Paragraph("<b>FACULTY REPORT LOGS</b>", styles['Title'])
     title.hAlign = 'CENTER'
     elements.append(title)
 

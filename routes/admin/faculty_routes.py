@@ -21,7 +21,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app import db
 from decorators import admin_required, cspc_acc_required
-from models import Faculty, User, FacultySubjectSchedule
+from models import Faculty, User, FacultyCourseSchedule
 from webforms.faculty_form import FacultyForm
 from webforms.delete_form import DeleteForm
 
@@ -123,7 +123,7 @@ def get_faculty_data():
     faculties = Faculty.query.all()
     data = []
     for faculty in faculties:
-        subjects = [{"code": subj.subject_code, "name": subj.subject_name} for subj in faculty.subjects]
+        courses = [{"code": subj.course_code, "name": subj.course_name} for subj in faculty.courses]
         data.append({
             "id": faculty.id,
             "faculty_number": faculty.faculty_number.upper() if faculty.faculty_number else "",
@@ -136,7 +136,7 @@ def get_faculty_data():
             "faculty_department": faculty.faculty_department.upper() if faculty.faculty_department else "",
             "email": faculty.user.email,
             'totp_secret': faculty.user.totp_secret.secret_key if faculty.user.totp_secret else None,
-            "subjects": subjects
+            "courses": courses
         })
     return jsonify({"data": data})
 
@@ -540,8 +540,8 @@ def delete_faculty(id):
     faculty = Faculty.query.get_or_404(id)
     user = faculty.user
     try:
-        # Manually delete all associated faculty_subject_schedule records
-        FacultySubjectSchedule.query.filter_by(faculty_id=faculty.id).delete()
+        # Manually delete all associated faculty_course_schedule records
+        FacultyCourseSchedule.query.filter_by(faculty_id=faculty.id).delete()
 
         # Now delete the faculty and user
         db.session.delete(faculty)
