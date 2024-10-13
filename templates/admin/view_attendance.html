@@ -32,7 +32,7 @@
     </div>
     {% endfor %}
 
-    <h1>Attendance Records of all Students</h1>
+    <h1>Attendance Records of the Students</h1>
     <br/>
     <div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -178,9 +178,9 @@
 
     <div class="d-flex justify-content-between align-items-center">
         <div>
-            <a href="{{ url_for('attendance.view_attendance', export='csv', start_date=request.args.get('start_date'), end_date=request.args.get('end_date'), role=request.args.get('role')) }}"
+            <a href="{{ url_for('attendance.view_attendance', export='excel', start_date=request.args.get('start_date'), end_date=request.args.get('end_date'), role=request.args.get('role')) }}"
                class="btn btn-outline-primary btn-sm me-2">
-                <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
+                <i class="bi bi-file-earmark-spreadsheet"></i> Export EXCEL
             </a>
             <a href="{{ url_for('attendance.view_attendance', export='pdf', start_date=request.args.get('start_date'), end_date=request.args.get('end_date'), columns=selected_columns) }}"
                class="btn btn-outline-danger btn-sm">
@@ -219,16 +219,16 @@
         {% for attendance in attendances %}
             <tr>
                 <td></td>
-                <td>{{ attendance.time_in.strftime('%m-%d-%Y') if attendance.time_in else 'N/A' }}</td>
+                <td>{{ attendance.date.strftime('%b. %d, %Y') if attendance.date else 'N/A' }}</td>
                 <td>{{ attendance.student.full_name | title }}</td>
                 <td>{{ attendance.student.student_number | title }}</td>
                 <td>{{ attendance.program_code | upper }}
                     {{ attendance.level_code }}{{ attendance.section | upper }}</td>
                 <td>{{ attendance.course.course_name |title }}</td>
                 <td>{{ attendance.semester }}</td>
-                <td>{{ attendance.time_in.strftime('%I:%M %p') if attendance.time_in else '' }}</td>
+                <td>{{ attendance.time_in.strftime('%I:%M %p') if attendance.time_in else 'N/A' }}</td>
                 <td>{{ attendance.time_out.strftime('%I:%M %p') if attendance.time_out else 'N/A' }}</td>
-                <td>{{ attendance.status }}</td>
+                <td>{{ attendance.status | upper }}</td>
             </tr>
         {% endfor %}
         </tbody>
