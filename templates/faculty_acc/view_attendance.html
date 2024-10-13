@@ -53,6 +53,94 @@
 
     <h1>Attendance Records</h1>
 
+    <form method="GET" action="{{ url_for('faculty_acc.view_attendance') }}">
+        {{ form.hidden_tag() }}
+
+        <!-- Semester Filter -->
+        <div class="col-md-4">
+            <label for="semester" class="form-label">Semester</label>
+            <select name="semester" id="semester" class="form-select">
+                <option value="">All</option>
+                {% for sem in semester_choices %}
+                    <option value="{{ sem[0] }}"
+                            {% if request.args.get('semester') == sem[0] %}selected{% endif %}>
+                        {{ sem[1] }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- School Year Filter -->
+        <div class="col-md-4">
+            <label for="school_year" class="form-label">School Year</label>
+            <select name="school_year" id="school_year" class="form-select">
+                <option value="">All</option>
+                {% for sy in school_year_choices %}
+                    <option value="{{ sy[0] }}"
+                            {% if request.args.get('school_year') == sy[0] %}selected{% endif %}>
+                        {{ sy[1] }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Course Filter -->
+        <div class="col-md-4">
+            <label for="course" class="form-label">Course</label>
+            <select name="course" id="course" class="form-select">
+                <option value="">All</option>
+                {% for course in course_choices %}
+                    <option value="{{ course[0] }}"
+                            {% if request.args.get('course') == course[0] %}selected{% endif %}>
+                        {{ course[1] }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+
+        <div class="row g-3 justify-content-center mt-4">
+            <!-- Program Filter -->
+            <div class="col-md-4">
+                <label for="program" class="form-label">Program</label>
+                <select name="program" id="program" class="form-select">
+                    <option value="">All</option>
+                    {% for prog in program_choices %}
+                        <option value="{{ prog[0] }}"
+                                {% if request.args.get('program') == prog[0] %}selected{% endif %}>
+                            {{ prog[1] }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Section Filter -->
+            <div class="col-md-4">
+                <label for="section" class="form-label">Section</label>
+                <select name="section" id="section" class="form-select">
+                    <option value="">All</option>
+                    {% for sec in section_choices %}
+                        <option value="{{ sec[0] }}"
+                                {% if request.args.get('section') == sec[0] %}selected{% endif %}>
+                            {{ sec[1] }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="row g-3 justify-content-center mt-4">
+            <!-- Filter Button -->
+            <div class="col-md-4 d-grid">
+                <button type="submit" class="btn btn-primary">Filter</button>
+            </div>
+        </div>
+    </form>
+
+
+
+
+
     <div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -233,14 +321,14 @@
         {% for attendance in attendances %}
             <tr>
                 <td></td>
-               <td>{{ attendance.time_in.strftime('%b. %d, %Y') if attendance.time_in else 'N/A' }}</td>
+                <td>{{ attendance.date.strftime('%b. %d, %Y') if attendance.date else 'N/A' }}</td>
                 <td>{{ attendance.student.full_name | title }}</td>
                 <td>{{ attendance.student.student_number | title }}</td>
                 <td>{{ attendance.course.course_name |title }}</td>
                 <td>{{ attendance.program_code | upper }}
                     {{ attendance.level_code }}{{ attendance.section | upper }}</td>
                 <td>{{ attendance.semester }}</td>
-                <td>{{ attendance.time_in.strftime('%I:%M %p') if attendance.time_in else '' }}</td>
+                <td>{{ attendance.time_in.strftime('%I:%M %p') if attendance.time_in else 'N/A' }}</td>
                 <td>{{ attendance.time_out.strftime('%I:%M %p') if attendance.time_out else 'N/A' }}</td>
                 <td>
                     <form id="attendanceForm_{{ attendance.id }}" method="POST"
@@ -257,6 +345,8 @@
                                 <option value="late" {% if attendance.status == 'late' %}selected{% endif %}>Late
                                 </option>
                                 <option value="absent" {% if attendance.status == 'absent' %}selected{% endif %}>Absent
+                                </option>
+                                <option value="excuse" {% if attendance.status == 'excuse' %}selected{% endif %}>Excuse
                                 </option>
                             </select>
                         </label>
