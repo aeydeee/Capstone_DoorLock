@@ -45,16 +45,17 @@ faculty_acc_bp = Blueprint('faculty_acc', __name__)
 def export_excel_detail(attendances):
     # Convert attendance records to a list of dictionaries
     attendance_data = [{
-        'Student Name': attendance.student_name,
-        'Student ID': attendance.student_number,
-        'Program Code': attendance.program_code,
+        'Date': attendance.date.strftime('%b. %d, %Y'),
+        'Student Name': attendance.student_name.title(),
+        'Student ID': attendance.student_number.upper(),
+        'Program Code': attendance.program_code.upper(),
         'Year Level': attendance.level_code,
         'Section': attendance.section,
         'Semester': attendance.semester,
-        'Course': attendance.course_name,
-        'Faculty': attendance.faculty_name,
-        'Time In': attendance.time_in.strftime("%Y-%m-%d %H:%M:%S") if attendance.time_in else '',
-        'Time Out': attendance.time_out.strftime("%Y-%m-%d %H:%M:%S") if attendance.time_out else '',
+        'Course': attendance.course_name.title(),
+        'Faculty': attendance.faculty_name.title(),
+        'Time In': attendance.time_in.strftime('%I:%M %p') if attendance.time_in else 'N/A',
+        'Time Out': attendance.time_out.strftime('%I:%M %p') if attendance.time_out else 'N/A',
         'Status': attendance.status
     } for attendance in attendances]
 
@@ -70,7 +71,7 @@ def export_excel_detail(attendances):
 
     # Create response
     response = make_response(output.getvalue())
-    response.headers["Content-Disposition"] = "attachment; filename=attendance.xlsx"
+    response.headers["Content-Disposition"] = "attachment; filename=attendance_detailed_records.xlsx"
     response.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
     return response
@@ -129,11 +130,11 @@ def add_header_footer_detail(canvas, doc, is_first_page, start_date=None, end_da
 
     # Format the effectivity date based on the provided start and end dates
     if start_date and end_date:
-        effectivity_date = f"From {start_date.strftime('%Y-%m-%d')} - To {end_date.strftime('%Y-%m-%d')}"
+        effectivity_date = f"From {start_date.strftime('%b. %d, %Y')} - To {end_date.strftime('%b. %d, %Y')}"
     elif start_date:
-        effectivity_date = f"From {start_date.strftime('%Y-%m-%d')}"
+        effectivity_date = f"From {start_date.strftime('%b. %d, %Y')}"
     elif end_date:
-        effectivity_date = f"To {end_date.strftime('%Y-%m-%d')}"
+        effectivity_date = f"To {end_date.strftime('%b. %d, %Y')}"
     else:
         effectivity_date = "All records across all dates."
 
@@ -246,7 +247,7 @@ def export_pdf_detail(attendances, selected_columns, start_date=None, end_date=N
     doc.build(elements, onFirstPage=on_first_page, onLaterPages=on_later_pages)
 
     buffer.seek(0)
-    return send_file(buffer, as_attachment=True, download_name='detailed_attendance_records.pdf',
+    return send_file(buffer, as_attachment=True, download_name='attendance_detailed_records.pdf',
                      mimetype='application/pdf')
 
 
