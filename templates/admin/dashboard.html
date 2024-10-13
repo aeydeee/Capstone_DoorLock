@@ -82,19 +82,22 @@
                 </thead>
                 <tbody>
                 {% for attendance in recent_attendances %}
-                    <tr>
-                        <td>
-                            {#                            <img src="{{ attendance.student.user.profile_pic }}" alt="Profile Picture">#}
-                            <p>{{ attendance.student.full_name | title }}</p>
-                        </td>
-                        <td>{{ attendance.student.course_section | upper }}</td>
-                        <td>
-                            <span class="status completed text-light fs-6">
-                                {{ attendance.time_in.strftime('%I:%M %p') }}
-                            </span>
-                        </td>
-                    </tr>
+                    {% if attendance.time_in %}
+                        <tr>
+                            <td>
+                                {# <img src="{{ attendance.student.user.profile_pic }}" alt="Profile Picture"> #}
+                                <p>{{ attendance.student.full_name | title }}</p>
+                            </td>
+                            <td>{{ attendance.student.course_section | upper }}</td>
+                            <td>
+                                <span class="status completed text-light fs-6">
+                                    {{ attendance.time_in.strftime('%I:%M %p') }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endif %}
                 {% endfor %}
+
                 </tbody>
             </table>
         </div>
