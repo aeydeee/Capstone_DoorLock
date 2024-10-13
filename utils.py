@@ -1,14 +1,14 @@
 from sqlalchemy.orm import joinedload
+import qrcode
 
 
 def check_and_create_admin():
-    # Delayed import to avoid circular import issues
     from app import db
     from models import User, Admin
 
     # Check if an admin user exists
     admin_exists = User.query.options(joinedload(User.admin_details)).filter(User.admin_details != None).first()
-    print(admin_exists)
+
     if not admin_exists:
         # Create a new admin user
         admin_user = User(
@@ -22,7 +22,6 @@ def check_and_create_admin():
         admin_details = Admin(
             school_id='ADMIN001',
             user=admin_user,
-            # PBKDF2 with SHA256
         )
 
         # Add to the session and commit
@@ -30,8 +29,19 @@ def check_and_create_admin():
         db.session.add(admin_details)
         db.session.commit()
 
-        print("Admin user created successfully")
+        # Generate TOTP secret and print it
+        secret_key = admin_user.totp_secret.secret_key
+        print(f"Admin user created successfully with TOTP secret: {secret_key}")
+
+        # Generate and print the TOTP URI and display QR code
+        totp_uri = admin_user.get_totp_uri()
+        print(f"TOTP URI: {totp_uri}")
+
+        # Generate the QR code for the TOTP URI
+        qr_img = qrcode.make(totp_uri)
+        qr_img.show()  # Display the QR code image
     else:
+        # Admin already exists
         print("Admin user already exists")
 
 
