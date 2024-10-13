@@ -5,7 +5,7 @@ from flask_login import login_required
 
 from decorators import cspc_acc_required, admin_required
 from models import Schedule, Faculty, Program, FacultyCourseSchedule, YearLevel, Program, \
-    Section, Semester, ProgramYearLevelSemesterCourse, faculty_course_association, student_course_association
+    Section, Semester, ProgramYearLevelSemesterCourse, faculty_course_association, student_course_association, Course
 from webforms.delete_form import DeleteForm
 from webforms.schedule_form import EditScheduleForm, NewScheduleForm
 from app import db
@@ -47,7 +47,7 @@ def view_schedule(faculty_id):
     faculty = Faculty.query.get_or_404(faculty_id)
 
     # Query schedules joined with necessary tables and filtered by faculty_id
-    schedules = Schedule.query.join(Program, Schedule.course_id == Program.id) \
+    schedules = Schedule.query.join(Course, Schedule.course_id == Course.id) \
         .join(FacultyCourseSchedule, Schedule.id == FacultyCourseSchedule.schedule_id) \
         .join(Faculty, FacultyCourseSchedule.faculty_id == Faculty.id) \
         .join(Program, FacultyCourseSchedule.program_id == Program.id) \
@@ -114,7 +114,7 @@ def add_schedule(faculty_id):
     form = NewScheduleForm()
 
     # Initialize program choices
-    form.course_id.choices = [(course.id, course.course_name) for course in Program.query.all()]
+    form.course_id.choices = [(course.id, course.course_name) for course in Course.query.all()]
 
     # Handle POST request
     if request.method == 'POST' and form.course_id.data:
@@ -123,7 +123,8 @@ def add_schedule(faculty_id):
         program_year_level_semester_courses = ProgramYearLevelSemesterCourse.query.filter_by(
             course_id=course_id).all()
 
-        form.program_id.choices = [(cy.program.id, cy.program.program_name) for cy in program_year_level_semester_courses]
+        form.program_id.choices = [(cy.program.id, cy.program.program_name) for cy in
+                                   program_year_level_semester_courses]
         form.year_level_id.choices = [(cy.year_level.id, cy.year_level.display_name) for cy in
                                       program_year_level_semester_courses]
         form.semester_id.choices = [(cy.semester.id, cy.semester.display_name) for cy in
