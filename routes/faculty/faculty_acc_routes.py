@@ -560,12 +560,6 @@ def view_detailed_attendance():
     faculty = Faculty.query.filter_by(user_id=current_user.id).first()
     courses = faculty.courses
 
-    # Get student IDs for courses taught by this faculty
-    student_ids = db.session.query(Student.id).join(student_course_association).filter(
-        student_course_association.c.course_id.in_([course.id for course in courses])
-    ).distinct().all()
-    student_ids = [student_id[0] for student_id in student_ids]
-
     # Get the start and end date from the query parameters
     start_date_str = request.args.get('start_date')
     end_date_str = request.args.get('end_date')
@@ -589,14 +583,14 @@ def view_detailed_attendance():
     section = request.args.get('section')
 
     # Build the initial query to fetch attendance records
-    attendances_query = Attendance.query.filter(Attendance.student_id.in_(student_ids))
+    attendances_query = Attendance.query
 
     # Apply date range filtering
     if start_date:
-        attendances_query = attendances_query.filter(Attendance.time_in >= start_date)
+        attendances_query = attendances_query.filter(Attendance.date >= start_date)
     if end_date:
         attendances_query = attendances_query.filter(
-            Attendance.time_in <= end_date.replace(hour=23, minute=59, second=59))
+            Attendance.date <= end_date.replace(hour=23, minute=59, second=59))
 
     # Apply additional filters based on request arguments
     if semester:
@@ -616,6 +610,8 @@ def view_detailed_attendance():
         attendance for attendance in results
         if attendance.faculty_name == faculty.full_name or fuzz.ratio(attendance.faculty_name, faculty.full_name) >= 80
     ]
+
+    print(attendances)
 
     # Handle export requests
     if export_type in ['excel', 'pdf']:
@@ -713,12 +709,6 @@ def view_new_attendance():
 
     if filters_applied:
 
-        # Get student IDs for courses taught by this faculty
-        student_ids = db.session.query(Student.id).join(student_course_association).filter(
-            student_course_association.c.course_id.in_([course.id for course in faculty.courses])
-        ).distinct().all()
-        student_ids = [student_id[0] for student_id in student_ids]
-
         # Extract values from the models to populate filter options
         semester_choices = [(sem.display_name, sem.display_name) for sem in Semester.query.all()]
         school_year_choices = [(sy.id, sy.year_label) for sy in SchoolYear.query.all()]
@@ -739,7 +729,7 @@ def view_new_attendance():
         student_alias_3 = aliased(Student)
 
         # Build the initial query to fetch attendance records
-        attendances_query = Attendance.query.filter(Attendance.student_id.in_(student_ids))
+        attendances_query = Attendance.query
 
         # Apply additional filters based on request arguments
         if semester:
