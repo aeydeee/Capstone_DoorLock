@@ -21,7 +21,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app import db
 from decorators import admin_required, cspc_acc_required
-from models import Faculty, User, FacultyCourseSchedule
+from models import Faculty, User, FacultyCourseSchedule, faculty_course_association
 from webforms.faculty_form import FacultyForm
 from webforms.delete_form import DeleteForm
 
@@ -157,6 +157,26 @@ def faculty_qrcode(faculty_id):
         'Pragma': 'no-cache',
         'Expires': '0'
     }
+
+
+@faculty_bp.route('/reset_schedules', methods=['POST'])
+@login_required
+@cspc_acc_required
+@admin_required
+def faculty_reset_schedules():
+    try:
+        # Perform bulk delete on FacultyCourseSchedule and faculty_course_association
+        db.session.query(FacultyCourseSchedule).delete()
+        db.session.execute(faculty_course_association.delete())
+
+        db.session.commit()
+        flash('All faculty courses and schedules have been reset.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error occurred: {str(e)}', 'danger')
+
+    # Redirect to the page where the reset button is located (you can change this)
+    return redirect(url_for('faculty.manage_faculty'))
 
 
 @faculty_bp.route('/', methods=['GET', 'POST'])

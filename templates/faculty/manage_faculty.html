@@ -36,13 +36,27 @@
         </a>
     </div>
 
-    <div class="btn-group mb-3" role="group" aria-label="Manage Actions">
-        {% include 'upload.html' %}
-        <a href="{{ url_for('schedule.view_schedules') }}" class="btn btn-outline-primary d-flex align-items-center">
-            <i class="fa-regular fa-eye"></i>
-            <span class="ms-2">View all schedules</span>
-        </a>
+    <div class="btn-group mb-3 w-100" role="group" aria-label="Manage Actions">
+        <div class="d-flex gap-2">
+            {% include 'upload.html' %}
+            <a href="{{ url_for('schedule.view_schedules') }}"
+               class="btn btn-outline-primary d-flex align-items-center">
+                <i class="fa-regular fa-eye"></i>
+                <span class="ms-2">View all schedules</span>
+            </a>
+        </div>
+
+        <!-- Reset Button aligned to the right -->
+        <div class="ms-auto">
+            <form action="{{ url_for('faculty.faculty_reset_schedules') }}"
+                  method="POST"
+                  onsubmit="return confirm('Are you sure you want to reset all faculty schedules?');">
+                {{ delete_form.hidden_tag() }}
+                <button type="submit" class="btn btn-outline-danger">RESET SCHEDULES</button>
+            </form>
+        </div>
     </div>
+
 
     <br/>
 
