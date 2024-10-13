@@ -966,6 +966,18 @@ def edit_student(id):
                     student.program_id = form.program_id.data
                     student.semester_id = form.semester_id.data
 
+                    # Generate the school year based on the selected semester
+                    school_year_label = generate_school_year(form.semester_id.data)
+
+                    if school_year_label:
+                        school_year = SchoolYear.query.filter_by(year_label=school_year_label).first()
+                        if not school_year:
+                            school_year = SchoolYear(year_label=school_year_label)
+                            db.session.add(school_year)
+                            db.session.flush()  # Ensure we have the school_year.id
+
+                        student.school_year_id = school_year.id
+
                 db.session.commit()
                 flash('Student details updated successfully!', 'success')
                 return redirect(url_for('student.manage_student'))
