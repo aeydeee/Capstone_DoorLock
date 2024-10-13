@@ -926,7 +926,7 @@ def faculty_profile(faculty_id):
                     field_name_map = {
                         'rfid_uid': 'RFID',
                         'email': 'Email',
-                        'faculty_number': 'Faculty Number',
+                        'faculty_number': 'School ID',
                     }
 
                     friendly_field_name = field_name_map.get(field_name, field_name)
