@@ -49,52 +49,60 @@ def add_course(program_id, year, sem):
             df = pd.read_excel(file)
 
         if df is not None:
-            for index, row in df.iterrows():
-                # Process course name and code
-                course_name = ' '.join(row['course_name'].strip().lower().split())
-                course_code = ' '.join(row['course_code'].strip().upper().split())
-                course_units = int(row['course_units'])  # Ensure units is an integer
+            try:
+                for index, row in df.iterrows():
+                    # Process course name and code
+                    course_name = ' '.join(row['course_name'].strip().lower().split())
+                    course_code = ' '.join(row['course_code'].strip().upper().split())
+                    course_units = int(row['course_units'])  # Ensure units is an integer
 
-                # Check if a course with the same name or code already exists
-                existing_course = Course.query.filter(
-                    (Course.course_name == course_name) |
-                    (Course.course_code == course_code)
-                ).first()
+                    # Check if a course with the same name or code already exists
+                    existing_course = Course.query.filter(
+                        (Course.course_name == course_name) |
+                        (Course.course_code == course_code)
+                    ).first()
 
-                if existing_course:
-                    course = existing_course
-                    flash(f'Course "{course_name}" with this name or code already exists.', 'error')
-                else:
-                    # Create a new course
-                    course = Course(
-                        course_name=course_name,
-                        course_code=course_code,
-                        course_units=course_units
-                    )
-                    db.session.add(course)
-                    db.session.commit()
-                    flash(f'Course "{course_name}" added successfully!', 'success')
+                    if existing_course:
+                        course = existing_course
+                        flash(f'Course "{course_name}" with this name or code already exists.', 'error')
+                    else:
+                        # Create a new course
+                        course = Course(
+                            course_name=course_name,
+                            course_code=course_code,
+                            course_units=course_units
+                        )
+                        db.session.add(course)
+                        db.session.commit()
+                        flash(f'Course "{course_name}" added successfully!', 'success')
 
-                # Associate the course with the program, year level, and semester
-                association_exists = ProgramYearLevelSemesterCourse.query.filter_by(
-                    program_id=program_id,
-                    year_level_id=year_level.id,
-                    semester_id=semester.id,
-                    course_id=course.id
-                ).first()
-
-                if not association_exists:
-                    new_association = ProgramYearLevelSemesterCourse(
+                    # Associate the course with the program, year level, and semester
+                    association_exists = ProgramYearLevelSemesterCourse.query.filter_by(
                         program_id=program_id,
                         year_level_id=year_level.id,
                         semester_id=semester.id,
                         course_id=course.id
-                    )
-                    db.session.add(new_association)
-                    db.session.commit()
-                    flash(f'Course "{course_name}" association added successfully!', 'success')
+                    ).first()
 
-            return redirect(url_for('add_course_per_program.add_course', program_id=program_id, year=year, sem=sem))
+                    if not association_exists:
+                        new_association = ProgramYearLevelSemesterCourse(
+                            program_id=program_id,
+                            year_level_id=year_level.id,
+                            semester_id=semester.id,
+                            course_id=course.id
+                        )
+                        db.session.add(new_association)
+                        db.session.commit()
+                        flash(f'Course "{course_name}" association added successfully!', 'success')
+
+                return redirect(url_for('add_course_per_program.add_course', program_id=program_id, year=year, sem=sem))
+
+            except KeyError as e:
+                flash(f'Missing column: {e}. Please make sure the uploaded file contains "course_name", "course_code", and "course_units" columns.', 'error')
+            except ValueError:
+                flash('Invalid data format in the uploaded file. Please ensure that course units are numeric.', 'error')
+            except Exception as e:
+                flash(f'An unexpected error occurred: {str(e)}', 'error')
 
     elif form.validate_on_submit():
         # Process course name and code
