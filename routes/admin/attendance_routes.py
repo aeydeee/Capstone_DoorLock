@@ -36,7 +36,7 @@ def export_excel(attendances):
         'Faculty': attendance.faculty_name.title(),
         'Time In': attendance.time_in.strftime('%I:%M %p') if attendance.time_in else 'N/A',
         'Time Out': attendance.time_out.strftime('%I:%M %p') if attendance.time_out else 'N/A',
-        'Status': attendance.status
+        'Status': attendance.status.upper()
     } for attendance in attendances]
 
     # Create DataFrame
@@ -110,11 +110,11 @@ def add_header_footer(canvas, doc, is_first_page, start_date=None, end_date=None
 
     # Format the effectivity date based on the provided start and end dates
     if start_date and end_date:
-        effectivity_date = f"From {start_date.strftime('%Y-%m-%d')} - To {end_date.strftime('%Y-%m-%d')}"
+        effectivity_date = f"From {start_date.strftime('%b. %d, %Y')} - To {end_date.strftime('%b. %d, %Y')}"
     elif start_date:
-        effectivity_date = f"From {start_date.strftime('%Y-%m-%d')}"
+        effectivity_date = f"From {start_date.strftime('%b. %d, %Y')}"
     elif end_date:
-        effectivity_date = f"To {end_date.strftime('%Y-%m-%d')}"
+        effectivity_date = f"To {end_date.strftime('%b. %d, %Y')}"
     else:
         effectivity_date = "All records across all dates."
 
@@ -191,10 +191,10 @@ def export_pdf(attendances, selected_columns, start_date=None, end_date=None):
 
     # Define specific column widths for time_in, time_out, and status
     column_widths = {
-        'student_name': 180,
+        'student_name': 165,
         'student_number': 65,
         'program': 120,
-        'date': 70,
+        'date': 80,
         'program_section': 100,
         'semester': 90,
         'time_in': 65,  # Specific width for Time In
@@ -259,11 +259,11 @@ def view_attendance():
 
     # Apply date filters if present
     if start_date:
-        attendances_query = attendances_query.filter(Attendance.time_in >= start_date)
+        attendances_query = attendances_query.filter(Attendance.date >= start_date)
     if end_date:
         # Set time to end of the day for the end date filter
         end_date = end_date.replace(hour=23, minute=59, second=59)
-        attendances_query = attendances_query.filter(Attendance.time_in <= end_date)
+        attendances_query = attendances_query.filter(Attendance.date <= end_date)
 
     # Fetch the attendances after applying the filters
     attendances = attendances_query.all()
