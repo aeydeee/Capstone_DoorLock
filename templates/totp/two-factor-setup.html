@@ -17,18 +17,7 @@
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     {% endfor %}
-
-    {% if current_user.role == 'admin' %}
-        <div class="alert alert-danger text-center font-weight-bold p-5" role="alert"
-             style="font-size: 1.5rem; border: 3px solid red; background-color: #ff0000; color: #fff; box-shadow: 0 0 10px red;">
-            ⚠️⚠️ <strong>IMPORTANT NOTICE:</strong> As an admin, you have the option to skip this verification step and
-            allow your users to verify their own accounts.
-            Please proceed with caution. Choose to <strong>verify your account</strong> or <strong>skip
-            verification</strong> at your own discretion! ⚠️⚠️
-        </div>
-    {% endif %}
-
-
+    
     <h1>Two-Factor Authentication Setup</h1>
     <p>You are almost done! Please <strong>download and open your TOTP app</strong> (e.g., Google Authenticator,
         Microsoft Authenticator) on your smartphone and <strong>scan the following QR code</strong> with it:</p>
