@@ -7,17 +7,21 @@ import io
 import os
 import re
 import pandas as pd
+import pytz
 from fuzzywuzzy import fuzz
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter, landscape, GOV_LEGAL
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.pagesizes import letter, landscape, GOV_LEGAL, legal
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
-from reportlab.platypus import TableStyle, Table, Paragraph, Image, SimpleDocTemplate, Spacer
+from reportlab.platypus import TableStyle, Table, Paragraph, Image, SimpleDocTemplate, Spacer, BaseDocTemplate, Frame, \
+    PageTemplate, KeepInFrame
 
 from flask import Blueprint, request, render_template, flash, redirect, url_for, jsonify, abort, session, current_app, \
     make_response, send_file
 from flask_login import login_required, current_user, logout_user
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from sqlalchemy.orm import aliased
 # from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
 
@@ -25,7 +29,7 @@ from app import db
 from decorators import cspc_acc_required, faculty_required, own_faculty_account_required, check_totp_verified
 from models import Faculty, User, Student, Attendance, Schedule, Course, \
     student_course_association, faculty_course_association, Section, FacultyCourseSchedule, Program, YearLevel, \
-    Semester
+    Semester, SchoolYear
 from webforms.attendance_form import SelectScheduleForm
 from webforms.delete_form import DeleteForm
 from webforms.faculty_acc_form import AttendanceStatusForm
@@ -64,174 +68,169 @@ def export_csv(attendances):
     return response
 
 
-def add_header_footer(canvas, doc, is_first_page, start_date=None, end_date=None):
+def add_header_footer(canvas, doc):
     canvas.saveState()
+    # Check if it's the first page
+    is_first_page = doc.page == 1
 
-    # Header Section - different logic for first page
     if is_first_page:
-        # Left side logo
+        # Header Section (First Page)
         logo_path = os.path.join(os.getcwd(), 'static', 'images', 'logo', 'cspc.png')
         if os.path.exists(logo_path):
-            canvas.drawImage(logo_path, 65, doc.height + 40, width=50, height=50)  # Adjusted logo size and position
+            canvas.drawImage(logo_path, 65, doc.height + 40, width=50, height=50)
 
-        # Left side text
+        # Header Text
         canvas.setFont("Helvetica", 10)
-        canvas.drawString(120, doc.height + 75, "Republic of the Philippines")  # Adjusted header text position
+        canvas.drawString(120, doc.height + 75, "Republic of the Philippines")
         canvas.setFont("Helvetica-Bold", 12)
         canvas.drawString(120, doc.height + 60, "CAMARINES SUR POLYTECHNIC COLLEGES")
         canvas.setFont("Helvetica", 10)
         canvas.drawString(120, doc.height + 45, "Nabua, Camarines Sur")
         canvas.setFont("Helvetica", 6)
-        canvas.drawString(70, doc.height + 30, "ISO 9001:2015")
+        canvas.drawString(70, doc.height + 30, "ISO 9001:2015 Certified")
 
-        # Right side logo
+        # Right Logo
         new_logo_path = os.path.join(os.getcwd(), 'static', 'images', 'logo', 'ccs-logo.png')
         if os.path.exists(new_logo_path):
-            canvas.drawImage(new_logo_path, doc.width - 1, doc.height + 40, width=50,
-                             height=50)  # Align to match left logo size
+            canvas.drawImage(new_logo_path, doc.width - 80, doc.height + 40, width=50, height=50)
 
-        # Right side text (College of Computer Studies)
+        # Right Header Text
         canvas.setFont("Helvetica-Bold", 12)
-        canvas.drawString(doc.width - 215, doc.height + 60,
-                          "COLLEGE OF COMPUTER STUDIES")  # Text aligned to the left of the logo
-
-        # Horizontal line after the header
-        canvas.setLineWidth(1)
-        canvas.setStrokeColor(colors.black)
-        canvas.line(60, doc.height + 25, doc.width + 45, doc.height + 25)  # Draw a horizontal line after the header
+        canvas.drawString(doc.width - 215, doc.height + 60, "COLLEGE OF COMPUTER STUDIES")
 
     else:
-        # Adjusted header for the 2nd and subsequent pages
+        # Header for Subsequent Pages
         canvas.setFont("Helvetica-Bold", 12)
-        canvas.drawString(65, doc.height + 60, "CAMARINES SUR POLYTECHNIC COLLEGES, ATTENDANCE RECORD LOGS - CONTINUED")
+        canvas.drawString(65, doc.height + 60,
+                          "CAMARINES SUR POLYTECHNIC COLLEGES, ATTENDANCE RECORD LOGS - CONTINUED")
 
-    # Add the italic footer text
-    canvas.setFont("Helvetica-Oblique", 9)  # Setting the font to italic
-    canvas.drawString(60, 50, "System-generated report. No Signature required.")  # Adjust the y-position as needed
-
-    # Footer Section with horizontal line
+    # Footer Section
     canvas.setLineWidth(1)
     canvas.setStrokeColor(colors.black)
-    canvas.line(60, 40, doc.width + 45, 40)  # Horizontal line for the footer
-    canvas.setFont("Helvetica", 10)
+    canvas.line(60, 40, doc.width + 45, 40)  # Footer line
 
-    # Format the effectivity date based on the provided start and end dates
-    if start_date and end_date:
-        effectivity_date = f"From {start_date.strftime('%Y-%m-%d')} - To {end_date.strftime('%Y-%m-%d')}"
-    elif start_date:
-        effectivity_date = f"From {start_date.strftime('%Y-%m-%d')}"
-    elif end_date:
-        effectivity_date = f"To {end_date.strftime('%Y-%m-%d')}"
-    else:
-        effectivity_date = "All records across all dates."
-
-    canvas.drawString(60, 30, effectivity_date)
-
-    # Include current_user.faculty_details.full_name in the footer
+    # Footer with Faculty Name and Page Number
     if current_user and hasattr(current_user, 'faculty_details') and current_user.faculty_details:
         faculty_full_name = current_user.faculty_details.full_name
-        canvas.drawString(60, 20, f"Prepared by: {faculty_full_name.title()}")
+        canvas.setFont("Helvetica", 10)
+        canvas.drawString(60, 30, f"Prepared by: {faculty_full_name.title()}")
 
+    canvas.setFont("Helvetica", 10)
     canvas.drawRightString(doc.width + 45, 30, f"Page {doc.page}")
+
+    # System-generated notice
+    canvas.setFont("Helvetica-Oblique", 9)
+    canvas.drawString(60, 50, "System-generated report. No signature required.")
 
     canvas.restoreState()
 
 
-def export_pdf(attendances, selected_columns, start_date=None, end_date=None):
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=landscape(GOV_LEGAL),
-                            leftMargin=0.75 * inch, rightMargin=0.75 * inch,
-                            topMargin=1 * inch, bottomMargin=0.75 * inch)
+def export_pdf(attendances, semester, school_year, course, year_level, program, section):
+    # Resolve display names from database if IDs are provided
+    semester_display = Semester.query.get(int(semester)).display_name if semester and semester.isdigit() else semester
+    school_year_display = SchoolYear.query.get(
+        int(school_year)).year_label if school_year and school_year.isdigit() else school_year
+    course_obj = Course.query.get(int(course)) if course and course.isdigit() else None
+    course_display = course_obj.course_name if course_obj else course
+    course_code = course_obj.course_code if course_obj else 'N/A'
+    program_display = Program.query.get(int(program)).program_code.upper() if program and program.isdigit() else program
+    year_level_display = YearLevel.query.get(
+        int(year_level)).level_code if year_level and year_level.isdigit() else year_level
+    section_display = Section.query.get(int(section)).display_name if section and section.isdigit() else section
 
-    styles = getSampleStyleSheet()
-    elements = []
-    elements.append(Spacer(1, 30))  # Spacer to push the title down
-    title = Paragraph("<b>ATTENDANCE RECORDS LOGS</b>", styles['Title'])
-    title.hAlign = 'CENTER'
-    elements.append(title)
-    elements.append(Spacer(1, 10))
+    # Extract unique attendance dates and sort them
+    attendance_dates = sorted(set(attendance.date.date() for attendance in attendances))
 
-    # Define column mappings for selected columns
-    column_mapping = {
-        'student_name': 'Student Name',
-        'student_number': 'Student ID',
-        'course': 'Course',
-        'date': 'Date',
-        'program_section': 'Program & Section',
-        'semester': 'Semester',
-        'time_in': 'Time In',
-        'time_out': 'Time Out',
-        'status': 'Status'
-    }
-
-    # Create table header based on selected columns
-    table_header = [column_mapping[col] for col in selected_columns]
-    data = [[Paragraph(cell, styles['Normal']) for cell in table_header]]
-
-    # Populate the table rows based on selected columns
+    # Group attendance records by student (same logic as in the view)
+    student_attendance = {}
     for attendance in attendances:
-        row = []
-        if 'student_name' in selected_columns:
-            row.append(Paragraph(attendance.student_name.title(), styles['Normal']))
-        if 'student_number' in selected_columns:
-            row.append(Paragraph(attendance.student_number.title(), styles['Normal']))
-        if 'course' in selected_columns:
-            row.append(Paragraph(attendance.course_name.title(), styles['Normal']))
-        if 'date' in selected_columns:
-            row.append(
-                Paragraph(attendance.time_in.strftime('%m-%d-%Y') if attendance.time_in else '', styles['Normal']))
-        if 'program_section' in selected_columns:
-            row.append(Paragraph(
-                f'{attendance.program_code.upper()} {attendance.level_code}{attendance.section.upper() if attendance.section else ""}',
-                styles['Normal']))
-        if 'semester' in selected_columns:
-            row.append(Paragraph(attendance.semester, styles['Normal']))
-        if 'time_in' in selected_columns:
-            row.append(
-                Paragraph(attendance.time_in.strftime('%I:%M %p') if attendance.time_in else 'N/A', styles['Normal']))
-        if 'time_out' in selected_columns:
-            row.append(
-                Paragraph(attendance.time_out.strftime('%I:%M %p') if attendance.time_out else 'N/A', styles['Normal']))
-        if 'status' in selected_columns:
-            row.append(Paragraph(attendance.status.upper(), styles['Normal']))
+        student_key = (attendance.student_number.upper(), attendance.student_name.title())
+        if student_key not in student_attendance:
+            student_attendance[student_key] = {}
+        date_key = attendance.date.strftime('%b. %d, %Y')  # Consistent date format
+        student_attendance[student_key][date_key] = attendance.status.capitalize()
+
+    # Prepare the PDF
+    buffer = io.BytesIO()
+    doc = BaseDocTemplate(buffer, pagesize=landscape(legal),
+                          leftMargin=0.75 * inch, rightMargin=0.75 * inch,
+                          topMargin=1 * inch, bottomMargin=0.75 * inch)
+
+    # Define a frame and page template
+    frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='normal')
+    template = PageTemplate(id='attendance_template', frames=frame, onPage=add_header_footer)
+    doc.addPageTemplates([template])
+
+    elements = []
+
+    # Add title and header information
+    elements.append(Spacer(1, 20))
+    title = Paragraph("<b>ATTENDANCE RECORDS LOGS</b>", getSampleStyleSheet()['Title'])
+    elements.append(title)
+
+    # Centered course and semester info
+    elements.append(Spacer(1, -10))
+    course_info = Paragraph(
+        f"<b>{semester_display} {school_year_display}</b><br/><b>{course_code} - {course_display}</b><br/><b>{program_display} {year_level_display}{section_display}</b>",
+        getSampleStyleSheet()['Normal'])
+    elements.append(course_info)
+
+    # Helper function to format the date in a stacked format
+    def stack_date(date_str):
+        # Split the date into components and stack them using HTML <br/>
+        return "<br/>".join(date_str)
+
+    # Modify the table header: Student ID, Name, and Attendance Dates (Stacked format)
+    stacked_dates = [stack_date(date.strftime('%b/%d/%Y')) for date in attendance_dates]
+
+    # Convert each stacked date to a Paragraph with appropriate styling
+    styles = getSampleStyleSheet()
+    stacked_date_paragraphs = [Paragraph(f"<font size=12>{date}</font>", styles['Normal']) for date in stacked_dates]
+
+    # Define a larger font style for the table header with center alignment
+    header_style = ParagraphStyle(name='Header', fontSize=14, alignment=TA_CENTER, spaceBefore=50, spaceAfter=6)
+
+    # Create the table header with bigger font for 'Student ID' and 'Name'
+    table_header = [
+                       Paragraph('Student ID', header_style),
+                       Paragraph('Name', header_style)
+                   ] + stacked_date_paragraphs
+
+    # Initialize the table data with the header
+    data = [table_header]
+
+    # Map the status to a single letter
+    status_mapping = {'present': 'P', 'absent': 'A', 'late': 'L', 'excuse': 'E'}
+
+    # Add attendance data for each student
+    for (student_id, student_name), records in student_attendance.items():
+        row = [student_id, student_name]  # Start with student ID and name
+        for date in attendance_dates:
+            status = records.get(date.strftime('%b. %d, %Y'), 'N/A')  # Match date columns
+            row.append(status_mapping.get(status.lower(), 'N/A'))
         data.append(row)
 
-    # Define specific column widths for time_in, time_out, and status
-    column_widths = {
-        'student_name': 180,
-        'student_number': 65,
-        'course': 120,
-        'date': 70,
-        'program_section': 100,
-        'semester': 90,
-        'time_in': 65,  # Specific width for Time In
-        'time_out': 65,  # Specific width for Time Out
-        'status': 60  # Specific width for Status
-    }
+    # Set column widths: Student ID (100), Name (150), and smaller width (40) for each date column
+    column_widths = [100, 150] + [20] * len(attendance_dates)
 
-    # Set colWidths dynamically based on selected columns
-    col_widths = [column_widths[col] for col in selected_columns]
-
-    # Create the table with the specified column widths
-    table = Table(data, colWidths=col_widths, repeatRows=1)
+    # Create and style the table
+    table = Table(data, colWidths=column_widths, repeatRows=1)
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.white),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),  # Header background color
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),  # Header text color
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),  # Center alignment for all cells
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),  # Bold font for headers
+        ('FONTSIZE', (0, 0), (-1, 0), 10),  # Font size for headers
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),  # Grid for all cells
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),  # Row backgrounds
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),  # Vertical alignment
     ]))
 
+    # Add the table to the PDF elements
     elements.append(table)
 
-    def on_first_page(canvas, doc):
-        add_header_footer(canvas, doc, is_first_page=True, start_date=start_date, end_date=end_date)
-
-    def on_later_pages(canvas, doc):
-        add_header_footer(canvas, doc, is_first_page=False, start_date=start_date, end_date=end_date)
-
-    doc.build(elements, onFirstPage=on_first_page, onLaterPages=on_later_pages)
+    # Build the PDF and return it as a download
+    doc.build(elements)
 
     buffer.seek(0)
     return send_file(buffer, as_attachment=True, download_name='attendance_records.pdf', mimetype='application/pdf')
@@ -280,13 +279,10 @@ def view_attendance():
     export_type = request.args.get('export')
 
     # Retrieve the selected columns for export
-    selected_columns = request.args.getlist('columns')  # Capture selected columns from form
-
-    # Ensure selected_columns is a list and not empty
+    selected_columns = request.args.getlist('columns')
     if not selected_columns:
-        selected_columns = ['student_name', 'student_number', 'course', 'date', 'program_section', 'semester',
-                            'time_in', 'time_out',
-                            'status']  # default columns
+        selected_columns = ['student_name', 'student_number', 'course', 'date', 'program_section',
+                            'semester', 'time_in', 'time_out', 'status']  # Default columns
 
     faculty = Faculty.query.filter_by(user_id=current_user.id).first()
     courses = faculty.courses
@@ -300,36 +296,60 @@ def view_attendance():
     # Get the start and end date from the query parameters
     start_date_str = request.args.get('start_date')
     end_date_str = request.args.get('end_date')
+    start_date = datetime.strptime(start_date_str, '%Y-%m-%d') if start_date_str else None
+    end_date = datetime.strptime(end_date_str, '%Y-%m-%d') if end_date_str else None
 
-    # Parse the date strings into datetime objects
-    start_date = datetime.strptime(start_date_str, '%Y-%m-%d') if start_date_str and start_date_str != 'None' else None
-    end_date = datetime.strptime(end_date_str, '%Y-%m-%d') if end_date_str and end_date_str != 'None' else None
+    # Extract values from the models to populate filter options
+    semester_choices = [(sem.display_name, sem.display_name) for sem in
+                        Semester.query.all()]  # Use display_name for both value and label
+    school_year_choices = [(sy.id, sy.year_label) for sy in SchoolYear.query.all()]
+    course_choices = [(course.id, course.course_name) for course in Course.query.all()]
+    program_choices = [(prog.id, prog.program_code) for prog in Program.query.all()]
+    section_choices = [(sec.id, sec.display_name) for sec in Section.query.all()]
+    year_level_choices = [(yl.id, yl.level_code) for yl in YearLevel.query.all()]
+
+    # Get filter values from the request
+    semester = request.args.get('semester')
+    school_year = request.args.get('school_year')
+    course = request.args.get('course')
+    program = request.args.get('program')
+    section = request.args.get('section')
 
     # Build the initial query to fetch attendance records
     attendances_query = Attendance.query.filter(Attendance.student_id.in_(student_ids))
+
+    # Apply date range filtering
     if start_date:
         attendances_query = attendances_query.filter(Attendance.time_in >= start_date)
     if end_date:
-        end_date = end_date.replace(hour=23, minute=59, second=59)
-        attendances_query = attendances_query.filter(Attendance.time_in <= end_date)
+        attendances_query = attendances_query.filter(
+            Attendance.time_in <= end_date.replace(hour=23, minute=59, second=59))
 
-    # Filter based on the faculty name or fuzzy match
-    exact_match_attendances = attendances_query.filter(Attendance.faculty_name == faculty.full_name).all()
+    # Apply additional filters based on request arguments
+    if semester:
+        attendances_query = attendances_query.filter(Attendance.semester == semester)
 
-    if exact_match_attendances:
-        attendances = exact_match_attendances
-    else:
-        all_attendances = attendances_query.all()
-        attendances = [attendance for attendance in all_attendances if
-                       fuzz.ratio(attendance.faculty_name, faculty.full_name) >= 80]
+    if school_year:
+        attendances_query = attendances_query.join(Student).join(SchoolYear).filter(SchoolYear.id == school_year)
 
-    # Handle export requests with the filtered data
+    if course:
+        attendances_query = attendances_query.join(Course).filter(Course.id == course)
+
+    # Fetch the results
+    results = attendances_query.all()
+
+    # Filter based on faculty name with exact or fuzzy matching
+    attendances = [
+        attendance for attendance in results
+        if attendance.faculty_name == faculty.full_name or fuzz.ratio(attendance.faculty_name, faculty.full_name) >= 80
+    ]
+
+    # Handle export requests
     if export_type in ['csv', 'pdf']:
         if export_type == 'csv':
-            return export_csv(attendances)  # Pass filtered attendance
+            return export_csv(attendances)
         elif export_type == 'pdf':
-            return export_pdf(attendances, selected_columns, start_date=start_date, end_date=end_date
-                              )
+            return export_pdf(attendances, selected_columns, start_date=start_date, end_date=end_date)
 
     form = AttendanceStatusForm()
 
@@ -343,8 +363,205 @@ def view_attendance():
             flash('Attendance status updated successfully', 'success')
         return redirect(url_for('faculty_acc.view_attendance'))
 
-    return render_template('faculty_acc/view_attendance.html', attendances=attendances, form=form,
-                           selected_columns=selected_columns)
+    # Pass the filter options and selected choices to the template
+    return render_template(
+        'faculty_acc/view_attendance.html',
+        attendances=attendances,
+        form=form,
+        selected_columns=selected_columns,
+        semester_choices=semester_choices,
+        course_choices=course_choices,
+        program_choices=program_choices,
+        section_choices=section_choices,
+        selected_semester=semester,
+        selected_school_year=school_year,
+        selected_course=course,
+        selected_program=program,
+        selected_section=section
+    )
+
+
+@faculty_acc_bp.route('/students/new_attendance', methods=['GET', 'POST'])
+@login_required
+@cspc_acc_required
+@faculty_required
+@check_totp_verified
+def view_new_attendance():
+    form = AttendanceStatusForm()
+
+    # Check for export requests
+    export_type = request.args.get('export')
+    # Get filter values from the request
+    semester = request.args.get('semester')
+    school_year = request.args.get('school_year')
+    course = request.args.get('course')
+    program = request.args.get('program')
+    year_level = request.args.get('year_level')
+    section = request.args.get('section')
+
+    # If a school year is selected, get its label
+    if school_year:
+        school_year_label = SchoolYear.query.filter_by(id=school_year).first().year_label
+    else:
+        school_year_label = None
+
+    # If a course is selected, get its name
+    if course:
+        course_name = Course.query.filter_by(id=course).first().course_name
+    else:
+        course_name = None
+
+    # If a program is selected, get its code
+    if program:
+        program_code = Program.query.filter_by(id=program).first().program_code
+    else:
+        program_code = None
+
+    # If a year level is selected, get its code
+    if year_level:
+        year_level_code = YearLevel.query.filter_by(id=year_level).first().level_code
+    else:
+        year_level_code = None
+
+    # If a section is selected, get its display name
+    if section:
+        section_name = Section.query.filter_by(id=section).first().display_name
+    else:
+        section_name = None
+
+    faculty = Faculty.query.filter_by(user_id=current_user.id).first()
+
+    # Check if any filters are selected
+    filters_applied = any([semester, school_year, course, program, year_level, section])
+
+    attendances = []
+    attendance_dates = []
+    student_attendance = {}
+
+    if filters_applied:
+
+        # Get student IDs for courses taught by this faculty
+        student_ids = db.session.query(Student.id).join(student_course_association).filter(
+            student_course_association.c.course_id.in_([course.id for course in faculty.courses])
+        ).distinct().all()
+        student_ids = [student_id[0] for student_id in student_ids]
+
+        # Extract values from the models to populate filter options
+        semester_choices = [(sem.display_name, sem.display_name) for sem in Semester.query.all()]
+        school_year_choices = [(sy.id, sy.year_label) for sy in SchoolYear.query.all()]
+
+        # Use distinct to get unique courses associated with the faculty
+        course_choices = db.session.query(Attendance.course_id, Attendance.course_name).filter(
+            Attendance.faculty_name == faculty.full_name
+        ).distinct(Attendance.course_id).all()
+        course_choices = [(course_id, course_name) for course_id, course_name in course_choices]
+
+        program_choices = [(prog.id, prog.program_code) for prog in Program.query.all()]
+        section_choices = [(sec.id, sec.display_name) for sec in Section.query.all()]
+        year_level_choices = [(yl.id, yl.level_code) for yl in YearLevel.query.all()]
+
+        # Create two aliases for the Student table to avoid alias conflicts
+        student_alias_1 = aliased(Student)
+        student_alias_2 = aliased(Student)
+        student_alias_3 = aliased(Student)
+
+        # Build the initial query to fetch attendance records
+        attendances_query = Attendance.query.filter(Attendance.student_id.in_(student_ids))
+
+        # Apply additional filters based on request arguments
+        if semester:
+            attendances_query = attendances_query.filter(Attendance.semester == semester)
+
+        if school_year:
+            attendances_query = attendances_query.join(student_alias_1,
+                                                       Attendance.student_id == student_alias_1.id).join(
+                SchoolYear, student_alias_1.school_year_id == SchoolYear.id).filter(SchoolYear.id == school_year)
+
+        if course:
+            attendances_query = attendances_query.join(Course, Attendance.course_id == Course.id).filter(
+                Course.id == course)
+
+        if program:
+            attendances_query = attendances_query.join(student_alias_2,
+                                                       Attendance.student_id == student_alias_2.id).join(
+                Program, student_alias_2.program_id == Program.id).filter(Program.id == program)
+
+        if year_level:
+            attendances_query = attendances_query.join(student_alias_3,
+                                                       Attendance.student_id == student_alias_3.id).join(
+                YearLevel, student_alias_3.year_level_id == YearLevel.id).filter(YearLevel.id == year_level)
+
+        if section:
+            attendances_query = attendances_query.filter(Attendance.section == section_name)
+
+        # Fetch the results
+        results = attendances_query.all()
+
+        # Filter based on faculty name with exact or fuzzy matching
+        attendances = [
+            attendance for attendance in results
+            if
+            attendance.faculty_name == faculty.full_name or fuzz.ratio(attendance.faculty_name, faculty.full_name) >= 80
+        ]
+
+        # Extract unique attendance dates from the results
+        attendance_dates = sorted(set([attendance.date.date() for attendance in attendances]))
+
+        # Group the attendance records by student
+        student_attendance = {}
+        for attendance in attendances:
+
+            student_key = (attendance.student_number, attendance.student_name)
+            if student_key not in student_attendance:
+                student_attendance[student_key] = {}
+            student_attendance[student_key][attendance.date.date()] = attendance.status
+
+            print(student_key)
+
+    # Handle export requests
+    if export_type in ['csv', 'pdf']:
+        if export_type == 'csv':
+            return export_csv(attendances)
+        elif export_type == 'pdf':
+            # Ensure that all required parameters are passed to export_pdf
+            print(f"school year: {school_year}")
+            return export_pdf(
+                attendances=attendances,
+                semester=semester,
+                school_year=school_year,
+                course=course,
+                program=program,
+                year_level=year_level,
+                section=section
+            )
+
+    # Pass the filter options and the filtered results to the template
+    return render_template(
+        'faculty_acc/view_new_attendance.html',
+        attendances=attendances,
+        attendance_dates=attendance_dates,  # Pass the attendance dates
+        student_attendance=student_attendance,  # Pass the student attendance records
+        form=AttendanceStatusForm(),
+        semester_choices=[(sem.display_name, sem.display_name) for sem in Semester.query.all()],
+        school_year_choices=[(sy.id, sy.year_label) for sy in SchoolYear.query.all()],
+        course_choices=[(course_id, course_name) for course_id, course_name in db.session.query(
+            Attendance.course_id, Attendance.course_name
+        ).filter(Attendance.faculty_name == faculty.full_name).distinct(Attendance.course_id).all()],
+        program_choices=[(prog.id, prog.program_code) for prog in Program.query.all()],
+        year_level_choices=[(yl.id, yl.level_code) for yl in YearLevel.query.all()],
+        section_choices=[(sec.id, sec.display_name) for sec in Section.query.all()],
+        selected_semester=semester,
+        selected_school_year=school_year,
+        selected_course=course,
+        selected_program=program,
+        selected_year_level=year_level,
+        selected_section=section,
+        filtered_school_year=school_year_label,  # Pass the label instead of the id
+        filtered_course=course_name,  # Pass the name instead of the id
+        filtered_program=program_code,  # Pass the code instead of the id
+        filtered_year_level=year_level_code,  # Pass the code instead of the id
+        filtered_section=section_name  # Pass the display name instead of the id
+    )
 
 
 @faculty_acc_bp.route("/profile/<int:faculty_id>", methods=["GET", "POST"])
