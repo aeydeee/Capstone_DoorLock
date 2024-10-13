@@ -24,7 +24,8 @@ from app import db
 from decorators import cspc_acc_required, admin_required
 from models import User, Student, \
     Course, Attendance, ProgramYearLevelSemesterCourse, Section, Program, YearLevel, Semester, \
-    student_course_association, Schedule, FacultyCourseSchedule, YearLevelEnum, SectionEnum, SemesterEnum, Faculty
+    student_course_association, Schedule, FacultyCourseSchedule, YearLevelEnum, SectionEnum, SemesterEnum, Faculty, \
+    SchoolYear, EnrollmentHistory
 
 from webforms.delete_form import DeleteForm
 from webforms.search_form import AssignStudentForm
@@ -482,6 +483,58 @@ def delete_student_course(student_id, course_id):
     return redirect(url_for('student.manage_students_schedule_courses', student_id=student_id))
 
 
+@student_bp.route('/students/record-history', methods=['POST'])
+@login_required
+@cspc_acc_required
+@admin_required
+def record_history():
+    try:
+        students = Student.query.all()
+
+        for student in students:
+            # Check if a similar enrollment history already exists
+            existing_history = EnrollmentHistory.query.filter_by(
+                student_id=student.id,
+                school_year_id=student.school_year.id,
+                program_id=student.program_id,
+                year_level_id=student.year_level_id,
+                section_id=student.section_id,
+                semester_id=student.semester_id,
+                student_number=student.student_number,
+                program_code=student.program.program_code,
+                year_level_code=student.year_level.level_code,
+                section_code=student.section.section_code
+            ).first()
+
+            if existing_history:
+                print(f"Duplicate history found for student {student.student_number}. Skipping.")
+                continue  # Skip this record if a duplicate exists
+
+            # Create a new EnrollmentHistory record if not found
+            history = EnrollmentHistory(
+                student_id=student.id,
+                school_year_id=student.school_year.id,
+                program_id=student.program_id,
+                year_level_id=student.year_level_id,
+                section_id=student.section_id,
+                semester_id=student.semester_id,
+                student_number=student.student_number,
+                program_code=student.program.program_code,
+                year_level_code=student.year_level.level_code,
+                section_code=student.section.section_code
+            )
+            db.session.add(history)
+
+        db.session.commit()
+        flash("Enrollment history recorded successfully.", 'success')
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Failed to record history: {e}", 'danger')
+
+    return redirect(url_for('student.manage_student'))
+
+
 @student_bp.route("/add", methods=["GET", "POST"])
 @login_required
 @cspc_acc_required
@@ -501,161 +554,77 @@ def add_student():
 
         def convert_to_hex(rfid_uid):
             try:
-                # Try to interpret the RFID UID as an integer (which means it's in decimal)
                 rfid_int = int(rfid_uid)
-
-                # Convert the integer to a hexadecimal string
                 rfid_hex = format(rfid_int, '08X')
-
-                # Adjust the byte order (reverse for little-endian)
                 rfid_hex = ''.join(reversed([rfid_hex[i:i + 2] for i in range(0, len(rfid_hex), 2)]))
-
                 return rfid_hex
             except ValueError:
-                # If it raises a ValueError, it means rfid_uid is already a valid hexadecimal string
-                return rfid_uid.lower()  # Return as uppercase hex
+                return rfid_uid.lower()
 
         def is_valid_cspc_email(email):
-            """Check if the email ends with '@cspc.edu.ph'."""
             return email.lower().endswith('@my.cspc.edu.ph')
 
-        # Convert the RFID UID to hexadecimal before saving
         form.rfid_uid.data = convert_to_hex(form.rfid_uid.data)
-
-        # Check if the email is valid
         email = clean_field(form.email.data.lower())
         if not is_valid_cspc_email(email):
             flash('Email must be from the CSPC domain', 'error')
             return render_template('student/add_student.html', form=form)
 
-        # Check for existing email, username, and student number
         rfid_uid_exists = User.query.filter_by(rfid_uid=clean_field(form.rfid_uid.data.lower())).first()
         email_exists = User.query.filter_by(email=clean_field(form.email.data.lower())).first()
-        # username_exists = User.query.filter_by(username=clean_field(form.username.data.lower())).first()
         student_number_exists = Student.query.filter_by(
             student_number=clean_field(form.student_number.data.lower())).first()
 
-        if rfid_uid_exists is not None:
+        if rfid_uid_exists:
             flash('RFID was already used', 'error')
-        elif email_exists is not None:
+        elif email_exists:
             flash('Email was already registered', 'error')
-        # elif username_exists is not None:
-        #     flash('Username is already taken', 'error')
-        elif student_number_exists is not None:
+        elif student_number_exists:
             flash('Student ID is already in use', 'error')
         else:
             try:
                 with db.session.begin_nested():
-                    # hashed_pw = generate_password_hash(form.password.data, "pbkdf2:sha256")
                     user = User(
                         rfid_uid=clean_field(form.rfid_uid.data.lower()),
-                        # username=clean_field(form.username.data.lower()),
                         f_name=clean_field(form.f_name.data.lower()),
                         l_name=clean_field(form.l_name.data.lower()),
                         m_name=clean_field(form.m_name.data.lower()),
-                        # m_initial=clean_field(form.m_initial.data.lower()),
                         email=clean_field(form.email.data.lower()),
-                        # date_of_birth=form.date_of_birth.data,
-                        # place_of_birth=clean_field(form.place_of_birth.data.lower()),
                         role='student',
                         gender=clean_field(form.gender.data.lower()),
-                        # civil_status=clean_field(form.civil_status.data.lower()),
-                        # nationality=clean_field(form.nationality.data.lower()),
-                        # citizenship=clean_field(form.citizenship.data.lower()),
-                        # religion=clean_field(form.religion.data.lower()),
-                        # dialect=clean_field(form.dialect.data.lower()),
-                        # tribal_aff=clean_field(form.tribal_aff.data.lower()),
-                        # profile_pic=None
                     )
                     db.session.add(user)
-                    db.session.flush()  # Get user.id without committing
+                    db.session.flush()
 
-                    # if 'profile_pic' in request.files and request.files['profile_pic'].filename != '':
-                    #     profile_pic = request.files['profile_pic']
-                    #     pic_filename = secure_filename(profile_pic.filename)
-                    #     pic_name = str(uuid.uuid1()) + "_" + pic_filename
-                    #     user.profile_pic = pic_name
-                    #     profile_pic.save(os.path.join(current_app.config['UPLOAD_FOLDER'], pic_name))
+                    # Determine the school year based on the selected semester and current year
+                    current_year = datetime.now().year
+                    selected_semester = Semester.query.get(form.semester_id.data)
 
-                    # # Add ContactInfo
-                    # contact_info = ContactInfo(
-                    #     user_id=user.id,
-                    #     contact_number=form.contact_number.data,
-                    #     h_city=clean_field(form.home_addr_text.data.lower()),
-                    #     h_barangay=clean_field(form.home_brgy_text.data.lower()),
-                    #     h_house_no=clean_field(form.home_house_no.data.lower()),
-                    #     h_street=clean_field(form.home_street.data.lower()),
-                    #     curr_city=clean_field(form.curr_addr_text.data.lower()),
-                    #     curr_barangay=clean_field(form.curr_brgy_text.data.lower()),
-                    #     curr_house_no=clean_field(form.curr_house_no.data.lower()),
-                    #     curr_street=clean_field(form.curr_street.data.lower())
-                    # )
-                    # db.session.add(contact_info)
-                    #
-                    # # Add FamilyBackground
-                    # family_background = FamilyBackground(
-                    #     user_id=user.id,
-                    #     mother_full_name=clean_field(form.mother_full_name.data.lower()),
-                    #     mother_educ_attainment=clean_field(form.mother_educ_attainment.data.lower()),
-                    #     mother_addr=clean_field(form.mother_addr_text.data.lower()),
-                    #     mother_brgy=clean_field(form.mother_brgy_text.data.lower()),
-                    #     mother_cont_no=form.mother_cont_no.data,
-                    #     mother_place_work_or_company_name=clean_field(
-                    #         form.mother_place_work_or_company_name.data.lower()),
-                    #     mother_occupation=clean_field(form.mother_occupation.data.lower()),
-                    #     father_full_name=clean_field(form.father_full_name.data.lower()),
-                    #     father_educ_attainment=clean_field(form.father_educ_attainment.data.lower()),
-                    #     father_addr=clean_field(form.father_addr_text.data.lower()),
-                    #     father_brgy=clean_field(form.father_brgy_text.data.lower()),
-                    #     father_cont_no=form.father_cont_no.data,
-                    #     father_place_work_or_company_name=clean_field(
-                    #         form.father_place_work_or_company_name.data.lower()),
-                    #     father_occupation=clean_field(form.father_occupation.data.lower()),
-                    #     guardian_full_name=clean_field(form.guardian_full_name.data.lower()),
-                    #     guardian_educ_attainment=clean_field(form.guardian_educ_attainment.data.lower()),
-                    #     guardian_addr=clean_field(form.guardian_addr_text.data.lower()),
-                    #     guardian_brgy=clean_field(form.guardian_brgy_text.data.lower()),
-                    #     guardian_cont_no=form.guardian_cont_no.data,
-                    #     guardian_place_work_or_company_name=clean_field(
-                    #         form.guardian_place_work_or_company_name.data.lower()),
-                    #     guardian_occupation=clean_field(form.guardian_occupation.data.lower())
-                    # )
-                    # db.session.add(family_background)
-                    #
-                    # # Add EducationalBackground
-                    # educational_background = EducationalBackground(
-                    #     user_id=user.id,
-                    #     elem_school=clean_field(form.elem_school_name.data.lower()),
-                    #     elem_address=clean_field(form.elem_school_addr_text.data.lower()),
-                    #     elem_graduated=form.elem_year_grad.data,
-                    #     junior_school=clean_field(form.junior_hs_school_name.data.lower()),
-                    #     junior_address=clean_field(form.junior_hs_school_addr_text.data.lower()),
-                    #     junior_graduated=form.junior_hs_year_grad.data,
-                    #     senior_school=clean_field(form.senior_hs_school_name.data.lower()),
-                    #     senior_address=clean_field(form.senior_hs_school_addr_text.data.lower()),
-                    #     senior_graduated=form.senior_hs_year_grad.data,
-                    #     senior_track_strand=clean_field(form.senior_strand.data.lower()),
-                    #     # tertiary_school=clean_field(form.tertiary_school_name.data.lower()),
-                    #     # tertiary_address=clean_field(form.tertiary_school_addr_text.data.lower()),
-                    #     # tertiary_graduated=form.tertiary_year_grad.data,
-                    #     # tertiary_program=clean_field(form.tertiary_program.data.lower())
-                    # )
-                    # db.session.add(educational_background)
+                    if selected_semester.display_name.lower() == "first semester":
+                        school_year_label = f"{current_year}-{current_year + 1}"
+                    else:  # Second Semester
+                        school_year_label = f"{current_year - 1}-{current_year}"
+
+                    # Fetch or create the school year
+                    school_year = SchoolYear.query.filter_by(year_label=school_year_label).first()
+                    if not school_year:
+                        school_year = SchoolYear(year_label=school_year_label)
+                        db.session.add(school_year)
+                        db.session.flush()
 
                     # Add Student
                     student = Student(
                         student_number=clean_field(form.student_number.data.lower()),
-                        # password_hash=hashed_pw,
                         year_level_id=form.year_level_id.data,
                         program_id=form.program_id.data,
                         section_id=form.section_id.data,
                         semester_id=form.semester_id.data,
+                        school_year_id=school_year.id,
                         user_id=user.id
                     )
                     db.session.add(student)
-                    db.session.flush()  # Get student.id without committing
+                    db.session.flush()
 
-                # Commit the transaction
                 db.session.commit()
                 flash('Student added successfully!', 'success')
                 return redirect(url_for('student.add_student'))
@@ -665,20 +634,14 @@ def add_student():
 
                 if isinstance(e.orig, IntegrityError) and "Duplicate entry" in str(e.orig):
                     field_name = str(e.orig).split("'")[3]
-
-                    # Mapping database columns to user-friendly field names
                     field_name_map = {
                         'rfid_uid': 'RFID',
                         'email': 'Email',
-                        # 'username': 'Username',
                         'student_number': 'Student ID',
                     }
-
-                    # Use the user-friendly name if available, else fall back to the database column name
                     friendly_field_name = field_name_map.get(field_name, field_name)
                     flash(f"The {friendly_field_name} you entered is already in use. Please use a different value.",
                           'error')
-
                 else:
                     flash('An error occurred while adding the student. Please try again.', 'error')
 
@@ -690,6 +653,9 @@ def add_student():
     return render_template('student/add_student.html', form=form)
 
 
+from datetime import datetime
+
+
 @student_bp.route("/edit/<int:id>/", methods=["GET", "POST"])
 @login_required
 @cspc_acc_required
@@ -698,50 +664,27 @@ def edit_student(id):
     student = Student.query.get_or_404(id)
     user = student.user
     form = EditStudentForm(obj=user)
-    print(request.form)
-
-    # # Initialize variables
-    # contact_info = user.contact_info
-    # family_background = user.family_background
-    # educational_background = user.educational_background
-    #
-    # # Ensure that the related objects exist
-    # if contact_info is None:
-    #     contact_info = ContactInfo(user_id=user.id)
-    #     db.session.add(contact_info)
-    #     db.session.commit()
-    #     user.contact_info = contact_info
-    #
-    # if family_background is None:
-    #     family_background = FamilyBackground(user_id=user.id)
-    #     db.session.add(family_background)
-    #     db.session.commit()
-    #     user.family_background = family_background
-    #
-    # if educational_background is None:
-    #     educational_background = EducationalBackground(user_id=user.id)
-    #     db.session.add(educational_background)
-    #     db.session.commit()
-    #     user.educational_background = educational_background
 
     def clean_field(field_value):
         return " ".join(field_value.strip().split())
 
     def convert_to_hex(rfid_uid):
         try:
-            # Try to interpret the RFID UID as an integer (which means it's in decimal)
             rfid_int = int(rfid_uid)
-
-            # Convert the integer to a hexadecimal string
             rfid_hex = format(rfid_int, '08X')
-
-            # Adjust the byte order (reverse for little-endian)
             rfid_hex = ''.join(reversed([rfid_hex[i:i + 2] for i in range(0, len(rfid_hex), 2)]))
-
             return rfid_hex
         except ValueError:
-            # If it raises a ValueError, it means rfid_uid is already a valid hexadecimal string
-            return rfid_uid.lower()  # Return as lowercase hex
+            return rfid_uid.lower()
+
+    # Generate year level based on the selected semester
+    def generate_school_year(semester_id):
+        current_year = datetime.now().year
+        if semester_id == 1:  # First Semester
+            return f"{current_year}-{current_year + 1}"
+        elif semester_id == 2:  # Second Semester
+            return f"{current_year - 1}-{current_year}"
+        return None
 
     form.year_level_id.choices = [(y.id, y.display_name) for y in YearLevel.query.all()]
     form.program_id.choices = [(c.id, c.program_name) for c in Program.query.all()]
@@ -749,217 +692,50 @@ def edit_student(id):
     form.semester_id.choices = [(sem.id, sem.display_name) for sem in Semester.query.all()]
 
     if request.method == 'POST':
-        print(form.errors)  # This will print any validation errors in the form
+        print(form.errors)
 
     if request.method == "GET":
-        # Populate the form with existing data, using `or ''` to handle None values
         form.rfid_uid.data = user.rfid_uid or ''
-        # form.username.data = user.username or ''
         form.f_name.data = user.f_name or ''
         form.l_name.data = user.l_name or ''
         form.m_name.data = user.m_name or ''
-        # form.m_initial.data = user.m_initial or ''
         form.email.data = user.email or ''
-        #         form.date_of_birth.data = user.date_of_birth or ''
-        #         form.place_of_birth.data = user.place_of_birth or ''
         form.gender.data = user.gender or ''
-        #         form.civil_status.data = user.civil_status or ''
-        #         form.nationality.data = user.nationality or ''
-        #         form.citizenship.data = user.citizenship or ''
-        #         form.religion.data = user.religion or ''
-        #         form.dialect.data = user.dialect or ''
-        #         form.tribal_aff.data = user.tribal_aff or ''
-
-        # Populate Student-specific data
         form.student_number.data = student.student_number or ''
         form.year_level_id.data = student.year_level_id or None
         form.program_id.data = student.program_id or None
         form.section_id.data = student.section_id or None
         form.semester_id.data = student.semester_id or None
 
-        # # Populate ContactInfo
-        # if contact_info:
-        #     form.contact_number.data = contact_info.contact_number or ''
-        #     form.home_addr_text.data = contact_info.h_city or ''
-        #     form.home_brgy_text.data = contact_info.h_barangay or ''
-        #     form.home_house_no.data = contact_info.h_house_no or ''
-        #     form.home_street.data = contact_info.h_street or ''
-        #     form.curr_addr_text.data = contact_info.curr_city or ''
-        #     form.curr_brgy_text.data = contact_info.curr_barangay or ''
-        #     form.curr_house_no.data = contact_info.curr_house_no or ''
-        #     form.curr_street.data = contact_info.curr_street or ''
-        #
-        # # Populate FamilyBackground
-        # if family_background:
-        #     form.mother_full_name.data = family_background.mother_full_name or ''
-        #     form.mother_educ_attainment.data = family_background.mother_educ_attainment or ''
-        #     form.mother_addr_text.data = family_background.mother_addr or ''
-        #     form.mother_brgy_text.data = family_background.mother_brgy or ''
-        #     form.mother_cont_no.data = family_background.mother_cont_no or ''
-        #     form.mother_place_work_or_company_name.data = family_background.mother_place_work_or_company_name or ''
-        #     form.mother_occupation.data = family_background.mother_occupation or ''
-        #     form.father_full_name.data = family_background.father_full_name or ''
-        #     form.father_educ_attainment.data = family_background.father_educ_attainment or ''
-        #     form.father_addr_text.data = family_background.father_addr or ''
-        #     form.father_brgy_text.data = family_background.father_brgy or ''
-        #     form.father_cont_no.data = family_background.father_cont_no or ''
-        #     form.father_place_work_or_company_name.data = family_background.father_place_work_or_company_name or ''
-        #     form.father_occupation.data = family_background.father_occupation or ''
-        #     form.guardian_full_name.data = family_background.guardian_full_name or ''
-        #     form.guardian_educ_attainment.data = family_background.guardian_educ_attainment or ''
-        #     form.guardian_addr_text.data = family_background.guardian_addr or ''
-        #     form.guardian_brgy_text.data = family_background.guardian_brgy or ''
-        #     form.guardian_cont_no.data = family_background.guardian_cont_no or ''
-        #     form.guardian_place_work_or_company_name.data = family_background.guardian_place_work_or_company_name or ''
-        #     form.guardian_occupation.data = family_background.guardian_occupation or ''
-        #
-        # # Populate EducationalBackground
-        # if educational_background:
-        #     form.elem_school_name.data = educational_background.elem_school or ''
-        #     form.elem_school_addr_text.data = educational_background.elem_address or ''
-        #     form.elem_year_grad.data = educational_background.elem_graduated or ''
-        #     form.junior_hs_school_name.data = educational_background.junior_school or ''
-        #     form.junior_hs_school_addr_text.data = educational_background.junior_address or ''
-        #     form.junior_hs_year_grad.data = educational_background.junior_graduated or ''
-        #     form.senior_hs_school_name.data = educational_background.senior_school or ''
-        #     form.senior_hs_school_addr_text.data = educational_background.senior_address or ''
-        #     form.senior_hs_year_grad.data = educational_background.senior_graduated or ''
-        #     form.senior_strand.data = educational_background.senior_track_strand or ''
-        # form.tertiary_school_name.data = educational_background.tertiary_school or ''
-        # form.tertiary_school_addr_text.data = educational_background.tertiary_address or ''
-        # form.tertiary_year_grad.data = educational_background.tertiary_graduated or ''
-        # form.tertiary_program.data = educational_background.tertiary_program or ''
-
     if form.validate_on_submit():
-        print("Form is valid")
-        # Convert the RFID UID to hexadecimal before saving
         form.rfid_uid.data = convert_to_hex(form.rfid_uid.data)
 
-        # Convert all fields to lowercase and normalize spaces
         for field in form:
             if isinstance(field.data, str):
-                # Convert to lowercase
                 field.data = field.data.lower()
-                # Normalize spaces (reduce multiple spaces to a single space)
                 field.data = re.sub(r'\s+', ' ', field.data)
 
-        # # Only hash the password if the password field is not empty
-        # if form.password.data:
-        #     hashed_pw = generate_password_hash(form.password.data, "pbkdf2:sha256")
-        # else:
-        #     hashed_pw = student.password_hash  # Use the existing password hash
-
-        # Check for existing email, username, and student number conflicts
         rfid_uid_exists = User.query.filter(User.rfid_uid == form.rfid_uid.data, User.id != user.id).first()
         email_exists = User.query.filter(User.email == form.email.data, User.id != user.id).first()
-        # username_exists = User.queSry.filter(User.username == form.username.data, User.id != user.id).first()
         student_number_exists = Student.query.filter(Student.student_number == form.student_number.data,
                                                      Student.user_id != user.id).first()
 
-        if rfid_uid_exists is not None:
+        if rfid_uid_exists:
             flash('RFID was already used', 'error')
-        elif email_exists is not None:
+        elif email_exists:
             flash('Email was already registered', 'error')
-        # elif username_exists is not None:
-        #     flash('Username is already taken', 'error')
-        elif student_number_exists is not None:
+        elif student_number_exists:
             flash('Student ID is already in use', 'error')
         else:
             try:
                 with db.session.begin_nested():
-                    # Convert all fields to lowercase and normalize spaces
                     user.rfid_uid = clean_field(form.rfid_uid.data.lower())
-                    # user.username = clean_field(form.username.data.lower())
                     user.f_name = clean_field(form.f_name.data.lower())
                     user.l_name = clean_field(form.l_name.data.lower())
                     user.m_name = clean_field(form.m_name.data.lower())
-                    # user.m_initial = clean_field(form.m_initial.data.lower())
                     user.email = clean_field(form.email.data.lower())
-                    #                     user.date_of_birth = form.date_of_birth.data
-                    #                     user.place_of_birth = clean_field(form.place_of_birth.data.lower())
                     user.gender = clean_field(form.gender.data.lower())
-                    #                     user.civil_status = clean_field(form.civil_status.data.lower())
-                    #                     user.nationality = clean_field(form.nationality.data.lower())
-                    #                     user.citizenship = clean_field(form.citizenship.data.lower())
-                    #                     user.religion = clean_field(form.religion.data.lower())
-                    #                     user.dialect = clean_field(form.dialect.data.lower())
-                    #                     user.tribal_aff = clean_field(form.tribal_aff.data.lower())
 
-                    # Handle profile pic update
-                    # if 'profile_pic' in request.files and request.files['profile_pic'].filename != '':
-                    #     profile_pic = request.files['profile_pic']
-                    #     pic_filename = secure_filename(profile_pic.filename)
-                    #     pic_name = str(uuid.uuid1()) + "_" + pic_filename
-                    #     user.profile_pic = pic_name
-                    #     profile_pic.save(os.path.join(current_app.config['UPLOAD_FOLDER'], pic_name))
-
-                    # # Update ContactInfo
-                    # if contact_info:
-                    #     contact_info.contact_number = form.contact_number.data
-                    #     contact_info.h_city = clean_field(form.home_addr_text.data.lower())
-                    #     contact_info.h_barangay = clean_field(form.home_brgy_text.data.lower())
-                    #     contact_info.h_house_no = clean_field(form.home_house_no.data.lower())
-                    #     contact_info.h_street = clean_field(form.home_street.data.lower())
-                    #     contact_info.curr_city = clean_field(form.curr_addr_text.data.lower())
-                    #     contact_info.curr_barangay = clean_field(form.curr_brgy_text.data.lower())
-                    #     contact_info.curr_house_no = clean_field(form.curr_house_no.data.lower())
-                    #     contact_info.curr_street = clean_field(form.curr_street.data.lower())
-                    #
-                    # # Update FamilyBackground (similar updates for each field)
-                    # if family_background:
-                    #     family_background.mother_full_name = clean_field(form.mother_full_name.data.lower())
-                    #     family_background.mother_educ_attainment = clean_field(
-                    #         form.mother_educ_attainment.data.lower())
-                    #     family_background.mother_addr = clean_field(form.mother_addr_text.data.lower())
-                    #     family_background.mother_brgy = clean_field(form.mother_brgy_text.data.lower())
-                    #     family_background.mother_cont_no = form.mother_cont_no.data
-                    #     family_background.mother_place_work_or_company_name = clean_field(
-                    #         form.mother_place_work_or_company_name.data.lower())
-                    #     family_background.mother_occupation = clean_field(form.mother_occupation.data.lower())
-                    #     family_background.father_full_name = clean_field(form.father_full_name.data.lower())
-                    #     family_background.father_educ_attainment = clean_field(
-                    #         form.father_educ_attainment.data.lower())
-                    #     family_background.father_addr = clean_field(form.father_addr_text.data.lower())
-                    #     family_background.father_brgy = clean_field(form.father_brgy_text.data.lower())
-                    #     family_background.father_cont_no = form.father_cont_no.data
-                    #     family_background.father_place_work_or_company_name = clean_field(
-                    #         form.father_place_work_or_company_name.data.lower())
-                    #     family_background.father_occupation = clean_field(form.father_occupation.data.lower())
-                    #     family_background.guardian_full_name = clean_field(form.guardian_full_name.data.lower())
-                    #     family_background.guardian_educ_attainment = clean_field(
-                    #         form.guardian_educ_attainment.data.lower())
-                    #     family_background.guardian_addr = clean_field(form.guardian_addr_text.data.lower())
-                    #     family_background.guardian_brgy = clean_field(form.guardian_brgy_text.data.lower())
-                    #     family_background.guardian_cont_no = form.guardian_cont_no.data
-                    #     family_background.guardian_place_work_or_company_name = clean_field(
-                    #         form.guardian_place_work_or_company_name.data.lower())
-                    #     family_background.guardian_occupation = clean_field(form.guardian_occupation.data.lower())
-                    #
-                    # # Update EducationalBackground (similar updates for each field)
-                    # if educational_background:
-                    #     educational_background.elem_school = clean_field(form.elem_school_name.data.lower())
-                    #     educational_background.elem_address = clean_field(form.elem_school_addr_text.data.lower())
-                    #     educational_background.elem_graduated = form.elem_year_grad.data
-                    #     educational_background.junior_school = clean_field(form.junior_hs_school_name.data.lower())
-                    #     educational_background.junior_address = clean_field(
-                    #         form.junior_hs_school_addr_text.data.lower())
-                    #     educational_background.junior_graduated = form.junior_hs_year_grad.data
-                    #     educational_background.senior_school = clean_field(form.senior_hs_school_name.data.lower())
-                    #     educational_background.senior_address = clean_field(
-                    #         form.senior_hs_school_addr_text.data.lower())
-                    #     educational_background.senior_graduated = form.senior_hs_year_grad.data
-                    #     educational_background.senior_track_strand = clean_field(form.senior_strand.data.lower())
-                    # educational_background.tertiary_school = clean_field(form.tertiary_school_name.data.lower())
-                    # educational_background.tertiary_address = clean_field(
-                    #     form.tertiary_school_addr_text.data.lower())
-                    # educational_background.tertiary_graduated = form.tertiary_year_grad.data
-                    # educational_background.tertiary_program = clean_field(form.tertiary_program.data.lower())
-
-                    # # Update the password hash only if it's changed
-                    # if form.password.data:
-                    #     student.password_hash = hashed_pw
-
-                    # Update Student
                     student.student_number = form.student_number.data
                     student.year_level_id = form.year_level_id.data
                     student.section_id = form.section_id.data
@@ -984,17 +760,13 @@ def edit_student(id):
 
             except SQLAlchemyError as e:
                 db.session.rollback()
-
                 if isinstance(e.orig, IntegrityError) and "Duplicate entry" in str(e.orig):
                     field_name = str(e.orig).split("'")[3]
-
                     field_name_map = {
                         'rfid_uid': 'RFID',
                         'email': 'Email',
-                        # 'username': 'Username',
                         'student_number': 'Student ID',
                     }
-
                     friendly_field_name = field_name_map.get(field_name, field_name)
                     flash(f"The {friendly_field_name} you entered is already in use. Please use a different value.",
                           'error')
