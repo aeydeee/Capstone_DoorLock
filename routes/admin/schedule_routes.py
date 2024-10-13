@@ -20,14 +20,15 @@ schedule_bp = Blueprint('schedule', __name__)
 def view_schedules():
     delete_form = DeleteForm()
 
-    # Query schedules joined with necessary tables without filtering by faculty_id
-    schedules = Schedule.query.join(Program, Schedule.course_id == Program.id) \
+    # Query schedules joined with necessary tables and filtered by faculty_id
+    schedules = Schedule.query.join(Course, Schedule.course_id == Course.id) \
         .join(FacultyCourseSchedule, Schedule.id == FacultyCourseSchedule.schedule_id) \
         .join(Faculty, FacultyCourseSchedule.faculty_id == Faculty.id) \
         .join(Program, FacultyCourseSchedule.program_id == Program.id) \
         .join(YearLevel, FacultyCourseSchedule.year_level_id == YearLevel.id) \
         .join(Section, FacultyCourseSchedule.section_id == Section.id) \
-        .join(Semester, FacultyCourseSchedule.semester_id == Semester.id).all()
+        .join(Semester, FacultyCourseSchedule.semester_id == Semester.id) \
+        .all()
 
     # Format start and end times to 12-hour format and remove SemesterEnum prefix
     for sched in schedules:
