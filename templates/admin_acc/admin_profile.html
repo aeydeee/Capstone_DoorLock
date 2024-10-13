@@ -50,13 +50,16 @@
             <div class="card-body">
                 <form method="POST" enctype="multipart/form-data"
                       action="{{ url_for('admin_acc.admin_profile', admin_id=admin.id) }}"
-                      class="was-validated">
+                      class="was-validated"
+                      id="myForm">
                     {{ form.csrf_token }}
 
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="card-title">School Information</h5>
-                        {% if admin.user.totp_verified %}
+                        {% if current_user.totp_verified %}
                             <h6 class="text-danger">TOTP already verified.</h6>
+                        {% else %}
+                            <h6 class="text-danger">TOTP is still unverified.</h6>
                         {% endif %}
                     </div>
 
@@ -134,14 +137,17 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary">Submit</button>
+                    {% if not current_user.totp_verified %}
+                        <button type="button" class="btn btn-primary" id="proceedButton">Proceed</button>
+                    {% else %}
+                        {{ form.submit(class="btn btn-primary") }}
+                    {% endif %}
                 </form>
+                {% if not current_user.totp_verified %}
+                    {% include 'totp-warning.html' %}
+                {% endif %}
             </div>
         </div>
     </div>
-    {% if not admin.user.totp_verified %}
-        {% include 'totp-warning.html' %}
-        <br>
-    {% endif %}
 {% endblock %}
 
