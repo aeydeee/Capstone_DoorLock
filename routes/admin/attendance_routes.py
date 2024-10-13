@@ -22,32 +22,38 @@ from webforms.faculty_acc_form import AttendanceStatusForm
 attendance_bp = Blueprint('attendance', __name__)
 
 
-def export_csv(attendances):
+def export_excel(attendances):
     # Convert attendance records to a list of dictionaries
     attendance_data = [{
-        'Student Name': attendance.student_name,
-        'Student ID': attendance.student_number,
-        'Program Code': attendance.program_code,
+        'Date': attendance.date.strftime('%b. %d, %Y'),
+        'Student Name': attendance.student_name.title(),
+        'Student ID': attendance.student_number.upper(),
+        'Program Code': attendance.program_code.upper(),
         'Year Level': attendance.level_code,
         'Section': attendance.section,
         'Semester': attendance.semester,
-        'Course': attendance.course_name,
-        'Faculty': attendance.faculty_name,
-        'Time In': attendance.time_in.strftime("%Y-%m-%d %H:%M:%S") if attendance.time_in else '',
-        'Time Out': attendance.time_out.strftime("%Y-%m-%d %H:%M:%S") if attendance.time_out else '',
+        'Course': attendance.course_name.title(),
+        'Faculty': attendance.faculty_name.title(),
+        'Time In': attendance.time_in.strftime('%I:%M %p') if attendance.time_in else 'N/A',
+        'Time Out': attendance.time_out.strftime('%I:%M %p') if attendance.time_out else 'N/A',
         'Status': attendance.status
     } for attendance in attendances]
 
     # Create DataFrame
     df = pd.DataFrame(attendance_data)
 
-    # Export to CSV
-    csv_data = df.to_csv(index=False)
+    # Export to Excel
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Attendance')
+
+    output.seek(0)
 
     # Create response
-    response = make_response(csv_data)
-    response.headers["Content-Disposition"] = "attachment; filename=attendance.csv"
-    response.headers["Content-Type"] = "text/csv"
+    response = make_response(output.getvalue())
+    response.headers["Content-Disposition"] = "attachment; filename=attendance_records.xlsx"
+    response.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
     return response
 
 
@@ -166,7 +172,7 @@ def export_pdf(attendances, selected_columns, start_date=None, end_date=None):
             row.append(Paragraph(attendance.course_name.title(), styles['Normal']))
         if 'date' in selected_columns:
             row.append(
-                Paragraph(attendance.time_in.strftime('%m-%d-%Y') if attendance.time_in else '', styles['Normal']))
+                Paragraph(attendance.date.strftime('%b. %d, %Y') if attendance.date else '', styles['Normal']))
         if 'program_section' in selected_columns:
             row.append(Paragraph(
                 f'{attendance.program_code.upper()} {attendance.level_code}{attendance.section.upper() if attendance.section else ""}',
@@ -263,9 +269,9 @@ def view_attendance():
     attendances = attendances_query.all()
 
     # Handle export requests with the filtered data
-    if export_type in ['csv', 'pdf']:
-        if export_type == 'csv':
-            return export_csv(attendances)  # Pass filtered attendance
+    if export_type in ['excel', 'pdf']:
+        if export_type == 'excel':
+            return export_excel(attendances)  # Pass filtered attendance
         elif export_type == 'pdf':
             return export_pdf(attendances, selected_columns, start_date=start_date, end_date=end_date)
 
