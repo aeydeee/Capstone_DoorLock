@@ -119,8 +119,14 @@
                 </a>
             </li>
 
-            <li class="nav-item {% if request.path == url_for('faculty_acc.view_attendance') %}active{% endif %}">
-                <a href="{{ url_for('faculty_acc.view_attendance') }}">
+            <li class="nav-item {% if request.path == url_for('faculty_acc.view_detailed_attendance') %}active{% endif %}">
+                <a href="{{ url_for('faculty_acc.view_detailed_attendance') }}">
+                    <i class='bx bxs-detail'></i> Attendance Details
+                </a>
+            </li>
+
+            <li class="nav-item {% if request.path == url_for('faculty_acc.view_new_attendance') %}active{% endif %}">
+                <a href="{{ url_for('faculty_acc.view_new_attendance') }}">
                     <i class='bx bx-check-square'></i> View Attendance
                 </a>
             </li>
