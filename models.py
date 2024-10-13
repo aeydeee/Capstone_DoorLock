@@ -8,8 +8,9 @@ from datetime import datetime, timedelta, date
 
 import pytz
 from flask_dance.consumer.storage.sqla import OAuthConsumerMixin
-from sqlalchemy import Enum
+from sqlalchemy import Enum, and_
 from flask_login import UserMixin
+from sqlalchemy.orm import joinedload
 
 from app import db
 
@@ -18,21 +19,57 @@ timezone = pytz.timezone('Asia/Manila')
 
 # Create an association table for the many-to-many relationship between students and courses
 student_course_association = db.Table('student_course_association',
-                                       db.Column('student_id', db.Integer, db.ForeignKey('student.id')),
-                                       db.Column('course_id', db.Integer, db.ForeignKey('program_courses.id')),
-                                       db.Column('schedule_id', db.Integer, db.ForeignKey('schedule.id')),
-                                       # Add schedule_id
-                                       db.PrimaryKeyConstraint('student_id', 'course_id', 'schedule_id')
-                                       # Make sure it's part of the primary key
-                                       )
+                                      db.Column('student_id', db.Integer, db.ForeignKey('student.id')),
+                                      db.Column('course_id', db.Integer, db.ForeignKey('program_courses.id')),
+                                      db.Column('schedule_id', db.Integer, db.ForeignKey('schedule.id')),
+                                      # Add schedule_id
+                                      db.PrimaryKeyConstraint('student_id', 'course_id', 'schedule_id')
+                                      # Make sure it's part of the primary key
+                                      )
 
 faculty_course_association = db.Table('faculty_course',
-                                       db.Column('faculty_id', db.Integer,
-                                                 db.ForeignKey('faculty.id', ondelete='CASCADE'), primary_key=True),
-                                       db.Column('course_id', db.Integer,
-                                                 db.ForeignKey('program_courses.id', ondelete='CASCADE'),
-                                                 primary_key=True)
-                                       )
+                                      db.Column('faculty_id', db.Integer,
+                                                db.ForeignKey('faculty.id', ondelete='CASCADE'), primary_key=True),
+                                      db.Column('course_id', db.Integer,
+                                                db.ForeignKey('program_courses.id', ondelete='CASCADE'),
+                                                primary_key=True)
+                                      )
+
+
+class EnrollmentHistory(db.Model):
+    __tablename__ = 'enrollment_history'
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('student.id', ondelete='CASCADE'), nullable=False)
+    school_year_id = db.Column(db.Integer, db.ForeignKey('school_year.id', ondelete='CASCADE'), nullable=False)
+    program_id = db.Column(db.Integer, db.ForeignKey('program.id', ondelete='CASCADE'), nullable=False)
+    year_level_id = db.Column(db.Integer, db.ForeignKey('year_level.id', ondelete='CASCADE'), nullable=False)
+    section_id = db.Column(db.Integer, db.ForeignKey('section.id', ondelete='CASCADE'), nullable=False)
+    semester_id = db.Column(db.Integer, db.ForeignKey('semester.id', ondelete='CASCADE'), nullable=False)
+    enrollment_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone), nullable=False)
+
+    # Store snapshots of student details
+    student_number = db.Column(db.String(255), nullable=False)
+    program_code = db.Column(db.String(255), nullable=False)
+    year_level_code = db.Column(db.Integer, nullable=False)
+    section_code = db.Column(db.Integer, nullable=False)
+
+    @property
+    def full_name(self):
+        # Assuming you can access the student model if needed
+        student = Student.query.get(self.student_id)
+        return f"{student.user.f_name} {student.user.m_name} {student.user.l_name}"
+
+    @property
+    def program_section(self):
+        return f"{self.program.program_code} {self.year_level.level_code}{self.section.display_name}"
+
+
+class SchoolYear(db.Model):
+    __tablename__ = 'school_year'
+    id = db.Column(db.Integer, primary_key=True)
+    year_label = db.Column(db.String(9), nullable=False, unique=True)  # e.g., "2023-2024"
+
+    students = db.relationship('Student', back_populates='school_year', cascade="all, delete-orphan")
 
 
 class Program(db.Model):
@@ -176,7 +213,7 @@ class ProgramYearLevelSemesterCourse(db.Model):
 
     # Add back_populates to link the course and program_year_level_semester_courses relationships
     course = db.relationship('Course', back_populates='program_year_level_semester_courses',
-                              overlaps="program_course,program_year_level_semester_courses")
+                             overlaps="program_course,program_year_level_semester_courses")
 
     __table_args__ = (
         db.UniqueConstraint('program_id', 'year_level_id', 'semester_id', 'course_id',
@@ -258,8 +295,10 @@ class Student(db.Model):
     section_id = db.Column(db.Integer, db.ForeignKey('section.id', ondelete='CASCADE'))
     program_id = db.Column(db.Integer, db.ForeignKey('program.id', ondelete='CASCADE'))
     semester_id = db.Column(db.Integer, db.ForeignKey('semester.id', ondelete='CASCADE'))
+    school_year_id = db.Column(db.Integer, db.ForeignKey('school_year.id', ondelete='CASCADE'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
 
+    school_year = db.relationship('SchoolYear', back_populates='students')
     year_level = db.relationship('YearLevel', back_populates='students')
     section = db.relationship('Section', back_populates='students')
     program = db.relationship('Program', back_populates='students')
@@ -363,9 +402,10 @@ class FacultyCourseSchedule(db.Model):
 class Attendance(db.Model):
     __tablename__ = 'attendance'
     id = db.Column(db.Integer, primary_key=True)
-    time_in = db.Column(db.DateTime, nullable=False)
+    date = db.Column(db.DateTime, default=lambda: datetime.now(timezone), nullable=False)
+    time_in = db.Column(db.DateTime, nullable=True)
     time_out = db.Column(db.DateTime, nullable=True)
-    status = db.Column(db.Enum('present', 'absent', 'late'))
+    status = db.Column(db.Enum('present', 'absent', 'late', 'excuse'))
 
     # Student details
     student_id = db.Column(db.Integer, db.ForeignKey('student.id', ondelete='SET NULL'), nullable=True)
@@ -380,6 +420,9 @@ class Attendance(db.Model):
     course_id = db.Column(db.Integer, db.ForeignKey('program_courses.id', ondelete='SET NULL'), nullable=True)
     course_name = db.Column(db.String(255), nullable=False)
 
+    # Attendance details
+    schedule_id = db.Column(db.Integer, db.ForeignKey('schedule.id', ondelete='SET NULL'), nullable=True)
+
     # Faculty details
     faculty_id = db.Column(db.Integer, db.ForeignKey('faculty.id', ondelete='SET NULL'), nullable=True)
     faculty_name = db.Column(db.String(255), nullable=False)
@@ -391,28 +434,116 @@ class Attendance(db.Model):
 
     def __init__(self, time_in, student_id, course_id, **kwargs):
         super().__init__(time_in=time_in, student_id=student_id, course_id=course_id, **kwargs)
-        self.status = self.check_lateness()
+
+        # Only check lateness if time_in is not None
+        if time_in is not None:
+            self.status = self.check_lateness()
+        else:
+            self.status = 'absent'  # Explicitly mark as absent if no time_in
 
     def check_lateness(self):
-        # Define your desired timezone
-        tz = pytz.timezone('Asia/Manila')  # Example timezone
+
+        # Only check lateness if time_in is not None
+        if self.time_in is None:
+            return None
 
         current_day = self.time_in.strftime('%A').lower()
         schedule = Schedule.query.filter_by(course_id=self.course_id, day=current_day).first()
 
         if schedule:
-            scheduled_start_time = datetime.combine(self.time_in.date(), schedule.start_time).astimezone(tz)
-            scheduled_end_time = datetime.combine(self.time_in.date(), schedule.end_time).astimezone(tz)
-            time_in_aware = self.time_in.astimezone(tz)
+            scheduled_start_time = datetime.combine(self.time_in.date(), schedule.start_time).astimezone(timezone)
+            scheduled_end_time = datetime.combine(self.time_in.date(), schedule.end_time).astimezone(timezone)
+            time_in_aware = self.time_in.astimezone(timezone)
 
-            if time_in_aware > scheduled_end_time:
+            # Check if the student is late based on schedule and grace period+
+            if time_in_aware >= scheduled_end_time:
+                return 'absent'
+            elif time_in_aware > scheduled_end_time:
                 return 'late'
-            elif time_in_aware > (scheduled_start_time + timedelta(minutes=15)):
+            elif time_in_aware > (scheduled_start_time + timedelta(minutes=15)):  # Example grace period of 15 mins
                 return 'late'
-            else:
-                return 'present'
         else:
-            return 'late'
+            return 'absent'  # If no schedule exists for the day, treat as absent or handle as appropriate
+
+
+def record_absent_students(app):
+    with app.app_context():
+        current_time = datetime.now(timezone)
+        current_day = current_time.strftime('%A')
+
+        # Query the latest schedule based on the current day and end_time
+        latest_schedule = Schedule.query.filter(
+            Schedule.day == current_day.upper(),
+            Schedule.end_time <= current_time.time()
+        ).order_by(Schedule.end_time.desc()).first()
+
+        if latest_schedule:
+            # Get all faculty-course schedules related to this latest schedule
+            faculty_course_schedules = FacultyCourseSchedule.query.filter_by(schedule_id=latest_schedule.id).all()
+
+            for faculty_course_schedule in faculty_course_schedules:
+                faculty_id = faculty_course_schedule.faculty_id
+                course_id = faculty_course_schedule.course_id
+                section_id = faculty_course_schedule.section_id
+                semester_id = faculty_course_schedule.semester_id
+                schedule_id = faculty_course_schedule.schedule_id
+
+                # print(f'Processing: {faculty_course_schedule}')
+
+                # Query students assigned to this course and schedule with no attendance for this schedule
+                students = (
+                    Student.query
+                    .join(Student.courses)  # Join Student with courses
+                    .join(Course.schedule_details)  # Join Course with schedule details
+                    .filter(
+                        Student.section_id == section_id,  # Filter by section
+                        Student.semester_id == semester_id,  # Filter by semester
+                        Course.id == course_id,  # Filter by course ID
+                        Schedule.id == schedule_id  # Filter by schedule ID
+                    )
+                    .outerjoin(
+                        Attendance,
+                        and_(
+                            Attendance.course_id == course_id,
+                            Attendance.student_id == Student.id,
+                            Attendance.schedule_id == schedule_id  # Ensure match with schedule
+                        )
+                    )
+                    .filter(Attendance.id == None)  # Select only students with no attendance
+                    .all()
+                )
+
+                # print(f'Students with no attendance: {students}')
+
+                # Track if any new attendance records were added
+                new_records = False
+
+                # Record absences for students who did not attend
+                for student in students:
+                    attendance = Attendance(
+                        time_in=None,  # No time_in as they did not attend
+                        time_out=None,  # No time_out since they didn't attend
+                        status='absent',  # Mark as absent
+                        student_id=student.id,
+                        course_id=course_id,
+                        faculty_id=faculty_id,
+                        schedule_id=schedule_id,  # Ensure schedule ID is tracked
+                        student_number=student.student_number,
+                        student_name=student.full_name,
+                        course_name=latest_schedule.course.course_name,
+                        faculty_name=faculty_course_schedule.faculty.full_name,
+                        program_code=student.program.program_code,
+                        level_code=student.year_level.level_code,
+                        section=student.section.display_name,
+                        semester=student.semester.display_name
+                    )
+                    db.session.add(attendance)
+                    new_records = True
+
+                # Commit only if new attendance records were added
+                if new_records:
+                    db.session.commit()
+                    # print(f'Attendance recorded for schedule {schedule_id}')
 
 
 class ReportLog(db.Model):
