@@ -9,6 +9,9 @@ import re
 import pandas as pd
 import pytz
 from fuzzywuzzy import fuzz
+from openpyxl.styles import Alignment, Font
+from openpyxl.utils import get_column_letter
+from openpyxl.workbook import Workbook
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import letter, landscape, GOV_LEGAL, legal
@@ -39,7 +42,7 @@ faculty_acc_bp = Blueprint('faculty_acc', __name__)
 
 
 # EXPORT ROUTES
-def export_csv(attendances):
+def export_excel_detail(attendances):
     # Convert attendance records to a list of dictionaries
     attendance_data = [{
         'Student Name': attendance.student_name,
@@ -58,69 +61,339 @@ def export_csv(attendances):
     # Create DataFrame
     df = pd.DataFrame(attendance_data)
 
-    # Export to CSV
-    csv_data = df.to_csv(index=False)
+    # Export to Excel
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Attendance')
+
+    output.seek(0)
 
     # Create response
-    response = make_response(csv_data)
-    response.headers["Content-Disposition"] = "attachment; filename=attendance.csv"
-    response.headers["Content-Type"] = "text/csv"
+    response = make_response(output.getvalue())
+    response.headers["Content-Disposition"] = "attachment; filename=attendance.xlsx"
+    response.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
     return response
 
 
-def add_header_footer(canvas, doc):
+def add_header_footer_detail(canvas, doc, is_first_page, start_date=None, end_date=None):
     canvas.saveState()
-    # Check if it's the first page
-    is_first_page = doc.page == 1
 
+    # Header Section - different logic for first page
     if is_first_page:
-        # Header Section (First Page)
+        # Left side logo
         logo_path = os.path.join(os.getcwd(), 'static', 'images', 'logo', 'cspc.png')
         if os.path.exists(logo_path):
-            canvas.drawImage(logo_path, 65, doc.height + 40, width=50, height=50)
+            canvas.drawImage(logo_path, 65, doc.height + 40, width=50, height=50)  # Adjusted logo size and position
 
-        # Header Text
+        # Left side text
         canvas.setFont("Helvetica", 10)
-        canvas.drawString(120, doc.height + 75, "Republic of the Philippines")
+        canvas.drawString(120, doc.height + 75, "Republic of the Philippines")  # Adjusted header text position
         canvas.setFont("Helvetica-Bold", 12)
         canvas.drawString(120, doc.height + 60, "CAMARINES SUR POLYTECHNIC COLLEGES")
         canvas.setFont("Helvetica", 10)
         canvas.drawString(120, doc.height + 45, "Nabua, Camarines Sur")
         canvas.setFont("Helvetica", 6)
-        canvas.drawString(70, doc.height + 30, "ISO 9001:2015 Certified")
+        canvas.drawString(70, doc.height + 30, "ISO 9001:2015")
 
-        # Right Logo
+        # Right side logo
         new_logo_path = os.path.join(os.getcwd(), 'static', 'images', 'logo', 'ccs-logo.png')
         if os.path.exists(new_logo_path):
-            canvas.drawImage(new_logo_path, doc.width - 80, doc.height + 40, width=50, height=50)
+            canvas.drawImage(new_logo_path, doc.width - 1, doc.height + 40, width=50,
+                             height=50)  # Align to match left logo size
 
-        # Right Header Text
+        # Right side text (College of Computer Studies)
         canvas.setFont("Helvetica-Bold", 12)
-        canvas.drawString(doc.width - 215, doc.height + 60, "COLLEGE OF COMPUTER STUDIES")
+        canvas.drawString(doc.width - 215, doc.height + 60,
+                          "COLLEGE OF COMPUTER STUDIES")  # Text aligned to the left of the logo
+
+        # Horizontal line after the header
+        canvas.setLineWidth(1)
+        canvas.setStrokeColor(colors.black)
+        canvas.line(60, doc.height + 25, doc.width + 45, doc.height + 25)  # Draw a horizontal line after the header
 
     else:
-        # Header for Subsequent Pages
+        # Adjusted header for the 2nd and subsequent pages
         canvas.setFont("Helvetica-Bold", 12)
-        canvas.drawString(65, doc.height + 60,
-                          "CAMARINES SUR POLYTECHNIC COLLEGES, ATTENDANCE RECORD LOGS - CONTINUED")
+        canvas.drawString(65, doc.height + 60, "CAMARINES SUR POLYTECHNIC COLLEGES, ATTENDANCE RECORD LOGS - CONTINUED")
 
-    # Footer Section
+    # Add the italic footer text
+    canvas.setFont("Helvetica-Oblique", 9)  # Setting the font to italic
+    canvas.drawString(60, 50, "System-generated report. No Signature required.")  # Adjust the y-position as needed
+
+    # Footer Section with horizontal line
     canvas.setLineWidth(1)
     canvas.setStrokeColor(colors.black)
-    canvas.line(60, 40, doc.width + 45, 40)  # Footer line
+    canvas.line(60, 40, doc.width + 45, 40)  # Horizontal line for the footer
+    canvas.setFont("Helvetica", 10)
 
-    # Footer with Faculty Name and Page Number
+    # Format the effectivity date based on the provided start and end dates
+    if start_date and end_date:
+        effectivity_date = f"From {start_date.strftime('%Y-%m-%d')} - To {end_date.strftime('%Y-%m-%d')}"
+    elif start_date:
+        effectivity_date = f"From {start_date.strftime('%Y-%m-%d')}"
+    elif end_date:
+        effectivity_date = f"To {end_date.strftime('%Y-%m-%d')}"
+    else:
+        effectivity_date = "All records across all dates."
+
+    canvas.drawString(60, 30, effectivity_date)
+
+    # Include current_user.faculty_details.full_name in the footer
     if current_user and hasattr(current_user, 'faculty_details') and current_user.faculty_details:
         faculty_full_name = current_user.faculty_details.full_name
-        canvas.setFont("Helvetica", 10)
-        canvas.drawString(60, 30, f"Prepared by: {faculty_full_name.title()}")
+        canvas.drawString(60, 20, f"Prepared by: {faculty_full_name.title()}")
 
-    canvas.setFont("Helvetica", 10)
     canvas.drawRightString(doc.width + 45, 30, f"Page {doc.page}")
 
-    # System-generated notice
-    canvas.setFont("Helvetica-Oblique", 9)
-    canvas.drawString(60, 50, "System-generated report. No signature required.")
+    canvas.restoreState()
+
+
+def export_pdf_detail(attendances, selected_columns, start_date=None, end_date=None):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(GOV_LEGAL),
+                            leftMargin=0.75 * inch, rightMargin=0.75 * inch,
+                            topMargin=1 * inch, bottomMargin=0.75 * inch)
+
+    styles = getSampleStyleSheet()
+    elements = []
+    elements.append(Spacer(1, 30))  # Spacer to push the title down
+    title = Paragraph("<b>ATTENDANCE RECORD LOGS</b>", styles['Title'])
+    title.hAlign = 'CENTER'
+    elements.append(title)
+    elements.append(Spacer(1, 10))
+
+    # Define column mappings for selected columns
+    column_mapping = {
+        'student_name': 'Student Name',
+        'student_number': 'Student ID',
+        'course': 'Subject',
+        'date': 'Date',
+        'program_section': 'Course & Section',
+        'semester': 'Semester',
+        'time_in': 'Time In',
+        'time_out': 'Time Out',
+        'status': 'Status'
+    }
+
+    # Create table header based on selected columns
+    table_header = [column_mapping[col] for col in selected_columns]
+    data = [[Paragraph(cell, styles['Normal']) for cell in table_header]]
+
+    # Populate the table rows based on selected columns
+    for attendance in attendances:
+        row = []
+        if 'student_name' in selected_columns:
+            row.append(Paragraph(attendance.student_name.title(), styles['Normal']))
+        if 'student_number' in selected_columns:
+            row.append(Paragraph(attendance.student_number.title(), styles['Normal']))
+        if 'course' in selected_columns:
+            row.append(Paragraph(attendance.course_name.title(), styles['Normal']))
+        if 'date' in selected_columns:
+            row.append(
+                Paragraph(attendance.date.strftime('%b. %d, %Y') if attendance.date else 'N/A', styles['Normal']))
+        if 'program_section' in selected_columns:
+            row.append(Paragraph(
+                f'{attendance.program_code.upper()} {attendance.level_code}{attendance.section.upper() if attendance.section else ""}',
+                styles['Normal']))
+        if 'semester' in selected_columns:
+            row.append(Paragraph(attendance.semester, styles['Normal']))
+        if 'time_in' in selected_columns:
+            row.append(
+                Paragraph(attendance.time_in.strftime('%I:%M %p') if attendance.time_in else 'N/A', styles['Normal']))
+        if 'time_out' in selected_columns:
+            row.append(
+                Paragraph(attendance.time_out.strftime('%I:%M %p') if attendance.time_out else 'N/A', styles['Normal']))
+        if 'status' in selected_columns:
+            row.append(Paragraph(attendance.status.upper(), styles['Normal']))
+        data.append(row)
+
+    # Define specific column widths for time_in, time_out, and status
+    column_widths = {
+        'student_name': 180,
+        'student_number': 65,
+        'course': 120,
+        'date': 70,
+        'program_section': 100,
+        'semester': 90,
+        'time_in': 65,  # Specific width for Time In
+        'time_out': 65,  # Specific width for Time Out
+        'status': 60  # Specific width for Status
+    }
+
+    # Set colWidths dynamically based on selected columns
+    col_widths = [column_widths[col] for col in selected_columns]
+
+    # Create the table with the specified column widths
+    table = Table(data, colWidths=col_widths, repeatRows=1)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.white),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+
+    elements.append(table)
+
+    def on_first_page(canvas, doc):
+        add_header_footer_detail(canvas, doc, is_first_page=True, start_date=start_date, end_date=end_date)
+
+    def on_later_pages(canvas, doc):
+        add_header_footer_detail(canvas, doc, is_first_page=False, start_date=start_date, end_date=end_date)
+
+    doc.build(elements, onFirstPage=on_first_page, onLaterPages=on_later_pages)
+
+    buffer.seek(0)
+    return send_file(buffer, as_attachment=True, download_name='detailed_attendance_records.pdf',
+                     mimetype='application/pdf')
+
+
+def export_excel(attendances, semester, school_year, course, year_level, program, section):
+    # Resolve display names from database if IDs are provided
+    semester_display = Semester.query.get(int(semester)).display_name if semester and semester.isdigit() else semester
+    school_year_display = SchoolYear.query.get(
+        int(school_year)).year_label if school_year and school_year.isdigit() else school_year
+    course_obj = Course.query.get(int(course)) if course and course.isdigit() else None
+    course_display = course_obj.course_name if course_obj else course
+    course_code = course_obj.course_code if course_obj else 'N/A'
+    program_display = Program.query.get(int(program)).program_code.upper() if program and program.isdigit() else program
+    year_level_display = YearLevel.query.get(
+        int(year_level)).level_code if year_level and year_level.isdigit() else year_level
+    section_display = Section.query.get(int(section)).display_name if section and section.isdigit() else section
+
+    # Extract unique attendance dates and sort them
+    attendance_dates = sorted(set(attendance.date.date() for attendance in attendances))
+
+    # Group attendance records by student
+    student_attendance = {}
+    for attendance in attendances:
+        student_key = (attendance.student_number.upper(), attendance.student_name.title())
+        if student_key not in student_attendance:
+            student_attendance[student_key] = {}
+        student_attendance[student_key][attendance.date.date()] = attendance.status.capitalize()
+
+    # Create an Excel workbook and worksheet
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Attendance Records"
+
+    # Calculate the farthest column for headers to align to the right
+    last_col_index = 2 + len(attendance_dates) + 1  # 2 for Student ID and Name, +1 for spacing
+    last_col_letter = get_column_letter(last_col_index)
+
+    # Add title and header information (aligned to the very right)
+    ws.merge_cells(start_row=1, start_column=last_col_index, end_row=1, end_column=last_col_index)
+    ws.cell(row=1, column=last_col_index).value = 'ATTENDANCE RECORDS LOGS'
+
+    ws.merge_cells(start_row=2, start_column=last_col_index, end_row=2, end_column=last_col_index)
+    ws.cell(row=2, column=last_col_index).value = f'{semester_display} {school_year_display}'
+
+    ws.merge_cells(start_row=3, start_column=last_col_index, end_row=3, end_column=last_col_index)
+    ws.cell(row=3, column=last_col_index).value = f'{course_code} - {course_display.upper()}'
+
+    ws.merge_cells(start_row=4, start_column=last_col_index, end_row=4, end_column=last_col_index)
+    ws.cell(row=4, column=last_col_index).value = f'{program_display} {year_level_display} {section_display}'
+
+    # Add header row with student info and rotated date columns
+    ws.append([])  # Empty row for spacing
+    header_row = ['Student ID', 'Name'] + [date.strftime('%b/%d/%Y') for date in attendance_dates]
+    ws.append(header_row)
+
+    # Apply rotation to the attendance date headers
+    for col_num in range(3, 3 + len(attendance_dates)):
+        cell = ws.cell(row=6, column=col_num)
+        cell.alignment = Alignment(textRotation=90, horizontal='center', vertical='center')
+        cell.font = Font(bold=True)
+
+    # Map the status to a single letter (same as PDF logic)
+    status_mapping = {'present': 'P', 'absent': 'A', 'late': 'L', 'excuse': 'E'}
+
+    # Add attendance data for each student
+    for (student_id, student_name), records in student_attendance.items():
+        row = [student_id, student_name]  # Start with student ID and name
+        for date in attendance_dates:
+            status = records.get(date, 'N/A')  # Match date columns
+            row.append(status_mapping.get(status.lower(), 'N/A'))
+        ws.append(row)
+
+    # Adjust column widths for better visibility
+    ws.column_dimensions['A'].width = 15  # Student ID column
+    ws.column_dimensions['B'].width = 25  # Name column
+    for col_num in range(3, 3 + len(attendance_dates)):
+        ws.column_dimensions[get_column_letter(col_num)].width = 5  # Smaller width for date columns
+
+    # Save the workbook to a BytesIO buffer
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+
+    # Return the file as an Excel download
+    return send_file(buffer, as_attachment=True, download_name='attendance_records.xlsx',
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
+def add_header_footer(canvas, doc):
+    canvas.saveState()
+
+    # Check if it's the first page
+    is_first_page = doc.page == 1
+
+    # Header Section - different logic for first page
+    if is_first_page:
+        # Left side logo
+        logo_path = os.path.join(os.getcwd(), 'static', 'images', 'logo', 'cspc.png')
+        if os.path.exists(logo_path):
+            canvas.drawImage(logo_path, 65, doc.height + 40, width=50, height=50)  # Adjusted logo size and position
+
+        # Left side text
+        canvas.setFont("Helvetica", 10)
+        canvas.drawString(120, doc.height + 75, "Republic of the Philippines")  # Adjusted header text position
+        canvas.setFont("Helvetica-Bold", 12)
+        canvas.drawString(120, doc.height + 60, "CAMARINES SUR POLYTECHNIC COLLEGES")
+        canvas.setFont("Helvetica", 10)
+        canvas.drawString(120, doc.height + 45, "Nabua, Camarines Sur")
+        canvas.setFont("Helvetica", 6)
+        canvas.drawString(70, doc.height + 30, "ISO 9001:2015")
+
+        # Right side logo
+        new_logo_path = os.path.join(os.getcwd(), 'static', 'images', 'logo', 'ccs-logo.png')
+        if os.path.exists(new_logo_path):
+            canvas.drawImage(new_logo_path, doc.width - 1, doc.height + 40, width=50,
+                             height=50)  # Align to match left logo size
+
+        # Right side text (College of Computer Studies)
+        canvas.setFont("Helvetica-Bold", 12)
+        canvas.drawString(doc.width - 215, doc.height + 60,
+                          "COLLEGE OF COMPUTER STUDIES")  # Text aligned to the left of the logo
+
+        # Horizontal line after the header
+        canvas.setLineWidth(1)
+        canvas.setStrokeColor(colors.black)
+        canvas.line(60, doc.height + 25, doc.width + 45, doc.height + 25)  # Draw a horizontal line after the header
+
+    else:
+        # Adjusted header for the 2nd and subsequent pages
+        canvas.setFont("Helvetica-Bold", 12)
+        canvas.drawString(65, doc.height + 60, "CAMARINES SUR POLYTECHNIC COLLEGES, ATTENDANCE RECORD LOGS - CONTINUED")
+
+    # Add the italic footer text
+    canvas.setFont("Helvetica-Oblique", 9)  # Setting the font to italic
+    canvas.drawString(60, 50, "System-generated report. No Signature required.")  # Adjust the y-position as needed
+
+    # Footer Section with horizontal line
+    canvas.setLineWidth(1)
+    canvas.setStrokeColor(colors.black)
+    canvas.line(60, 40, doc.width + 45, 40)  # Horizontal line for the footer
+    canvas.setFont("Helvetica", 10)
+
+    # Include current_user.faculty_details.full_name in the footer
+    if current_user and hasattr(current_user, 'faculty_details') and current_user.faculty_details:
+        faculty_full_name = current_user.faculty_details.full_name
+        canvas.drawString(60, 20, f"Prepared by: {faculty_full_name.title()}")
+
+    canvas.drawRightString(doc.width + 45, 30, f"Page {doc.page}")
 
     canvas.restoreState()
 
@@ -164,14 +437,14 @@ def export_pdf(attendances, semester, school_year, course, year_level, program, 
     elements = []
 
     # Add title and header information
-    elements.append(Spacer(1, 20))
+    elements.append(Spacer(1, 30))
     title = Paragraph("<b>ATTENDANCE RECORDS LOGS</b>", getSampleStyleSheet()['Title'])
     elements.append(title)
 
     # Centered course and semester info
     elements.append(Spacer(1, -10))
     course_info = Paragraph(
-        f"<b>{semester_display} {school_year_display}</b><br/><b>{course_code} - {course_display}</b><br/><b>{program_display} {year_level_display}{section_display}</b>",
+        f"<b>{semester_display} {school_year_display}</b><br/><b>{course_code} - {course_display.upper()}</b><br/><b>{program_display} {year_level_display}{section_display}</b>",
         getSampleStyleSheet()['Normal'])
     elements.append(course_info)
 
@@ -269,12 +542,12 @@ def view_student_schedule(student_id):
     return render_template('faculty_acc/schedule.html', schedule=schedule, student=student)
 
 
-@faculty_acc_bp.route('/students/attendance', methods=['GET', 'POST'])
+@faculty_acc_bp.route('/students/detailed-attendance', methods=['GET', 'POST'])
 @login_required
 @cspc_acc_required
 @faculty_required
 @check_totp_verified
-def view_attendance():
+def view_detailed_attendance():
     # Check for export requests
     export_type = request.args.get('export')
 
@@ -345,11 +618,11 @@ def view_attendance():
     ]
 
     # Handle export requests
-    if export_type in ['csv', 'pdf']:
-        if export_type == 'csv':
-            return export_csv(attendances)
+    if export_type in ['excel', 'pdf']:
+        if export_type == 'excel':
+            return export_excel_detail(attendances)
         elif export_type == 'pdf':
-            return export_pdf(attendances, selected_columns, start_date=start_date, end_date=end_date)
+            return export_pdf_detail(attendances, selected_columns, start_date=start_date, end_date=end_date)
 
     form = AttendanceStatusForm()
 
@@ -360,12 +633,12 @@ def view_attendance():
         if attendance:
             attendance.status = form.status.data
             db.session.commit()
-            flash('Attendance status updated successfully', 'success')
-        return redirect(url_for('faculty_acc.view_attendance'))
+            flash(f'Attendance status updated successfully for {attendance.student_name.title()}', 'success')
+        return redirect(url_for('faculty_acc.view_detailed_attendance'))
 
     # Pass the filter options and selected choices to the template
     return render_template(
-        'faculty_acc/view_attendance.html',
+        'faculty_acc/view_detailed_attendance.html',
         attendances=attendances,
         form=form,
         selected_columns=selected_columns,
@@ -519,21 +792,11 @@ def view_new_attendance():
             print(student_key)
 
     # Handle export requests
-    if export_type in ['csv', 'pdf']:
-        if export_type == 'csv':
-            return export_csv(attendances)
-        elif export_type == 'pdf':
-            # Ensure that all required parameters are passed to export_pdf
-            print(f"school year: {school_year}")
-            return export_pdf(
-                attendances=attendances,
-                semester=semester,
-                school_year=school_year,
-                course=course,
-                program=program,
-                year_level=year_level,
-                section=section
-            )
+    if export_type in ['pdf', 'excel']:
+        if export_type == 'pdf':
+            return export_pdf(attendances, semester, school_year, course, program, year_level, section)
+        elif export_type == 'excel':
+            return export_excel(attendances, semester, school_year, course, program, year_level, section)
 
     # Pass the filter options and the filtered results to the template
     return render_template(
