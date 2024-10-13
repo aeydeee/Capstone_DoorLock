@@ -151,7 +151,7 @@ def student_qrcode(student_id):
 @login_required
 @cspc_acc_required
 @admin_required
-def reset_schedules():
+def student_reset_schedules():
     try:
         db.session.execute(student_course_association.delete())
         db.session.commit()
