@@ -230,7 +230,7 @@
                 <td></td>
                 <td>{{ attendance.date.strftime('%b. %d, %Y') if attendance.date else 'N/A' }}</td>
                 <td>{{ attendance.student.full_name | title }}</td>
-                <td>{{ attendance.student.student_number | title }}</td>
+                <td>{{ attendance.student.student_number | upper }}</td>
                 <td>{{ attendance.course.course_name |title }}</td>
                 <td>{{ attendance.program_code | upper }}
                     {{ attendance.level_code }}{{ attendance.section | upper }}</td>
