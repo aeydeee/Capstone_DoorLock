@@ -51,96 +51,8 @@
     </div>
     {% endfor %}
 
-    <h1>Attendance Records</h1>
-
-    <form method="GET" action="{{ url_for('faculty_acc.view_attendance') }}">
-        {{ form.hidden_tag() }}
-
-        <!-- Semester Filter -->
-        <div class="col-md-4">
-            <label for="semester" class="form-label">Semester</label>
-            <select name="semester" id="semester" class="form-select">
-                <option value="">All</option>
-                {% for sem in semester_choices %}
-                    <option value="{{ sem[0] }}"
-                            {% if request.args.get('semester') == sem[0] %}selected{% endif %}>
-                        {{ sem[1] }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <!-- School Year Filter -->
-        <div class="col-md-4">
-            <label for="school_year" class="form-label">School Year</label>
-            <select name="school_year" id="school_year" class="form-select">
-                <option value="">All</option>
-                {% for sy in school_year_choices %}
-                    <option value="{{ sy[0] }}"
-                            {% if request.args.get('school_year') == sy[0] %}selected{% endif %}>
-                        {{ sy[1] }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <!-- Course Filter -->
-        <div class="col-md-4">
-            <label for="course" class="form-label">Course</label>
-            <select name="course" id="course" class="form-select">
-                <option value="">All</option>
-                {% for course in course_choices %}
-                    <option value="{{ course[0] }}"
-                            {% if request.args.get('course') == course[0] %}selected{% endif %}>
-                        {{ course[1] }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-
-
-        <div class="row g-3 justify-content-center mt-4">
-            <!-- Program Filter -->
-            <div class="col-md-4">
-                <label for="program" class="form-label">Program</label>
-                <select name="program" id="program" class="form-select">
-                    <option value="">All</option>
-                    {% for prog in program_choices %}
-                        <option value="{{ prog[0] }}"
-                                {% if request.args.get('program') == prog[0] %}selected{% endif %}>
-                            {{ prog[1] }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <!-- Section Filter -->
-            <div class="col-md-4">
-                <label for="section" class="form-label">Section</label>
-                <select name="section" id="section" class="form-select">
-                    <option value="">All</option>
-                    {% for sec in section_choices %}
-                        <option value="{{ sec[0] }}"
-                                {% if request.args.get('section') == sec[0] %}selected{% endif %}>
-                            {{ sec[1] }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-
-        <div class="row g-3 justify-content-center mt-4">
-            <!-- Filter Button -->
-            <div class="col-md-4 d-grid">
-                <button type="submit" class="btn btn-primary">Filter</button>
-            </div>
-        </div>
-    </form>
-
-
-
-
-
+    <h1>Student Attendance Details </h1>
+    <!--
     <div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -150,11 +62,9 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Original Form Content -->
                     <div class="card-body">
-                        <!-- Date Range Filter Section -->
                         <h5 class="mb-4 text-primary text-center">Date Range Filter</h5>
-                        <form method="GET" action="{{ url_for('faculty_acc.view_attendance') }}">
+                        <form method="GET" action="{{ url_for('faculty_acc.view_detailed_attendance') }}">
                             <div class="row g-3 justify-content-center">
                                 <div class="col-md-4">
                                     <label for="start_date" class="form-label">From</label>
@@ -168,11 +78,9 @@
                                 </div>
                             </div>
 
-
-                            <!-- Select Columns Section -->
                             <h5 class="card-title text-center mt-5 mb-4 text-primary">Select Columns to Export</h5>
 
-                            <!-- Select/Deselect Buttons -->
+
                             <div class="d-flex justify-content-center mb-4">
                                 <button type="button" class="btn btn-outline-secondary me-2" id="selectAll">Select All
                                 </button>
@@ -235,14 +143,13 @@
                                 </div>
                             </div>
 
-                            <!-- Live Count of Selected Columns -->
+
                             <p class="text-center mt-3"><strong>Selected columns:</strong> <span
                                     id="selectedCount">8</span> / 8</p>
 
                             <input type="hidden" name="start_date" value="{{ request.args.get('start_date') }}">
                             <input type="hidden" name="end_date" value="{{ request.args.get('end_date') }}">
 
-                            <!-- Submit Button -->
                             <div class="text-center mt-4">
                                 <button type="submit" class="btn btn-primary btn-lg px-5">Filter Selected Columns
                                 </button>
@@ -279,14 +186,15 @@
             document.getElementById('selectedCount').textContent = selectedCount;
         }
     </script>
+
     <br>
     <div class="d-flex justify-content-between align-items-center">
         <div>
-            <a href="{{ url_for('faculty_acc.view_attendance', export='csv', start_date=request.args.get('start_date'), end_date=request.args.get('end_date'), role=request.args.get('role')) }}"
+            <a href="{{ url_for('faculty_acc.view_detailed_attendance', export='excel', start_date=request.args.get('start_date'), end_date=request.args.get('end_date'), role=request.args.get('role')) }}"
                class="btn btn-outline-primary btn-sm me-2">
                 <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
             </a>
-            <a href="{{ url_for('faculty_acc.view_attendance', export='pdf', start_date=request.args.get('start_date'), end_date=request.args.get('end_date'), columns=selected_columns) }}"
+            <a href="{{ url_for('faculty_acc.view_detailed_attendance', export='pdf', start_date=request.args.get('start_date'), end_date=request.args.get('end_date'), columns=selected_columns) }}"
                class="btn btn-outline-danger btn-sm">
                 <i class="bi bi-file-earmark-pdf"></i> Export PDF
             </a>
@@ -298,7 +206,7 @@
             </button>
         </div>
     </div>
-
+    -->
     <br/>
 
     <table class="table table-hover" id="view_attendance">
@@ -332,7 +240,7 @@
                 <td>{{ attendance.time_out.strftime('%I:%M %p') if attendance.time_out else 'N/A' }}</td>
                 <td>
                     <form id="attendanceForm_{{ attendance.id }}" method="POST"
-                          action="{{ url_for('faculty_acc.view_attendance') }}">
+                          action="{{ url_for('faculty_acc.view_detailed_attendance') }}">
                         {{ form.hidden_tag() }}
                         <input type="hidden" name="attendance_id" value="{{ attendance.id }}">
                         <label>
