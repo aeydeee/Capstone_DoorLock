@@ -96,7 +96,7 @@ def add_header_footer(canvas, doc, is_first_page, start_date=None, end_date=None
     else:
         # Adjusted header for the 2nd and subsequent pages
         canvas.setFont("Helvetica-Bold", 12)
-        canvas.drawString(65, doc.height + 60, "CAMARINES SUR POLYTECHNIC COLLEGES, ATTENDANCE RECORD LOGS - CONTINUED")
+        canvas.drawString(65, doc.height + 60, "CAMARINES SUR POLYTECHNIC COLLEGES, ATTENDANCE LOG REPORT RECORDS - CONTINUED")
 
     # Add the italic footer text
     canvas.setFont("Helvetica-Oblique", 9)  # Setting the font to italic
@@ -139,7 +139,7 @@ def export_pdf(attendances, selected_columns, start_date=None, end_date=None):
     styles = getSampleStyleSheet()
     elements = []
     elements.append(Spacer(1, 30))  # Spacer to push the title down
-    title = Paragraph("<b>ATTENDANCE RECORD LOGS</b>", styles['Title'])
+    title = Paragraph("<b>ATTENDANCE LOG REPORT RECORDS</b>", styles['Title'])
     title.hAlign = 'CENTER'
     elements.append(title)
     elements.append(Spacer(1, 10))
