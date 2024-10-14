@@ -21,7 +21,8 @@ from sqlalchemy.exc import IntegrityError
 
 from app import db
 from decorators import admin_required, cspc_acc_required
-from models import Faculty, User, FacultyCourseSchedule, faculty_course_association
+from models import Faculty, User, FacultyCourseSchedule, faculty_course_association, Schedule, \
+    student_course_association
 from webforms.faculty_form import FacultyForm
 from webforms.delete_form import DeleteForm
 
@@ -169,8 +170,21 @@ def faculty_reset_schedules():
         db.session.query(FacultyCourseSchedule).delete()
         db.session.execute(faculty_course_association.delete())
 
+        # Manually delete related entries in student_course_association
+        db.session.execute(
+            student_course_association.delete().where(
+                student_course_association.c.schedule_id.isnot(None)
+            )
+        )
+
+        # Retrieve all schedules and delete them one by one
+        schedules = Schedule.query.all()
+        for schedule in schedules:
+            db.session.delete(schedule)
+
         db.session.commit()
-        flash('All faculty courses and schedules have been reset.', 'success')
+        flash('Schedule and associated faculty-program links resets successfully', 'success')
+
     except Exception as e:
         db.session.rollback()
         flash(f'Error occurred: {str(e)}', 'danger')
