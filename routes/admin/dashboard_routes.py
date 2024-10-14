@@ -36,7 +36,7 @@ def dashboard():
     for i in range(7):
         day = date.today() - timedelta(days=i)
         count = Attendance.query.filter(db.func.date(Attendance.time_in) == day).count()
-        past_week_data[day.strftime('%Y-%m-%d')] = count
+        past_week_data[day.strftime('%b. %d, %Y')] = count
 
     # Reverse the order to make sure the chart labels are in chronological order
     past_week_data = dict(sorted(past_week_data.items()))
