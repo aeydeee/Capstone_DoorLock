@@ -80,7 +80,7 @@ def get_options(course_id):
     program_year_level_semester_courses = ProgramYearLevelSemesterCourse.query.filter_by(course_id=course_id).all()
 
     # Extract unique programs for the given program
-    programs = set((cy.program.id, cy.program.program_name) for cy in program_year_level_semester_courses)
+    programs = set((cy.program.id, cy.program.program_name.title()) for cy in program_year_level_semester_courses)
 
     return jsonify({
         'programs': list(programs)
@@ -115,7 +115,7 @@ def add_schedule(faculty_id):
     form = NewScheduleForm()
 
     # Initialize program choices
-    form.course_id.choices = [(course.id, course.course_name) for course in Course.query.all()]
+    form.course_id.choices = [(course.id, course.course_name.title()) for course in Course.query.all()]
 
     # Handle POST request
     if request.method == 'POST' and form.course_id.data:
