@@ -83,7 +83,7 @@ def create_app():
     scheduler.add_job(func=lambda: trigger_full_backup_job(app), trigger="cron", hour=17, minute=4)
 
     # Schedule job to record absent students at the end of each subject schedule
-    scheduler.add_job(func=lambda: record_absent_students(app), trigger="interval", seconds=5)
+    scheduler.add_job(func=lambda: record_absent_students(app), trigger="interval", seconds=60)
     scheduler.start()
 
     # Shut down the scheduler when exiting the app
@@ -145,7 +145,7 @@ def create_app():
         check_and_create_admin()  # Check and create admin user
         check_and_create_enums()
 
-    ARDUINO_IP = '192.168.50.170'  # Arduino's IP address
+    ARDUINO_IP = '192.168.2.170'  # Arduino's IP address
     ARDUINO_PORT = 90
 
     # Function to unlock the door
@@ -678,6 +678,7 @@ def create_app():
                                     level_code = student.year_level.level_code  # Assuming level relationship exists
                                     section = student.section.display_name  # Assuming section relationship exists
                                     semester = student.semester.display_name  # Assuming semester relationship exists
+                                    school_year = student.school_year.year_label  # Assuming school_year relationship exists
 
                                     if reader_type == "in":
                                         if attendance and attendance.time_in:
@@ -736,6 +737,7 @@ def create_app():
                                                     level_code=level_code,
                                                     section=section,
                                                     semester=semester,
+                                                    school_year=school_year,
                                                     faculty_id=faculty.id,
                                                     faculty_name=f"{faculty.full_name}",
                                                 )
