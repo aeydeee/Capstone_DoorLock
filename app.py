@@ -1,3 +1,4 @@
+import base64
 import os
 
 import pyotp
@@ -53,7 +54,7 @@ def create_app():
 
     from models import User, Attendance, Schedule, FacultyCourseSchedule, Faculty, Course, Program, YearLevel, Section, \
         Semester, FacultySession, ReportLog, student_course_association, delete_null_status_logs, \
-        delete_old_faculty_sessions
+        delete_old_faculty_sessions, record_absent_students
     from flask import request
     from datetime import datetime, timedelta
     import requests
@@ -81,6 +82,8 @@ def create_app():
     # Schedule full backups at the end of the day (midnight)
     scheduler.add_job(func=lambda: trigger_full_backup_job(app), trigger="cron", hour=17, minute=4)
 
+    # Schedule job to record absent students at the end of each subject schedule
+    scheduler.add_job(func=lambda: record_absent_students(app), trigger="interval", seconds=5)
     scheduler.start()
 
     # Shut down the scheduler when exiting the app
@@ -1066,7 +1069,13 @@ def create_app():
             return redirect(url_for('login.login'))
 
         # Here, generate and update the new TOTP secret key
-        user.totp_secret.secret_key = pyotp.random_base32()
+        # Generate a random 10-byte secret
+        random_bytes = os.urandom(10)
+
+        # Convert to base32 for Google Authenticator
+        secret_base32 = base64.b32encode(random_bytes).decode('utf-8')
+
+        user.totp_secret.secret_key = secret_base32
         user.totp_verified = False
         user.totp_token_used = True  # Mark the token as used
         db.session.commit()
