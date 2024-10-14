@@ -737,9 +737,7 @@ def view_new_attendance():
             attendances_query = attendances_query.filter(Attendance.semester == semester)
 
         if school_year:
-            attendances_query = attendances_query.join(student_alias_1,
-                                                       Attendance.student_id == student_alias_1.id).join(
-                SchoolYear, student_alias_1.school_year_id == SchoolYear.id).filter(SchoolYear.id == school_year)
+            attendances_query = attendances_query.filter(Attendance.school_year == school_year_label)
 
         if course:
             attendances_query = attendances_query.join(Course, Attendance.course_id == Course.id).filter(
@@ -942,8 +940,21 @@ def faculty_profile(faculty_id):
 
             if form.errors:
                 for field, errors in form.errors.items():
+                    # Convert field names to user-friendly versions
+                    friendly_field_names = {
+                        'rfid_uid': 'RFID',
+                        'f_name': 'First Name',
+                        'l_name': 'Last Name',
+                        'm_name': 'Middle Name',
+                        'email': 'Email Address',
+                        'gender': 'Gender',
+                        'faculty_number': 'School ID'
+                    }
+                    field_label = friendly_field_names.get(field, field.capitalize())
+
+                    # Display all validation errors in layman's terms
                     for error in errors:
-                        flash(f"Error: {error}", 'error')
+                        flash(f"{field_label}: {error}. Please try again.", 'error')
 
     return render_template('faculty_acc/faculty_profile.html', form=form, faculty=faculty)
 
