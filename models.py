@@ -475,7 +475,7 @@ def record_absent_students(app):
         # Query the latest schedule based on the current day and end_time
         latest_schedule = Schedule.query.filter(
             Schedule.day == current_day.upper(),
-            Schedule.end_time <= current_time.time()
+            Schedule.end_time <= current_time.timetz()
         ).order_by(Schedule.end_time.desc()).first()
 
         if latest_schedule:
