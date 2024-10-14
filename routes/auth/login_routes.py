@@ -20,7 +20,7 @@ def login():
     elif current_user.is_authenticated and current_user.role == 'admin':
         return redirect(url_for('dashboard.dashboard'))
     elif current_user.is_authenticated and current_user.role == 'faculty':
-        return redirect(url_for('faculty_acc.view_attendance'))
+        return redirect(url_for('faculty_acc.view_detailed_attendance'))
 
     form = LoginForm()
 
