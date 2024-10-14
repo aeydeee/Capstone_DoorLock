@@ -18,7 +18,7 @@ from reportlab.lib.pagesizes import letter, landscape, GOV_LEGAL, legal
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import TableStyle, Table, Paragraph, Image, SimpleDocTemplate, Spacer, BaseDocTemplate, Frame, \
-    PageTemplate, KeepInFrame
+    PageTemplate, KeepInFrame, Flowable
 
 from flask import Blueprint, request, render_template, flash, redirect, url_for, jsonify, abort, session, current_app, \
     make_response, send_file
@@ -159,7 +159,7 @@ def export_pdf_detail(attendances, selected_columns, start_date=None, end_date=N
     styles = getSampleStyleSheet()
     elements = []
     elements.append(Spacer(1, 30))  # Spacer to push the title down
-    title = Paragraph("<b>ATTENDANCE RECORD LOGS</b>", styles['Title'])
+    title = Paragraph("<b>LOG REPORT RECORDS</b>", styles['Title'])
     title.hAlign = 'CENTER'
     elements.append(title)
     elements.append(Spacer(1, 10))
@@ -213,7 +213,7 @@ def export_pdf_detail(attendances, selected_columns, start_date=None, end_date=N
     column_widths = {
         'student_name': 180,
         'student_number': 65,
-        'course': 120,
+        'course': 130,
         'date': 70,
         'program_section': 100,
         'semester': 90,
@@ -377,11 +377,11 @@ def add_header_footer(canvas, doc):
     else:
         # Adjusted header for the 2nd and subsequent pages
         canvas.setFont("Helvetica-Bold", 12)
-        canvas.drawString(65, doc.height + 60, "CAMARINES SUR POLYTECHNIC COLLEGES, ATTENDANCE RECORD LOGS - CONTINUED")
+        canvas.drawString(65, doc.height + 60, "CAMARINES SUR POLYTECHNIC COLLEGES, LOG REPORT RECORDS - CONTINUED")
 
     # Add the italic footer text
     canvas.setFont("Helvetica-Oblique", 9)  # Setting the font to italic
-    canvas.drawString(60, 50, "System-generated report. No Signature required.")  # Adjust the y-position as needed
+    canvas.drawString(60, 50, "System-generated report.")  # Adjust the y-position as needed
 
     # Footer Section with horizontal line
     canvas.setLineWidth(1)
@@ -399,8 +399,40 @@ def add_header_footer(canvas, doc):
     canvas.restoreState()
 
 
+class VerticalText(Flowable):
+    def __init__(self, text, font_name='Helvetica-Bold', font_size=10, text_color=colors.black):
+        Flowable.__init__(self)
+        self.text = text
+        self.font_name = font_name
+        self.font_size = font_size
+        self.text_color = text_color
+
+    def draw(self):
+        canvas = self.canv
+        canvas.saveState()  # Save the current canvas state
+
+        # Set styles: font, size, background, and text color
+        canvas.setFont(self.font_name, self.font_size)
+        canvas.setFillColor(self.text_color)
+
+        # Draw the background (if needed) behind the text
+        canvas.rect(0, 0, self.font_size * 1.2, canvas.stringWidth(self.text, self.font_name, self.font_size), stroke=0)
+
+        # Rotate, translate, and draw the string
+        canvas.rotate(90)
+        canvas.translate(1, -self.font_size / 1.2)
+        canvas.drawString(0, 0, self.text)
+
+        canvas.restoreState()  # Restore the canvas state
+
+    def wrap(self, aW, aH):
+        canv = self.canv
+        fn, fs = canv._fontname, canv._fontsize
+        return fs, canv.stringWidth(self.text, fn, fs)
+
+
 def export_pdf(attendances, semester, school_year, course, year_level, program, section):
-    # Resolve display names from database if IDs are provided
+    # Resolve display names from the database if IDs are provided
     semester_display = Semester.query.get(int(semester)).display_name if semester and semester.isdigit() else semester
     school_year_display = SchoolYear.query.get(
         int(school_year)).year_label if school_year and school_year.isdigit() else school_year
@@ -415,7 +447,7 @@ def export_pdf(attendances, semester, school_year, course, year_level, program, 
     # Extract unique attendance dates and sort them
     attendance_dates = sorted(set(attendance.date.date() for attendance in attendances))
 
-    # Group attendance records by student (same logic as in the view)
+    # Group attendance records by student
     student_attendance = {}
     for attendance in attendances:
         student_key = (attendance.student_number.upper(), attendance.student_name.title())
@@ -449,26 +481,18 @@ def export_pdf(attendances, semester, school_year, course, year_level, program, 
         getSampleStyleSheet()['Normal'])
     elements.append(course_info)
 
-    # Helper function to format the date in a stacked format
-    def stack_date(date_str):
-        # Split the date into components and stack them using HTML <br/>
-        return "<br/>".join(date_str)
+    # Format attendance dates into VerticalText instances
+    date_paragraphs = [VerticalText(date.strftime('%b %d, %Y')) for date in attendance_dates]
 
-    # Modify the table header: Student ID, Name, and Attendance Dates (Stacked format)
-    stacked_dates = [stack_date(date.strftime('%b/%d/%Y')) for date in attendance_dates]
-
-    # Convert each stacked date to a Paragraph with appropriate styling
+    # Get default styles and define a custom header style
     styles = getSampleStyleSheet()
-    stacked_date_paragraphs = [Paragraph(f"<font size=12>{date}</font>", styles['Normal']) for date in stacked_dates]
+    header_style = ParagraphStyle(name='Header', fontSize=17, alignment=TA_CENTER, spaceBefore=50, spaceAfter=6)
 
-    # Define a larger font style for the table header with center alignment
-    header_style = ParagraphStyle(name='Header', fontSize=14, alignment=TA_CENTER, spaceBefore=50, spaceAfter=6)
-
-    # Create the table header with bigger font for 'Student ID' and 'Name'
+    # Create the table header with 'Student ID', 'Name', and vertical date texts
     table_header = [
                        Paragraph('Student ID', header_style),
                        Paragraph('Name', header_style)
-                   ] + stacked_date_paragraphs
+                   ] + date_paragraphs  # Add vertical date texts
 
     # Initialize the table data with the header
     data = [table_header]
@@ -491,7 +515,7 @@ def export_pdf(attendances, semester, school_year, course, year_level, program, 
     table = Table(data, colWidths=column_widths, repeatRows=1)
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),  # Header background color
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),  # Header text color
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),  # Header text color
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),  # Center alignment for all cells
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),  # Bold font for headers
         ('FONTSIZE', (0, 0), (-1, 0), 10),  # Font size for headers
