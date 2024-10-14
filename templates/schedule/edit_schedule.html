@@ -33,17 +33,19 @@
             <!-- Course Selection -->
             <div class="form-group">
                 <label class="form-label">Course</label>
-                <label for="course_id"></label><select class="form-control" id="course_id" name="course_id">
-                {% for course_id, course_name in form.course_id.choices %}
-                    <option value="{{ course_id }}" {% if course_id == schedule.course_id %}selected{% endif %}>
-                        {{ course_name | title }}
-                    </option>
-                {% endfor %}
-            </select>
+                <label for="course_id"></label>
+                <select class="form-control" id="course_id" name="course_id" disabled>
+                    {% for course_id, course_name in form.course_id.choices %}
+                        <option value="{{ course_id }}" {% if course_id == schedule.course_id %}selected{% endif %}>
+                            {{ course_name | title }}
+                        </option>
+                    {% endfor %}
+                </select>
                 {% for error in form.course_id.errors %}
                     <span class="text-danger">{{ error }}</span>
                 {% endfor %}
             </div>
+
             <br/>
             <div class="form-group">
                 {{ form.day.label(class="form-label") }}
