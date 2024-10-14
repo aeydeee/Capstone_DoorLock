@@ -73,7 +73,6 @@ def admin_profile(admin_id):
         email_exists = User.query.filter(User.email == form.email.data, User.id != user.id).first()
         school_id_exists = Admin.query.filter(Admin.school_id == form.school_id.data,
                                               Admin.user_id != user.id).first()
-        print(f"rfid: {rfid_uid_exists}")
         if rfid_uid_exists is not None:
             flash('RFID is already in use', 'error')
         elif email_exists is not None:
@@ -123,7 +122,20 @@ def admin_profile(admin_id):
 
             if form.errors:
                 for field, errors in form.errors.items():
+                    # Convert field names to user-friendly versions
+                    friendly_field_names = {
+                        'rfid_uid': 'RFID',
+                        'f_name': 'First Name',
+                        'l_name': 'Last Name',
+                        'm_name': 'Middle Name',
+                        'email': 'Email Address',
+                        'gender': 'Gender',
+                        'school_id': 'School ID'
+                    }
+                    field_label = friendly_field_names.get(field, field.capitalize())
+
+                    # Display all validation errors in layman's terms
                     for error in errors:
-                        flash(f"Error: {error}", 'error')
+                        flash(f"{field_label}: {error}. Please try again.", 'error')
 
     return render_template('admin_acc/admin_profile.html', form=form, admin=admin)
