@@ -415,6 +415,7 @@ class Attendance(db.Model):
     level_code = db.Column(db.String(100), nullable=False)
     section = db.Column(db.String(100), nullable=False)
     semester = db.Column(db.String(100), nullable=False)
+    school_year = db.Column(db.String(100), nullable=False)
 
     # Course details
     course_id = db.Column(db.Integer, db.ForeignKey('program_courses.id', ondelete='SET NULL'), nullable=True)
@@ -535,7 +536,8 @@ def record_absent_students(app):
                         program_code=student.program.program_code,
                         level_code=student.year_level.level_code,
                         section=student.section.display_name,
-                        semester=student.semester.display_name
+                        semester=student.semester.display_name,
+                        school_year=student.school_year.year_label
                     )
                     db.session.add(attendance)
                     new_records = True
