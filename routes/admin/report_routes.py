@@ -148,7 +148,7 @@ def add_header_footer(canvas, doc, is_first_page, start_date=None, end_date=None
     else:
         # Adjusted header for the 2nd and subsequent pages
         canvas.setFont("Helvetica-Bold", 12)
-        canvas.drawString(65, doc.height + 60, "CAMARINES SUR POLYTECHNIC COLLEGES, REPORT GENERATION LOGS - CONTINUED")
+        canvas.drawString(65, doc.height + 60, "CAMARINES SUR POLYTECHNIC COLLEGES, DOOR ACCESS REPORT LOGS - CONTINUED")
 
     # Add the italic footer text
     canvas.setFont("Helvetica-Oblique", 9)  # Setting the font to italic
@@ -271,7 +271,7 @@ def export_admin_pdf(reports, start_date=None, end_date=None):
     elements.append(Spacer(1, 30))  # Spacer to push the title down
 
     # Add the document title at the top
-    title = Paragraph("<b>FACULTIES REPORT GENERATION LOGS</b>", styles['Title'])
+    title = Paragraph("<b>FACULTIES DOOR ACCESS REPORT LOGS</b>", styles['Title'])
     title.hAlign = 'CENTER'
     elements.append(title)
 
@@ -346,7 +346,7 @@ def export_faculty_admin_pdf(reports, start_date=None, end_date=None):
     elements.append(Spacer(1, 30))  # Spacer to push the title down
 
     # Add the document title at the top
-    title = Paragraph("<b>FACULTIES REPORT GENERATION LOGS</b>", styles['Title'])
+    title = Paragraph("<b>FACULTIES DOOR ACCESS REPORT LOGS</b>", styles['Title'])
     title.hAlign = 'CENTER'
     elements.append(title)
 
@@ -461,7 +461,15 @@ def report_generation():
                     'Export Generation is only available for Faculty and Admin. Please proceed to the Attendance Report Logs Page.')
                 return redirect(url_for('report.report_generation'))
         elif export_type == 'pdf':
-            # Existing PDF export logic here
-            pass
+            if role_filter == 'Faculty':
+                return export_faculty_pdf(reports)
+            elif role_filter == 'Admin':
+                return export_admin_pdf(reports)
+            elif role_filter == 'FacultyAdmin':
+                return export_faculty_admin_pdf(reports)
+            else:
+                flash(
+                    'Export Generation is only available for Faculty and Admin. Please proceed to the Attendance Report Logs Page.')
+                return redirect(url_for('report.report_generation'))
 
     return render_template('report/report.html', reports=reports)
