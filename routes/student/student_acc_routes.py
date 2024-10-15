@@ -12,7 +12,7 @@ from werkzeug.utils import secure_filename
 from app import db
 from decorators import student_required, email_required, own_student_account_required, check_totp_verified
 from models import Program, student_course_association, Schedule, Student, YearLevel, Program, Section, Semester, User, \
-    FacultyCourseSchedule, ProgramYearLevelSemesterCourse
+    FacultyCourseSchedule, ProgramYearLevelSemesterCourse, SchoolYear
 from webforms.student_form import EditStudentForm
 
 student_acc_bp = Blueprint('student_acc', __name__)
@@ -127,6 +127,14 @@ def student_profile(student_id):
         except ValueError:
             return rfid_uid.lower() if rfid_uid else ""
 
+    def generate_school_year(semester_id):
+        current_year = datetime.now().year
+        if semester_id == 1:  # First Semester
+            return f"{current_year}-{current_year + 1}"
+        elif semester_id == 2:  # Second Semester
+            return f"{current_year - 1}-{current_year}"
+        return None
+
     # Populate choices for form fields with a default "Select..." option
     form.year_level_id.choices = [('', 'Select Year Level')] + [(y.id, y.display_name) for y in YearLevel.query.all()]
     form.program_id.choices = [('', 'Select Program')] + [(c.id, c.program_name.title()) for c in Program.query.all()]
@@ -186,6 +194,18 @@ def student_profile(student_id):
                     student.program_id = form.program_id.data
                     student.section_id = form.section_id.data
                     student.semester_id = form.semester_id.data
+
+                    # Generate the school year based on the selected semester
+                    school_year_label = generate_school_year(form.semester_id.data)
+
+                    if school_year_label:
+                        school_year = SchoolYear.query.filter_by(year_label=school_year_label).first()
+                        if not school_year:
+                            school_year = SchoolYear(year_label=school_year_label)
+                            db.session.add(school_year)
+                            db.session.flush()  # Ensure we have the school_year.id
+
+                        student.school_year_id = school_year.id
 
                 db.session.commit()
                 flash('Student details updated successfully!', 'success')
