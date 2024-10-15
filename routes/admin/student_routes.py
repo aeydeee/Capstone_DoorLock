@@ -653,9 +653,6 @@ def add_student():
     return render_template('student/add_student.html', form=form)
 
 
-from datetime import datetime
-
-
 @student_bp.route("/edit/<int:id>/", methods=["GET", "POST"])
 @login_required
 @cspc_acc_required
