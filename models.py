@@ -458,7 +458,7 @@ class Attendance(db.Model):
 
             # Check if the student is late based on schedule and grace period+
             if time_in_aware >= scheduled_end_time:
-                return 'absent'
+                return 'present'
             elif time_in_aware > scheduled_end_time:
                 return 'late'
             elif time_in_aware > (scheduled_start_time + timedelta(minutes=15)):  # Example grace period of 15 mins
