@@ -1031,10 +1031,58 @@ def create_app():
         token = generate_token(user_email)
         reset_url = url_for('reset_totp', token=token, _external=True)
 
-        msg = Message('Reset Your TOTP Secret Key',
-                      sender=os.environ.get('MAIL_USERNAME'),
-                      recipients=[user_email])
-        msg.body = f'Click the link to reset your TOTP secret key: {reset_url}'
+        # URLs for the department header and logo
+        header_url = 'https://i.postimg.cc/zBSzR7Q6/ccs-header.png'
+        logo_url = 'https://i.postimg.cc/SQdQSZCz/techninjas.png'
+        current_year = datetime.now().year
+
+        msg = Message(
+            subject='Reset Your TOTP Secret Key',
+            sender=os.environ.get('MAIL_USERNAME'),
+            recipients=[user_email]
+        )
+
+        msg.html = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0;">
+            <table align="center" width="600" style="border-collapse: collapse; background-color: #ffffff; padding: 20px;">
+                <tr>
+                    <td align="center" colspan="2" style="padding: 10px 0;">
+                        <table align="center" style="width: 100%; max-width: 500px; text-align: center;">
+                            <tr>
+                                <td style="width: 50%; padding-right: 10px;">
+                                    <img src="{header_url}" alt="Department Header" width="250">
+                                </td>
+                                <td style="width: 50%; padding-left: 10px;">
+                                    <img src="{logo_url}" style="border-radius: 50%;" alt="Your Logo" width="85">
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="padding: 20px;">
+                        <h2 style="color: #333333; text-align: center;">Reset Your TOTP Secret Key</h2>
+                        <p>Hello,</p>
+                        <p>You recently requested to reset your TOTP secret key. Click the button below to proceed:</p>
+                        <div style="text-align: center; margin: 20px 0;">
+                            <a href="{reset_url}" style="background-color: #4CAF50; color: white; text-decoration: none; padding: 10px 20px; border-radius: 5px;">Reset TOTP Key</a>
+                        </div>
+                        <p>If you did not make this request, please ignore this email or contact support if you have any concerns.</p>
+                        <p>Best regards,<br>TechNinjas AutoLock</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" align="center" style="padding: 10px; background-color: #333333; color: white; font-size: 12px;">
+                        <p>&copy; {current_year} TechNinjas AutoLock. All Rights Reserved.</p>
+                        <p><a href="https://immune-lively-salmon.ngrok-free.app/login" style="color: #4CAF50; text-decoration: none;">Visit our website</a> | <a href="https://immune-lively-salmon.ngrok-free.app/login" style="color: #4CAF50; text-decoration: none;">Contact Support</a></p>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        """
+
         mail.send(msg)
 
     @app.route('/request_totp_reset', methods=['GET', 'POST'])
@@ -1083,7 +1131,7 @@ def create_app():
         db.session.commit()
 
         flash('Your TOTP secret key has been reset. Please configure your authenticator app again.', 'success')
-        return redirect(url_for('login.login'))
+        return redirect(url_for('totp.two_factor_setup'))
 
     # 400 Error Handler for Bad Requests
     @app.errorhandler(400)
