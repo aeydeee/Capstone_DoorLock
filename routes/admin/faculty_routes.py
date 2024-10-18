@@ -127,7 +127,7 @@ def get_faculty_data():
         courses = [{"code": subj.course_code, "name": subj.course_name} for subj in faculty.courses]
         profile_pic = faculty.user.profile_pic if faculty.user.profile_pic else None
         profile_html = (f'<a href="#" data-bs-toggle="modal" data-bs-target="#profileModal{faculty.id}">'
-                        f'<img src="{profile_pic}" alt="Profile Picture" style="border-radius: 50%; width: 50px; height: 50px; cursor: pointer;">'
+                        f'<img src="{profile_pic}" alt="Profile Picture" style="border-radius: 50%; width: 28px; height: 28px; cursor: pointer;">'
                         '</a>') if profile_pic else "<i class='bx bxs-user-circle'></i>"
         data.append({
             "id": faculty.id,
@@ -195,6 +195,68 @@ def faculty_reset_schedules():
 
     # Redirect to the page where the reset button is located (you can change this)
     return redirect(url_for('faculty.manage_faculty'))
+
+
+@faculty_bp.route('/download_template', methods=['GET'])
+@login_required
+@cspc_acc_required
+@admin_required
+def download_template():
+    # Define the column names for the template
+    columns = ['rfid_uid', 'faculty_number', 'designation', 'faculty_department', 'email', 'f_name', 'l_name', 'm_name',
+               'gender',
+               ]
+
+    # Create an empty DataFrame with the required columns
+    df = pd.DataFrame(columns=columns)
+
+    # Save the DataFrame to a BytesIO object
+    output = io.BytesIO()
+
+    # Use xlsxwriter for formatting
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Faculty Template')
+
+        # Get the xlsxwriter workbook and worksheet objects
+        workbook = writer.book
+        worksheet = writer.sheets['Faculty Template']
+
+        # Define formats for styling
+        header_format = workbook.add_format({
+            'bold': True,
+            'text_wrap': True,
+            'valign': 'center',
+            'fg_color': '#4F81BD',
+            'font_color': 'white',
+            'border': 1
+        })
+
+        cell_format = workbook.add_format({
+            'border': 1,
+            'valign': 'center'
+        })
+
+        # Set column widths for better readability
+        worksheet.set_column('A:A', 15, cell_format)  # RFID UID
+        worksheet.set_column('B:B', 15, cell_format)  # Faculty Number
+        worksheet.set_column('C:C', 15, cell_format)  # Designation
+        worksheet.set_column('D:D', 20, cell_format)  # Department
+        worksheet.set_column('E:E', 30, cell_format)  # Email
+        worksheet.set_column('F:F', 20, cell_format)  # First Name
+        worksheet.set_column('G:G', 20, cell_format)  # Last Name
+        worksheet.set_column('H:H', 15, cell_format)  # Middle Name
+        worksheet.set_column('I:I', 10, cell_format)  # Gender
+
+        # Apply the header format to the first row
+        for col_num, value in enumerate(df.columns):
+            worksheet.write(0, col_num, value, header_format)
+
+    # Set the file pointer back to the start
+    output.seek(0)
+
+    # Send the file as an attachment for download
+    return send_file(output, as_attachment=True, download_name='faculty_template.xlsx',
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 
 @faculty_bp.route('/', methods=['GET', 'POST'])
@@ -265,28 +327,6 @@ def manage_faculty():
                 else:
                     try:
                         with db.session.begin_nested():
-                            date_formats = ['%m/%d/%Y', '%d-%m-%Y', '%Y/%m/%d', '%Y-%m-%d']
-                            if row['date_of_birth']:
-                                # Check if the date is already a datetime object
-                                if isinstance(row['date_of_birth'], datetime):
-                                    # If it's already a datetime object, format it directly
-                                    row['date_of_birth'] = row['date_of_birth'].strftime('%Y-%m-%d')
-                                else:
-                                    # If it's a string, attempt to parse it
-                                    date_converted = False
-                                    for date_format in date_formats:
-                                        try:
-                                            row['date_of_birth'] = datetime.strptime(row['date_of_birth'],
-                                                                                     date_format).strftime('%Y-%m-%d')
-                                            date_converted = True
-                                            break
-                                        except ValueError:
-                                            continue
-                                    if not date_converted:
-                                        flash(f"Row {index + 1}: Invalid date format for Date of Birth.", 'error')
-                                        error_count += 1
-                                        continue  # Skip this row if date conversion failed
-
                             # Create a new User instance
                             user = User(
                                 rfid_uid=row['rfid_uid'],

@@ -36,9 +36,33 @@
         </a>
     </div>
 
-    <div class="btn-group mb-3 w-100" role="group" aria-label="Manage Actions">
-        <div class="d-flex gap-2">
+    <!-- Button Group Section -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <!-- Button Group -->
+        <div class="btn-group me-3" role="group" aria-label="Manage Actions">
             {% include 'upload.html' %}
+
+            <!-- Button to download Excel and show the image -->
+            <a href="{{ url_for('faculty.download_template') }}" class="btn btn-primary">Download Template</a>
+            <button id="show-image-btn" class="btn btn-secondary">Show Template</button>
+
+            <!-- Full-screen Modal for displaying the image -->
+            <div id="image-modal" class="modal fade" tabindex="-1" role="dialog">
+                <div class="modal-dialog modal-fullscreen" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Image Preview</h5>
+                            <button type="button" class="btn-close" id="close-modal-btn" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body d-flex justify-content-center align-items-center p-0">
+                            <img src="{{ url_for('static', filename='images/faculty_format.png') }}"
+                                 alt="Faculty Format" class="img-fluid w-100 h-100" style="object-fit: contain;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View All Schedules Button -->
             <a href="{{ url_for('schedule.view_schedules') }}"
                class="btn btn-outline-primary d-flex align-items-center">
                 <i class="fa-regular fa-eye"></i>
@@ -46,16 +70,45 @@
             </a>
         </div>
 
-        <!-- Reset Button aligned to the right -->
-        <div class="ms-auto">
-            <form action="{{ url_for('faculty.faculty_reset_schedules') }}"
-                  method="POST"
+        <!-- Right-Side Buttons -->
+        <div class="d-flex align-items-center">
+            <!-- Reset Schedules Button -->
+            <form action="{{ url_for('faculty.faculty_reset_schedules') }}" method="POST" class="me-2"
                   onsubmit="return confirm('Are you sure you want to reset all faculty schedules?');">
                 {{ delete_form.hidden_tag() }}
                 <button type="submit" class="btn btn-outline-danger">RESET SCHEDULES</button>
             </form>
         </div>
     </div>
+
+    <!-- Optional Bootstrap CSS for modal -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.0.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.2/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom CSS for Maximum Z-Index -->
+    <style>
+        /* Ensure modal is always on top of any other element */
+        #image-modal {
+            z-index: 9999 !important; /* Very high z-index for the modal */
+        }
+
+        /* Optional: If there are any sticky or fixed elements that could interfere, give them lower z-index */
+        .navbar, .sticky-top, .fixed-top, .fixed-bottom {
+            z-index: 1 !important; /* Reduce z-index for other potential overlapping elements */
+        }
+    </style>
+
+    <script>
+        document.getElementById('show-image-btn').addEventListener('click', function () {
+            $('#image-modal').modal('show');  // Show the modal when the button is clicked
+        });
+
+        document.getElementById('close-modal-btn').addEventListener('click', function () {
+            $('#image-modal').modal('hide');  // Hide the modal when the close button is clicked
+        });
+    </script>
+
 
 
     <br/>
