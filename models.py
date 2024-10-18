@@ -114,7 +114,6 @@ class YearLevel(db.Model):
 class SemesterEnum(enum.Enum):
     FIRST_SEMESTER = (1, 'First Semester')
     SECOND_SEMESTER = (2, 'Second Semester')
-    SUMMER_TERM = (3, 'Summer Term')
 
     @classmethod
     def choices(cls):
@@ -295,7 +294,7 @@ class Student(db.Model):
     section_id = db.Column(db.Integer, db.ForeignKey('section.id', ondelete='CASCADE'))
     program_id = db.Column(db.Integer, db.ForeignKey('program.id', ondelete='CASCADE'))
     semester_id = db.Column(db.Integer, db.ForeignKey('semester.id', ondelete='CASCADE'))
-    school_year_id = db.Column(db.Integer, db.ForeignKey('school_year.id', ondelete='CASCADE'), nullable=False)
+    school_year_id = db.Column(db.Integer, db.ForeignKey('school_year.id', ondelete='CASCADE'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
 
     school_year = db.relationship('SchoolYear', back_populates='students')
