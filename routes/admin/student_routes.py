@@ -3,6 +3,7 @@ import io
 import json
 import os
 import re
+import traceback
 import uuid
 from datetime import datetime
 
@@ -45,6 +46,9 @@ YEAR_LEVEL_MAPPING = {
 SEMESTER_MAPPING = {
     'first semester': 'FIRST_SEMESTER',
     'second semester': 'SECOND_SEMESTER',
+    # Add any other possible mappings
+    '1st semester': 'FIRST_SEMESTER',
+    '2nd semester': 'SECOND_SEMESTER',
 }
 
 SECTION_MAPPING = {
@@ -163,6 +167,75 @@ def student_reset_schedules():
     return redirect(url_for('student.manage_student'))
 
 
+import io
+from flask import send_file
+import pandas as pd
+
+
+@student_bp.route('/download_template', methods=['GET'])
+@login_required
+@cspc_acc_required
+@admin_required
+def download_template():
+    # Define the column names for the template
+    columns = ['rfid_uid', 'student_number', 'f_name', 'l_name', 'm_name', 'email', 'gender', 'program_code',
+               'level_name',
+               'section_name', 'semester_name']
+
+    # Create an empty DataFrame with the required columns
+    df = pd.DataFrame(columns=columns)
+
+    # Save the DataFrame to a BytesIO object
+    output = io.BytesIO()
+
+    # Use xlsxwriter for formatting
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Student Template')
+
+        # Get the xlsxwriter workbook and worksheet objects
+        workbook = writer.book
+        worksheet = writer.sheets['Student Template']
+
+        # Define formats for styling
+        header_format = workbook.add_format({
+            'bold': True,
+            'text_wrap': True,
+            'valign': 'center',
+            'fg_color': '#4F81BD',
+            'font_color': 'white',
+            'border': 1
+        })
+
+        cell_format = workbook.add_format({
+            'border': 1,
+            'valign': 'center'
+        })
+
+        # Set column widths for better readability
+        worksheet.set_column('A:A', 15, cell_format)  # RFID UID
+        worksheet.set_column('B:B', 15, cell_format)  # Student Number
+        worksheet.set_column('C:C', 20, cell_format)  # First Name
+        worksheet.set_column('D:D', 20, cell_format)  # Last Name
+        worksheet.set_column('E:E', 15, cell_format)  # Middle Name
+        worksheet.set_column('F:F', 30, cell_format)  # Email
+        worksheet.set_column('G:G', 10, cell_format)  # Gender
+        worksheet.set_column('H:H', 20, cell_format)  # Program Code
+        worksheet.set_column('I:I', 20, cell_format)  # Year Level
+        worksheet.set_column('J:J', 15, cell_format)  # Section Name
+        worksheet.set_column('K:K', 20, cell_format)  # Semester
+
+        # Apply the header format to the first row
+        for col_num, value in enumerate(df.columns):
+            worksheet.write(0, col_num, value, header_format)
+
+    # Set the file pointer back to the start
+    output.seek(0)
+
+    # Send the file as an attachment for download
+    return send_file(output, as_attachment=True, download_name='student_template.xlsx',
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
 @student_bp.route('/', methods=['GET', 'POST'])
 @login_required
 @cspc_acc_required
@@ -247,6 +320,7 @@ def manage_student():
                 elif student_number_exists is not None:
                     flash(f"Row {index + 1}: Faculty Number {row['student_number']} is already in use", 'error')
                     error_count += 1
+
                 else:
                     try:
                         with db.session.begin_nested():
@@ -288,6 +362,9 @@ def manage_student():
 
                             def get_semester_id(semester_name):
                                 semester_enum = get_enum_name(SEMESTER_MAPPING, semester_name)
+                                if semester_enum is None:
+                                    flash(f"Invalid semester name: '{semester_name}'.", 'error')
+                                    return None
                                 semester = Semester.query.filter_by(
                                     semester_code=SemesterEnum.code(semester_enum)).first()
                                 return semester.id if semester else None
@@ -297,6 +374,11 @@ def manage_student():
                             year_level_id = get_year_level_id(row['level_name'])
                             section_id = get_section_id(row['section_name'])
                             semester_id = get_semester_id(row['semester_name'])
+
+                            print(f"Program ID for {row['program_code']} is {program_id}")
+                            print(f"Year Level ID for {row['level_name']} is {year_level_id}")
+                            print(f"Section ID for {row['section_name']} is {section_id}")
+                            print(f"Semester ID for {row['semester_name']} is {semester_id}")
 
                             # Validate the existence of required entities
                             if not program_id:
@@ -311,9 +393,6 @@ def manage_student():
                             if not semester_id:
                                 flash(f"Semester '{row['semester_name']}' not found.", 'error')
                                 continue
-
-                            # Use 'pbkdf2:sha256' for better compatibility
-                            # password_hash = generate_password_hash(row['student_number'], method='pbkdf2:sha256')
 
                             # Create a new User instance
                             user = User(
@@ -366,52 +445,18 @@ def manage_student():
             if error_count > 0:
                 flash(f'{error_count} students could not be imported due to errors.', 'danger')
 
+
         except Exception as e:
+
             db.session.rollback()
-            flash(f'An error occurred: {str(e)}', 'danger')
+
             print(f"Exception at row {index + 1}: {e}")
 
-    # Populate the program dropdown with program name and student names
-    courses = Course.query.all()
-    assign_form.course.choices = [
-        # (program.id, f"{program.course_name} - {', '.join(student.full_name for student in program.faculties)}")
-        (course.id, f"{course.course_name}")
-        for course in courses
-    ]
+            traceback.print_exc()  # This will print a detailed traceback for the error
 
-    # Retrieve all students or filter by program, year level, and section
-    program_section = request.args.get('program_section', '')
-    print(f"program_section: {program_section}")  # Debugging line
+            flash(f'An error occurred: {str(e)}', 'danger')
 
-    if program_section:
-        parts = program_section.rsplit(' ', 3)  # Adjusted to expect 4 parts including the semester
-        print(f"parts: {parts}")  # Debugging line
-
-        if len(parts) == 4:
-            program_name, year_level_code, section_id, semester_name = parts
-
-            # Handle possible prefix in year level and section
-            if year_level_code.startswith('YearLevelEnum.'):
-                year_level_code = year_level_code.replace('YearLevelEnum.', '')
-
-            if section_id.startswith('SectionEnum.'):
-                section_id = section_id.replace('SectionEnum.', '')
-
-            print(
-                f"program_name: {program_name}, year_level_code: {year_level_code}, section_name: {section_id}, semester_name: {semester_name}")  # Debugging line
-
-            # Ensure Enum values are handled correctly in queries
-            students = Student.query.join(Program).join(YearLevel).join(Section).join(Semester).filter(
-                Program.program_code == program_name.strip(),
-                YearLevel.level_name == YearLevelEnum.code(year_level_code.strip()),
-                Section.section_name == SectionEnum.code(section_id.strip()),
-                Semester.semester_name == SemesterEnum.code(semester_name.strip())
-            ).all()
-
-        else:
-            students = Student.query.all()
-    else:
-        students = Student.query.all()
+    students = Student.query.all()
 
     return render_template(
         'student/manage_student.html',
@@ -420,50 +465,6 @@ def manage_student():
         delete_form=delete_form,
         upload_form=upload_form
     )
-
-
-@student_bp.route('/assign_students_to_course', methods=['POST'])
-@login_required
-@cspc_acc_required
-@admin_required
-def assign_students_to_course():
-    assign_form = AssignStudentForm()
-    assign_form.course.choices = [
-        (course.id, f"{course.course_name} - {', '.join(student.full_name for student in course.faculties)}")
-        # (program.id, f"{program.course_name}")
-        for course in Course.query.all()
-    ]
-
-    if assign_form.validate_on_submit():
-        selected_course_ids = assign_form.course.data  # Use .data directly for multiple selections
-        selected_student_ids = request.form.getlist('student_ids')
-
-        if not selected_student_ids:
-            flash('No students selected for assignment.',
-                  'error')
-            return redirect(url_for('student.manage_student'))
-
-        if not selected_course_ids:
-            flash('No courses selected for assignment.', 'error')
-            return redirect(url_for('student.manage_student'))
-
-        for student_id in selected_student_ids:
-            student = Student.query.get(student_id)
-            if student:
-                for course_id in selected_course_ids:
-                    course = Course.query.get(course_id)
-                    if course and course not in student.courses:
-                        student.courses.append(course)
-                db.session.add(student)
-
-        db.session.commit()
-        flash('Students successfully assigned to the selected courses.', 'success')
-        return redirect(url_for('student.manage_student'))
-    else:
-        for field, errors in assign_form.errors.items():
-            for error in errors:
-                flash(f"Error in {getattr(assign_form, field).label.text}: {error}", 'error')
-        return redirect(url_for('student.manage_student'))
 
 
 @student_bp.route("/course/<int:student_id>/delete/<int:course_id>", methods=["POST"])

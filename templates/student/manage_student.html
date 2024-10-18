@@ -49,6 +49,27 @@
         <!-- Button Group -->
         <div class="btn-group me-3" role="group" aria-label="Manage Actions">
             {% include 'upload.html' %}
+
+            <!-- Button to download Excel and show the image -->
+            <a href="{{ url_for('student.download_template') }}" class="btn btn-primary">Download Template</a>
+            <button id="show-image-btn" class="btn btn-secondary">Show Template</button>
+
+            <!-- Full-screen Modal for displaying the image -->
+            <div id="image-modal" class="modal fade" tabindex="-1" role="dialog">
+                <div class="modal-dialog modal-fullscreen" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Image Preview</h5>
+                            <button type="button" class="btn-close" id="close-modal-btn" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body d-flex justify-content-center align-items-center p-0">
+                            <img src="{{ url_for('static', filename='images/student_format.png') }}"
+                                 alt="Student Format" class="img-fluid w-100 h-100" style="object-fit: contain;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <a href="{{ url_for('student.assign_students') }}" class="btn btn-outline-primary">
                 <i class="fas fa-tasks"></i> Auto Assign Courses
             </a>
@@ -74,101 +95,116 @@
         </div>
     </div>
 
+    <!-- Optional Bootstrap CSS for modal -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.0.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.2/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom CSS for Maximum Z-Index -->
+    <style>
+        /* Ensure modal is always on top of any other element */
+        #image-modal {
+            z-index: 9999 !important; /* Very high z-index for the modal */
+        }
+
+        /* Optional: If there are any sticky or fixed elements that could interfere, give them lower z-index */
+        .navbar, .sticky-top, .fixed-top, .fixed-bottom {
+            z-index: 1 !important; /* Reduce z-index for other potential overlapping elements */
+        }
+    </style>
+
+    <script>
+        document.getElementById('show-image-btn').addEventListener('click', function () {
+            $('#image-modal').modal('show');  // Show the modal when the button is clicked
+        });
+
+        document.getElementById('close-modal-btn').addEventListener('click', function () {
+            $('#image-modal').modal('hide');  // Hide the modal when the close button is clicked
+        });
+    </script>
 
 
-
-
-
-    {##}
-    {#    <a href="{{ url_for('student.manage_student', export='csv') }}" class="btn btn-primary">Export CSV</a>#}
-    {#    <a href="{{ url_for('student.manage_student', export='pdf') }}" class="btn btn-primary">Export PDF</a>#}
-    {##}
-
-
-    <form method="POST" action="{{ url_for('student.assign_students_to_course') }}">
-        {{ assign_form.hidden_tag() }}
-        <table class="table table-hover" id="manage_student">
-            <thead>
+    <table class="table table-hover" id="manage_student">
+        <thead>
+        <tr>
+            <th>No.</th>
+            <th>RFID Number</th>
+            <th>Student ID</th>
+            <th>Profile Pic</th>
+            <th>Last Name</th>
+            <th>First Name</th>
+            <th>Middle Name</th>
+            <th>Email</th>
+            <th>Program & Section</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for student in students %}
             <tr>
-                <th>No.</th>
-                <th>RFID Number</th>
-                <th>Student ID</th>
-                <th>Profile Pic</th>
-                <th>Last Name</th>
-                <th>First Name</th>
-                <th>Middle Name</th>
-                <th>Email</th>
-                <th>Program & Section</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for student in students %}
-                <tr>
-                    <td>{{ loop.index }}</td>
+                <td>{{ loop.index }}</td>
 
-                    <td>{{ student.user.rfid_uid|upper }}</td>
-                    <td>{{ student.student_number|upper }}</td>
-                    <!-- Table Cell with Clickable Image -->
-                    <td>
-                        {% if student.user.profile_pic %}
-                            <a href="#" data-bs-toggle="modal" data-bs-target="#profileModal{{ student.id }}">
+                <td>{{ student.user.rfid_uid|upper }}</td>
+                <td>{{ student.student_number|upper }}</td>
+                <!-- Table Cell with Clickable Image -->
+                <td>
+                    {% if student.user.profile_pic %}
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#profileModal{{ student.id }}">
+                            <img src="{{ student.user.profile_pic }}"
+                                 alt="Profile Picture"
+                                 style="border-radius: 50%; width: 28px; height: 28px; cursor: pointer;">
+                        </a>
+                    {% else %}
+                        <i class='bx bxs-user-circle'></i>
+                    {% endif %}
+                </td>
+
+                <!-- Modal for Enlarged Profile Picture -->
+                <div class="modal fade" id="profileModal{{ student.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title text-dark">Profile Picture</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center">
                                 <img src="{{ student.user.profile_pic }}"
                                      alt="Profile Picture"
-                                     style="border-radius: 50%; width: 50px; height: 50px; cursor: pointer;">
-                            </a>
-                        {% else %}
-                            <i class='bx bxs-user-circle'></i>
-                        {% endif %}
-                    </td>
-
-                    <!-- Modal for Enlarged Profile Picture -->
-                    <div class="modal fade" id="profileModal{{ student.id }}" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title text-dark">Profile Picture</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                            aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body text-center">
-                                    <img src="{{ student.user.profile_pic }}"
-                                         alt="Profile Picture"
-                                         style="max-width: 100%; height: auto;">
-                                </div>
+                                     style="max-width: 100%; height: auto;">
                             </div>
                         </div>
                     </div>
+                </div>
 
 
-                    <td>{{ student.user.l_name|title }}</td>
-                    <td>{{ student.user.f_name|title }}</td>
-                    <td>{{ student.user.m_name|title }}</td>
-                    <td>{{ student.user.email|lower }}</td>
-                    <td>{{ student.program_section|upper }}</td>
-                    <td>
-                        <a href="{{ url_for('student.manage_students_schedule_courses', student_id=student.id) }}"
-                           class="btn btn-sm view-button"
-                           data-tooltip="View Courses">
-                            <img src="/static/images/icons/view.png" alt="Eye Icon" class="icon-small">
-                        </a>
-                        <a href="{{ url_for('student.edit_student', id=student.id) }}"
-                           class="btn btn-sm btn-info"
-                           data-tooltip="Edit Student">
-                            <img src="/static/images/icons/pencil-fill.svg" alt="Pencil Icon">
-                        </a>
+                <td>{{ student.user.l_name|title }}</td>
+                <td>{{ student.user.f_name|title }}</td>
+                <td>{{ student.user.m_name|title }}</td>
+                <td>{{ student.user.email|lower }}</td>
+                <td>{{ student.program_section|upper }}</td>
+                <td>
+                    <a href="{{ url_for('student.manage_students_schedule_courses', student_id=student.id) }}"
+                       class="btn btn-sm view-button"
+                       data-tooltip="View Courses">
+                        <img src="/static/images/icons/view.png" alt="Eye Icon" class="icon-small">
+                    </a>
+                    <a href="{{ url_for('student.edit_student', id=student.id) }}"
+                       class="btn btn-sm btn-info"
+                       data-tooltip="Edit Student">
+                        <img src="/static/images/icons/pencil-fill.svg" alt="Pencil Icon">
+                    </a>
 
-                        <a href="#" class="btn btn-sm btn-danger" data-bs-toggle="modal"
-                           data-bs-target="#deleteModal{{ student.id }}"
-                           data-tooltip="Delete Student">
-                            <img src="{{ url_for('static', filename='images/icons/trash-fill.svg') }}" alt="Trash Icon">
-                        </a>
-                    </td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </form>
+                    <a href="#" class="btn btn-sm btn-danger" data-bs-toggle="modal"
+                       data-bs-target="#deleteModal{{ student.id }}"
+                       data-tooltip="Delete Student">
+                        <img src="{{ url_for('static', filename='images/icons/trash-fill.svg') }}" alt="Trash Icon">
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
 
     <!-- Move modals here, outside the table -->
     {% for student in students %}
