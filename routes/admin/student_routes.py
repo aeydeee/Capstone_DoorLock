@@ -45,7 +45,6 @@ YEAR_LEVEL_MAPPING = {
 SEMESTER_MAPPING = {
     'first semester': 'FIRST_SEMESTER',
     'second semester': 'SECOND_SEMESTER',
-    'summer term': 'SUMMER_TERM'
 }
 
 SECTION_MAPPING = {
