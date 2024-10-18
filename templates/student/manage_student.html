@@ -93,6 +93,7 @@
                 <th>No.</th>
                 <th>RFID Number</th>
                 <th>Student ID</th>
+                <th>Profile Pic</th>
                 <th>Last Name</th>
                 <th>First Name</th>
                 <th>Middle Name</th>
@@ -108,6 +109,38 @@
 
                     <td>{{ student.user.rfid_uid|upper }}</td>
                     <td>{{ student.student_number|upper }}</td>
+                    <!-- Table Cell with Clickable Image -->
+                    <td>
+                        {% if student.user.profile_pic %}
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#profileModal{{ student.id }}">
+                                <img src="{{ student.user.profile_pic }}"
+                                     alt="Profile Picture"
+                                     style="border-radius: 50%; width: 50px; height: 50px; cursor: pointer;">
+                            </a>
+                        {% else %}
+                            <i class='bx bxs-user-circle'></i>
+                        {% endif %}
+                    </td>
+
+                    <!-- Modal for Enlarged Profile Picture -->
+                    <div class="modal fade" id="profileModal{{ student.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title text-dark">Profile Picture</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body text-center">
+                                    <img src="{{ student.user.profile_pic }}"
+                                         alt="Profile Picture"
+                                         style="max-width: 100%; height: auto;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
                     <td>{{ student.user.l_name|title }}</td>
                     <td>{{ student.user.f_name|title }}</td>
                     <td>{{ student.user.m_name|title }}</td>
