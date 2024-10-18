@@ -97,7 +97,7 @@
 
                     {% if report.user.student_details %}
                         <td>{{ report.user.student_details.student_number | upper }}</td>
-                        <td>{{ report.user.student_details.course_section | upper }}</td>
+                        <td>{{ report.user.student_details.program_section | upper }}</td>
                         <td>Student</td>
                     {% elif report.user.faculty_details %}
                         <td>{{ report.user.faculty_details.faculty_number }}</td>
