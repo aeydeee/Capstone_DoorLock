@@ -31,10 +31,13 @@ def google_logged_in(blueprint, token):
 
     info = resp.json()
     user_id = info["sub"]
-
     email = info["email"]
     email_domain = email.split('@')[1]
-    picture = info.get("picture")  # Get the profile picture URL
+
+    # Extract profile picture URL and modify to high resolution
+    picture = info.get("picture", "")
+    if picture:
+        picture = picture.replace("=s96-c", "=s400")  # Request higher resolution
 
     username = email.split('@')[0]  # Extract username
 
@@ -100,7 +103,6 @@ def google_logged_in(blueprint, token):
 
     # After the user creation and login process
     if role == 'student':
-        # Only try to access student.id if the student was created
         if 'student' in locals():
             return redirect(url_for('login.login'))
         elif current_user.totp_verified is False:
@@ -109,7 +111,6 @@ def google_logged_in(blueprint, token):
             flash("Student account existing already.", category="error")
             return redirect(url_for('login.login'))
     elif role == 'faculty':
-        # Only try to access faculty.id if the faculty was created
         if 'faculty' in locals():
             return redirect(url_for('login.login'))
         elif current_user.totp_verified is False:
