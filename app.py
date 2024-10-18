@@ -1075,7 +1075,8 @@ def create_app():
                 <tr>
                     <td colspan="2" align="center" style="padding: 10px; background-color: #333333; color: white; font-size: 12px;">
                         <p>&copy; {current_year} TechNinjas AutoLock. All Rights Reserved.</p>
-                        <p><a href="https://immune-lively-salmon.ngrok-free.app/login" style="color: #4CAF50; text-decoration: none;">Visit our website</a> | <a href="https://immune-lively-salmon.ngrok-free.app/login" style="color: #4CAF50; text-decoration: none;">Contact Support</a></p>
+                        <p><a href="https://immune-lively-salmon.ngrok-free.app/login" style="color: #4CAF50; text-decoration: none;">Visit our website</a> | <a href="mailto:techninjas3b@gmail.com?subject=Support Request" style="color: #4CAF50; text-decoration: none;">Contact Support</a>
+</p>
                     </td>
                 </tr>
             </table>
