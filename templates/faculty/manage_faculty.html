@@ -65,6 +65,7 @@
         <tr>
             <th scope="col"></th>
             <th scope="col">No.</th>
+            <th scope="col">Profile Pic</th>
             <th scope="col">Faculty Number</th>
             <th scope="col">Last Name</th>
             <th scope="col">First Name</th>
@@ -74,5 +75,25 @@
         </tr>
         </thead>
     </table>
+
+    {% for faculty in faculties %}
+
+        <!-- Modal for Enlarged Profile Picture -->
+        <div class="modal fade" id="profileModal{{ faculty.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-dark">Profile Picture</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <img src="{{ faculty.user.profile_pic }}" alt="Profile Picture"
+                             style="max-width: 100%; height: auto;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+
 
 {% endblock %}

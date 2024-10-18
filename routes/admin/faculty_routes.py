@@ -125,6 +125,10 @@ def get_faculty_data():
     data = []
     for faculty in faculties:
         courses = [{"code": subj.course_code, "name": subj.course_name} for subj in faculty.courses]
+        profile_pic = faculty.user.profile_pic if faculty.user.profile_pic else None
+        profile_html = (f'<a href="#" data-bs-toggle="modal" data-bs-target="#profileModal{faculty.id}">'
+                        f'<img src="{profile_pic}" alt="Profile Picture" style="border-radius: 50%; width: 50px; height: 50px; cursor: pointer;">'
+                        '</a>') if profile_pic else "<i class='bx bxs-user-circle'></i>"
         data.append({
             "id": faculty.id,
             "faculty_number": faculty.faculty_number.upper() if faculty.faculty_number else "",
@@ -136,7 +140,7 @@ def get_faculty_data():
             "gender": faculty.user.gender.upper() if faculty.user.gender else "",
             "faculty_department": faculty.faculty_department.upper() if faculty.faculty_department else "",
             "email": faculty.user.email,
-            'totp_secret': faculty.user.totp_secret.secret_key if faculty.user.totp_secret else None,
+            "profile": profile_html,
             "courses": courses
         })
     return jsonify({"data": data})
