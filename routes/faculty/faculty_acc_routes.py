@@ -377,7 +377,8 @@ def add_header_footer(canvas, doc):
     else:
         # Adjusted header for the 2nd and subsequent pages
         canvas.setFont("Helvetica-Bold", 12)
-        canvas.drawString(65, doc.height + 60, "CAMARINES SUR POLYTECHNIC COLLEGES, ATTENDANCE LOG REPORT RECORDS - CONTINUED")
+        canvas.drawString(65, doc.height + 60,
+                          "CAMARINES SUR POLYTECHNIC COLLEGES, ATTENDANCE LOG REPORT RECORDS - CONTINUED")
 
     # Add the italic footer text
     canvas.setFont("Helvetica-Oblique", 9)  # Setting the font to italic
@@ -633,7 +634,7 @@ def view_detailed_attendance():
     # Filter based on faculty name with exact or fuzzy matching
     attendances = [
         attendance for attendance in results
-        if attendance.faculty_name == faculty.full_name or fuzz.ratio(attendance.faculty_name, faculty.full_name) >= 80
+        if attendance.faculty_name == faculty.full_name or fuzz.ratio(attendance.faculty_name, faculty.full_name) >= 78
     ]
 
     print(attendances)
@@ -732,21 +733,25 @@ def view_new_attendance():
     attendance_dates = []
     student_attendance = {}
 
+    # Fetch all the courses associated with the faculty, then apply fuzzy matching in Python
+    course_choices = db.session.query(Attendance.course_id, Attendance.course_name, Attendance.faculty_name).all()
+
+    # Apply fuzzy matching in Python
+    course_choices = [
+        (course_id, course_name) for course_id, course_name, faculty_name in course_choices
+        if faculty_name == faculty.full_name or fuzz.ratio(faculty_name, faculty.full_name) >= 78
+    ]
+
+    # Ensure distinct courses by using set or a dictionary
+    course_choices = list({course_id: course_name.title() for course_id, course_name in course_choices}.items())
+    # Extract values from the models to populate filter options
+    semester_choices = [(sem.display_name, sem.display_name.title()) for sem in Semester.query.all()]
+    school_year_choices = [(sy.id, sy.year_label) for sy in SchoolYear.query.all()]
+    program_choices = [(prog.id, prog.program_code.upper()) for prog in Program.query.all()]
+    section_choices = [(sec.id, sec.display_name.upper()) for sec in Section.query.all()]
+    year_level_choices = [(yl.id, yl.level_code) for yl in YearLevel.query.all()]
+
     if filters_applied:
-
-        # Extract values from the models to populate filter options
-        semester_choices = [(sem.display_name, sem.display_name) for sem in Semester.query.all()]
-        school_year_choices = [(sy.id, sy.year_label) for sy in SchoolYear.query.all()]
-
-        # Use distinct to get unique courses associated with the faculty
-        course_choices = db.session.query(Attendance.course_id, Attendance.course_name).filter(
-            Attendance.faculty_name == faculty.full_name
-        ).distinct(Attendance.course_id).all()
-        course_choices = [(course_id, course_name) for course_id, course_name in course_choices]
-
-        program_choices = [(prog.id, prog.program_code) for prog in Program.query.all()]
-        section_choices = [(sec.id, sec.display_name) for sec in Section.query.all()]
-        year_level_choices = [(yl.id, yl.level_code) for yl in YearLevel.query.all()]
 
         # Create two aliases for the Student table to avoid alias conflicts
         student_alias_1 = aliased(Student)
@@ -787,7 +792,7 @@ def view_new_attendance():
         attendances = [
             attendance for attendance in results
             if
-            attendance.faculty_name == faculty.full_name or fuzz.ratio(attendance.faculty_name, faculty.full_name) >= 80
+            attendance.faculty_name == faculty.full_name or fuzz.ratio(attendance.faculty_name, faculty.full_name) >= 78
         ]
 
         # Extract unique attendance dates from the results
@@ -818,14 +823,12 @@ def view_new_attendance():
         attendance_dates=attendance_dates,  # Pass the attendance dates
         student_attendance=student_attendance,  # Pass the student attendance records
         form=AttendanceStatusForm(),
-        semester_choices=[(sem.display_name, sem.display_name) for sem in Semester.query.all()],
-        school_year_choices=[(sy.id, sy.year_label) for sy in SchoolYear.query.all()],
-        course_choices=[(course_id, course_name) for course_id, course_name in db.session.query(
-            Attendance.course_id, Attendance.course_name
-        ).filter(Attendance.faculty_name == faculty.full_name).distinct(Attendance.course_id).all()],
-        program_choices=[(prog.id, prog.program_code) for prog in Program.query.all()],
-        year_level_choices=[(yl.id, yl.level_code) for yl in YearLevel.query.all()],
-        section_choices=[(sec.id, sec.display_name) for sec in Section.query.all()],
+        semester_choices=semester_choices,
+        school_year_choices=school_year_choices,
+        course_choices=course_choices,
+        program_choices=program_choices,
+        year_level_choices=year_level_choices,
+        section_choices=section_choices,
         selected_semester=semester,
         selected_school_year=school_year,
         selected_course=course,
