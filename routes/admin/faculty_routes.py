@@ -124,7 +124,7 @@ def get_faculty_data():
     faculties = Faculty.query.all()
     data = []
     for faculty in faculties:
-        courses = [{"code": subj.course_code, "name": subj.course_name} for subj in faculty.courses]
+        courses = [{"code": subj.course_code.upper(), "name": subj.course_name.title()} for subj in faculty.courses]
         profile_pic = faculty.user.profile_pic if faculty.user.profile_pic else None
         profile_html = (f'<a href="#" data-bs-toggle="modal" data-bs-target="#profileModal{faculty.id}">'
                         f'<img src="{profile_pic}" alt="Profile Picture" style="border-radius: 50%; width: 28px; height: 28px; cursor: pointer;">'
