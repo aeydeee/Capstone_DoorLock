@@ -70,11 +70,11 @@
                 </div>
             </div>
 
-            <a href="{{ url_for('student.assign_students') }}" class="btn btn-outline-primary">
-                <i class="fas fa-tasks"></i> Auto Assign Courses
-            </a>
             <a href="{{ url_for('student.assign_back_course') }}" class="btn btn-outline-primary">
                 <i class="fa-solid fa-book"></i> Manual Assign Courses
+            </a>
+            <a href="{{ url_for('student.assign_students') }}" class="btn btn-outline-primary">
+                <i class="fas fa-tasks"></i> Auto Assign Courses
             </a>
         </div>
 
@@ -87,11 +87,11 @@
                 <button type="submit" class="btn btn-outline-danger">RESET SCHEDULES</button>
             </form>
 
-            <!-- Record Enrollment Year Button -->
-            <form action="{{ url_for('student.record_history') }}" method="POST">
-                {{ delete_form.hidden_tag() }}
-                <button type="submit" class="btn btn-primary">Record Enrollment Year Level</button>
-            </form>
+            {#            <!-- Record Enrollment Year Button -->#}
+            {#            <form action="{{ url_for('student.record_history') }}" method="POST">#}
+            {#                {{ delete_form.hidden_tag() }}#}
+            {#                <button type="submit" class="btn btn-primary">Record Enrollment Year Level</button>#}
+            {#            </form>#}
         </div>
     </div>
 
