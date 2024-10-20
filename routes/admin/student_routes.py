@@ -167,11 +167,6 @@ def student_reset_schedules():
     return redirect(url_for('student.manage_student'))
 
 
-import io
-from flask import send_file
-import pandas as pd
-
-
 @student_bp.route('/download_template', methods=['GET'])
 @login_required
 @cspc_acc_required
