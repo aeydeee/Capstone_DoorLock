@@ -28,23 +28,29 @@ def login():
         input_email = form.email.data
         # Fetch all users and their emails
         users = User.query.all()
-
-        # Get the closest email match with a threshold
         email_choices = [user.email for user in users]
-        closest_email, match_score = process.extractOne(input_email, email_choices, scorer=fuzz.ratio)
 
-        # Set a threshold for the match score (e.g., 80 means 80% similarity)
-        if match_score < 80:
-            flash('Invalid email, or totp code.', 'error')
+        # Set initial threshold and find the closest email match
+        threshold = 100
+        closest_email, match_score = None, 0
+        user = None  # Initialize user to None to avoid reference before assignment
+
+        for threshold in range(100, 65, -5):
+            closest_email, match_score = process.extractOne(input_email, email_choices, scorer=fuzz.ratio)
+
+            if closest_email and match_score >= threshold:
+                # Fetch the matched user from the database
+                user = User.query.filter_by(email=closest_email).first()
+                if user:  # Exit loop if a matching user is found
+                    break
+
+        # If no valid user was found within threshold range, show an error message
+        if not user or match_score < 70:
+            flash('Invalid email, or TOTP code.', 'error')
             return redirect(url_for('login.login'))
 
-        # Fetch the user with the closest matching email
-        user = User.query.filter_by(email=closest_email).first()
+        # If a user was found, proceed with the rest of the code
         print(user)
-
-        if user is None:
-            flash('Invalid email, or totp code.', 'error')
-            return redirect(url_for('login.login'))
 
         role_details = getattr(user, f"{user.role}_details", None)
         print(role_details)

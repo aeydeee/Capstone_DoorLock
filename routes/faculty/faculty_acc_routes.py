@@ -788,15 +788,22 @@ def view_new_attendance():
         # Fetch the results
         results = attendances_query.all()
 
-        # Filter based on faculty name with exact or fuzzy matching
-        attendances = [
-            attendance for attendance in results
-            if
-            attendance.faculty_name == faculty.full_name or fuzz.ratio(attendance.faculty_name, faculty.full_name) >= 78
-        ]
+        # Start with a high threshold and reduce it if no matches are found
+        threshold = 90
+        attendances = []
 
-        # Extract unique attendance dates from the results
-        attendance_dates = sorted(set([attendance.date.date() for attendance in attendances]))
+        for threshold in range(90, 60, -5):
+            # Find attendance records that match the faculty name exactly or with sufficient similarity
+            attendances = [
+                attendance for attendance in results
+                if attendance.faculty_name == faculty.full_name or
+                   fuzz.ratio(attendance.faculty_name, faculty.full_name) >= threshold
+            ]
+            if attendances:  # If any matches found at the current threshold, break out of the loop
+                break
+
+        # Extract and sort unique attendance dates from the matched results
+        attendance_dates = sorted({attendance.date.date() for attendance in attendances})
 
         # Group the attendance records by student
         student_attendance = {}
