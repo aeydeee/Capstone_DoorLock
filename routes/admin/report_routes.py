@@ -31,7 +31,7 @@ def export_faculty_excel(reports):
     # Write the report data for each faculty report
     for report in reports:
         ws.append([
-            report.timestamp.strftime('%m-%d-%Y') if report.timestamp else '',
+            report.timestamp.strftime('%b. %d, %Y') if report.timestamp else '',
             report.user.faculty_details.full_name.title() if report.user.faculty_details else '',
             report.user.faculty_details.faculty_number.upper() if report.user.faculty_details else '',
             report.timestamp.strftime('%I:%M %p') if report.timestamp else '',
@@ -60,7 +60,7 @@ def export_admin_excel(reports):
     # Write the report data for each admin report
     for report in reports:
         ws.append([
-            report.timestamp.strftime('%m-%d-%Y') if report.timestamp else '',
+            report.timestamp.strftime('%b. %d, %Y') if report.timestamp else '',
             report.user.admin_details.full_name.title() if report.user.admin_details else '',
             report.user.admin_details.faculty_number.upper() if report.user.admin_details else '',
             report.timestamp.strftime('%I:%M %p') if report.timestamp else '',
@@ -92,7 +92,7 @@ def export_faculty_admin_excel(reports):
         school_id = report.user.faculty_details.faculty_number.upper() if report.user.faculty_details else report.user.admin_details.school_id.upper()
 
         ws.append([
-            report.timestamp.strftime('%m-%d-%Y') if report.timestamp else '',
+            report.timestamp.strftime('%b. %d, %Y') if report.timestamp else '',
             name,
             school_id,
             report.timestamp.strftime('%I:%M %p') if report.timestamp else '',
@@ -148,7 +148,8 @@ def add_header_footer(canvas, doc, is_first_page, start_date=None, end_date=None
     else:
         # Adjusted header for the 2nd and subsequent pages
         canvas.setFont("Helvetica-Bold", 12)
-        canvas.drawString(65, doc.height + 60, "CAMARINES SUR POLYTECHNIC COLLEGES, DOOR ACCESS REPORT LOGS - CONTINUED")
+        canvas.drawString(65, doc.height + 60,
+                          "CAMARINES SUR POLYTECHNIC COLLEGES, DOOR ACCESS REPORT LOGS - CONTINUED")
 
     # Add the italic footer text
     canvas.setFont("Helvetica-Oblique", 9)  # Setting the font to italic
@@ -196,7 +197,7 @@ def export_faculty_pdf(reports, start_date=None, end_date=None):
     elements.append(Spacer(1, 30))  # Spacer to push the title down
 
     # Add the document title at the top
-    title = Paragraph("<b>FACULTY REPORT LOGS</b>", styles['Title'])
+    title = Paragraph("<b>DOOR ACCESS FACULTY REPORT LOGS</b>", styles['Title'])
     title.hAlign = 'CENTER'
     elements.append(title)
 
@@ -210,7 +211,7 @@ def export_faculty_pdf(reports, start_date=None, end_date=None):
 
     for report in reports:
         row = [
-            Paragraph(report.timestamp.strftime('%m-%d-%Y') if report.timestamp else '', styles['Normal']),
+            Paragraph(report.timestamp.strftime('%b. %d, %Y') if report.timestamp else '', styles['Normal']),
             Paragraph(report.user.faculty_details.full_name.title(), styles['Normal']),
             Paragraph(report.user.faculty_details.faculty_number.upper(), styles['Normal']),
             Paragraph(report.timestamp.strftime('%I:%M %p') if report.timestamp else '', styles['Normal']),
@@ -271,7 +272,7 @@ def export_admin_pdf(reports, start_date=None, end_date=None):
     elements.append(Spacer(1, 30))  # Spacer to push the title down
 
     # Add the document title at the top
-    title = Paragraph("<b>FACULTIES DOOR ACCESS REPORT LOGS</b>", styles['Title'])
+    title = Paragraph("<b>DOOR ACCESS FACULTY & ADMIN REPORT LOGS</b>", styles['Title'])
     title.hAlign = 'CENTER'
     elements.append(title)
 
@@ -285,7 +286,7 @@ def export_admin_pdf(reports, start_date=None, end_date=None):
 
     for report in reports:
         row = [
-            Paragraph(report.timestamp.strftime('%m-%d-%Y') if report.timestamp else '', styles['Normal']),
+            Paragraph(report.timestamp.strftime('%b. %d, %Y') if report.timestamp else '', styles['Normal']),
             Paragraph(report.user.admin_details.full_name.title(), styles['Normal']),
             Paragraph(report.user.admin_details.faculty_number.upper(), styles['Normal']),
             Paragraph(report.timestamp.strftime('%I:%M %p') if report.timestamp else '', styles['Normal']),
@@ -360,7 +361,7 @@ def export_faculty_admin_pdf(reports, start_date=None, end_date=None):
 
     for report in reports:
         row = [
-            Paragraph(report.timestamp.strftime('%m-%d-%Y') if report.timestamp else '', styles['Normal']),
+            Paragraph(report.timestamp.strftime('%b. %d, %Y') if report.timestamp else '', styles['Normal']),
             Paragraph(
                 report.user.faculty_details.full_name.title() if report.user.faculty_details else report.user.admin_details.full_name.title(),
                 styles['Normal']),

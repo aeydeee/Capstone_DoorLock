@@ -90,7 +90,7 @@
     {% for report in reports %}
         {% if report %}
             <tr>
-                <td>{{ report.timestamp.strftime('%m-%d-%Y') if report.timestamp else 'N/A' }}</td>
+                <td>{{ report.timestamp.strftime('%b. %d, %Y') if report.timestamp else 'N/A' }}</td>
 
                 {% if report.user %}
                     <td>{{ report.user.f_name | title }} {{ report.user.m_name | title }} {{ report.user.l_name | title }}</td>
