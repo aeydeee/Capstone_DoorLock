@@ -1,5 +1,4 @@
 import os
-import socket
 
 
 class Config(object):
