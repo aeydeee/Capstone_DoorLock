@@ -92,25 +92,21 @@
             <tr>
                 <td>{{ report.timestamp.strftime('%b. %d, %Y') if report.timestamp else 'N/A' }}</td>
 
-                {% if report.user %}
-                    <td>{{ report.user.f_name | title }} {{ report.user.m_name | title }} {{ report.user.l_name | title }}</td>
+                <td>{{ report.name | title }}</td>
 
-                    {% if report.user.student_details %}
-                        <td>{{ report.user.student_details.student_number | upper }}</td>
-                        <td>{{ report.user.student_details.program_section | upper }}</td>
-                        <td>Student</td>
-                    {% elif report.user.faculty_details %}
-                        <td>{{ report.user.faculty_details.faculty_number }}</td>
-                        <td>N/A</td>
-                        <td>Faculty</td>
-                    {% elif report.user.admin_details %}
-                        <td>{{ report.user.admin_details.school_id | upper }}</td>
-                        <td>N/A</td>
-                        <td>Admin</td>
-                    {% endif %}
+                {% if report.role == 'student' %}
+                    <td>{{ report.school_id | upper }}</td>
+                    <td>{{ report.program_section | upper }}</td>
+                    <td>{{ report.role | title }}</td>
+                {% elif report.role == 'faculty' %}
+                    <td>{{ report.school_id | upper }}</td>
+                    <td>N/A</td>
+                    <td>{{ report.role | title }}</td>
+                {% elif report.role == 'admin' %}
+                    <td>{{ report.school_id | upper }}</td>
+                    <td>N/A</td>
+                    <td>{{ report.role | title }}</td>
                 {% else %}
-                    <!-- Handle case where no user is associated with the report -->
-                    <td>Unregistered User</td>
                     <td>N/A</td>
                     <td>N/A</td>
                     <td>N/A</td>
