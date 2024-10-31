@@ -1,7 +1,6 @@
 import base64
 import os
 
-import pyotp
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer
 from waitress import serve
@@ -80,7 +79,7 @@ def create_app():
     scheduler.add_job(func=lambda: delete_old_faculty_sessions(app), trigger="interval", hours=24)
 
     # Schedule full backups at the end of the day (midnight)
-    scheduler.add_job(func=lambda: trigger_full_backup_job(app), trigger="cron", hour=17, minute=4)
+    scheduler.add_job(func=lambda: trigger_full_backup_job(app), trigger="cron", hour=13, minute=39)
 
     # Schedule job to record absent students at the end of each subject schedule
     scheduler.add_job(func=lambda: record_absent_students(app), trigger="interval", seconds=60)
@@ -201,7 +200,7 @@ def create_app():
     @app.route('/rfid', methods=['POST'])
     @csrf.exempt
     def handle_rfid():
-        rfid_uid = request.form.get('uid')
+        rfid_uid = request.form.get('uid').upper()
         totp = request.form.get('totp')
         reader_type = request.form.get('reader_type')
         print(f'READER_TYPE {reader_type}')
@@ -238,7 +237,11 @@ def create_app():
                 lock_status = lock_response.get('status')
 
                 # Log the access attempt in ReportLog
-                report_log = ReportLog(action=reader_type, status="Unidentified User")
+                report_log = ReportLog(
+                    action=reader_type, status="Unidentified User",
+                    name="Unregistered User", program_section="N/A",
+                    school_id="N/A", role="N/A"
+                )
                 db.session.add(report_log)
                 db.session.commit()
 
@@ -258,12 +261,13 @@ def create_app():
                 current_day = datetime.now(timezone).strftime('%A')
 
                 # Log the access attempt in ReportLog
-                report_log = ReportLog(user_id=user.id, action=reader_type, timestamp=datetime.now(timezone))
+                report_log = ReportLog(action=reader_type, timestamp=datetime.now(timezone))
                 db.session.add(report_log)
-                db.session.commit()
+                db.session.flush()
 
                 # Admin logic
                 if user.role == 'admin':
+
                     if not totp:
                         print("TOTP required for admin")
                         display_message("TOTP required for admin", "lock")
@@ -279,6 +283,10 @@ def create_app():
                                 # Admin has timed in, proceed with time out
                                 report_log.time_out = datetime.now(timezone)
                                 report_log.status = 'Timed Out'
+                                report_log.name = user.admin_details.full_name
+                                report_log.school_id = user.admin_details.school_id
+                                report_log.program_section = "N/A"
+                                report_log.role = "admin"
                                 db.session.commit()
 
                                 print("Admin has timed out")
@@ -306,6 +314,10 @@ def create_app():
                             formatted_time = datetime.now().strftime('%H:%M:%S')  # Assuming formatted_time variable
                             display_message(f"Door unlocked for admin at {formatted_time}", "unlock")
                             report_log.status = 'Access Granted'
+                            report_log.name = user.admin_details.full_name
+                            report_log.school_id = user.admin_details.school_id
+                            report_log.program_section = "N/A"
+                            report_log.role = "admin"
                             db.session.commit()
                             response_data = {'status': 'admin_authenticated', 'email': user.email}
                             response_status = 200
@@ -322,6 +334,12 @@ def create_app():
                             else:
                                 print("Failed to lock the door")
                                 display_message("Lock failed", "fail")
+                                report_log.status = 'Door Lock Communication Failed'
+                                report_log.name = user.admin_details.full_name
+                                report_log.school_id = user.admin_details.school_id
+                                report_log.program_section = "N/A"
+                                report_log.role = "admin"
+                                db.session.commit()
                                 response_data = {'status': 'lock_failed'}
                             response_status = 500
                     else:
@@ -334,12 +352,22 @@ def create_app():
                         if lock_status == 'success':
                             display_message("Invalid TOTP, door locked", "lock")
                             report_log.status = 'Invalid TOTP attempt'
+                            report_log.name = user.admin_details.full_name
+                            report_log.school_id = user.admin_details.school_id
+                            report_log.program_section = "N/A"
+                            report_log.role = "admin"
                             db.session.commit()
                             response_data = {'status': 'invalid_totp'}
                             response_status = 403
                         else:
                             print("Failed to lock the door")
                             display_message("Lock failed", "fail")
+                            report_log.status = 'Door Lock Communication Failed'
+                            report_log.name = user.admin_details.full_name
+                            report_log.school_id = user.admin_details.school_id
+                            report_log.program_section = "N/A"
+                            report_log.role = "admin"
+                            db.session.commit()
                             response_data = {'status': 'lock_failed'}
                             response_status = 500
 
@@ -354,12 +382,22 @@ def create_app():
                         if lock_status == 'success':
                             display_message("Faculty details missing", "lock")
                             report_log.status = 'Faculty details missing'
+                            report_log.name = user.faculty_details.full_name
+                            report_log.school_id = user.faculty_details.faculty_number
+                            report_log.program_section = "N/A"
+                            report_log.role = "faculty"
                             db.session.commit()
                             response_data = {'error': 'Faculty details missing'}
                             response_status = 400
                         else:
                             print("Failed to lock the door")
                             display_message("Lock failed", "fail")
+                            report_log.status = 'Door Lock Communication Failed'
+                            report_log.name = user.faculty_details.full_name
+                            report_log.school_id = user.faculty_details.faculty_number
+                            report_log.program_section = "N/A"
+                            report_log.role = "faculty"
+                            db.session.commit()
                             response_data = {'status': 'lock_failed'}
                             response_status = 500
 
@@ -408,6 +446,10 @@ def create_app():
                                             # Update ReportLog with timeout
                                             report_log.time_out = datetime.now(timezone)
                                             report_log.status = 'Class dismissed'
+                                            report_log.name = user.faculty_details.full_name
+                                            report_log.school_id = user.faculty_details.faculty_number
+                                            report_log.program_section = "N/A"
+                                            report_log.role = "faculty"
                                             db.session.commit()
 
                                             print("Session ended, class dismissed")
@@ -434,6 +476,12 @@ def create_app():
                                                 else:
                                                     print("Failed to lock the door")
                                                     display_message("Lock failed", "fail")
+                                                    report_log.status = 'Door Lock Communication Failed'
+                                                    report_log.name = user.faculty_details.full_name
+                                                    report_log.school_id = user.faculty_details.faculty_number
+                                                    report_log.program_section = "N/A"
+                                                    report_log.role = "faculty"
+                                                    db.session.commit()
                                                     response_data = {'status': 'lock_failed'}
                                                     response_status = 500
                                         else:
@@ -444,6 +492,10 @@ def create_app():
                                             lock_status = lock_response.get('status')
 
                                             report_log.status = 'No Active session'
+                                            report_log.name = user.faculty_details.full_name
+                                            report_log.school_id = user.faculty_details.faculty_number
+                                            report_log.program_section = "N/A"
+                                            report_log.role = "faculty"
                                             db.session.commit()
 
                                             if lock_status == 'success':
@@ -453,6 +505,12 @@ def create_app():
                                             else:
                                                 print("Failed to lock the door")
                                                 display_message("Lock failed", "fail")
+                                                report_log.status = 'Door Lock Communication Failed'
+                                                report_log.name = user.faculty_details.full_name
+                                                report_log.school_id = user.faculty_details.faculty_number
+                                                report_log.program_section = "N/A"
+                                                report_log.role = "faculty"
+                                                db.session.commit()
                                                 response_data = {'status': 'lock_failed'}
                                                 response_status = 500
 
@@ -469,6 +527,10 @@ def create_app():
 
                                         try:
                                             report_log.status = 'Timed in'
+                                            report_log.name = user.faculty_details.full_name
+                                            report_log.school_id = user.faculty_details.faculty_number
+                                            report_log.program_section = "N/A"
+                                            report_log.role = "faculty"
                                             db.session.commit()
                                         except sqlalchemy.orm.exc.StaleDataError:
                                             db.session.rollback()
@@ -500,6 +562,12 @@ def create_app():
                                             else:
                                                 print("Failed to lock the door")
                                                 display_message("Lock failed", "fail")
+                                                report_log.status = 'Door Lock Communication Failed'
+                                                report_log.name = user.faculty_details.full_name
+                                                report_log.school_id = user.faculty_details.faculty_number
+                                                report_log.program_section = "N/A"
+                                                report_log.role = "faculty"
+                                                db.session.commit()
                                                 response_data = {'status': 'lock_failed'}
                                                 response_status = 500
 
@@ -511,6 +579,10 @@ def create_app():
 
                                     try:
                                         report_log.status = 'Invalid TOTP'
+                                        report_log.name = user.faculty_details.full_name
+                                        report_log.school_id = user.faculty_details.faculty_number
+                                        report_log.program_section = "N/A"
+                                        report_log.role = "faculty"
                                         db.session.commit()
                                     except sqlalchemy.orm.exc.StaleDataError:
                                         db.session.rollback()
@@ -524,6 +596,12 @@ def create_app():
                                     else:
                                         print("Failed to lock the door")
                                         display_message("Lock failed", "fail")
+                                        report_log.status = 'Door Lock Communication Failed'
+                                        report_log.name = user.faculty_details.full_name
+                                        report_log.school_id = user.faculty_details.faculty_number
+                                        report_log.program_section = "N/A"
+                                        report_log.role = "faculty"
+                                        db.session.commit()
                                         response_data = {'status': 'lock_failed'}
                                         response_status = 500
                         else:
@@ -534,6 +612,10 @@ def create_app():
 
                             try:
                                 report_log.status = 'No Schedule'
+                                report_log.name = user.faculty_details.full_name
+                                report_log.school_id = user.faculty_details.faculty_number
+                                report_log.program_section = "N/A"
+                                report_log.role = "faculty"
                                 db.session.commit()
                             except sqlalchemy.orm.exc.StaleDataError:
                                 db.session.rollback()
@@ -548,6 +630,12 @@ def create_app():
                             else:
                                 print("Failed to lock the door")
                                 display_message("Lock failed", "fail")
+                                report_log.status = 'Door Lock Communication Failed'
+                                report_log.name = user.faculty_details.full_name
+                                report_log.school_id = user.faculty_details.faculty_number
+                                report_log.program_section = "N/A"
+                                report_log.role = "faculty"
+                                db.session.commit()
                                 response_data = {'status': 'lock_failed'}
                                 response_status = 500
 
@@ -589,7 +677,11 @@ def create_app():
                             lock_response = lock()
                             lock_status = lock_response.get('status')
                             try:
-                                report_log.status = 'Faculty unauthenticated'
+                                report_log.status = 'Faculty not entered yet'
+                                report_log.name = user.student_details.full_name
+                                report_log.school_id = user.student_details.student_number
+                                report_log.program_section = user.student_details.program_section
+                                report_log.role = "student"
                                 db.session.commit()
                             except sqlalchemy.orm.exc.StaleDataError:
                                 db.session.rollback()
@@ -600,11 +692,21 @@ def create_app():
                                 response_data = {'status': 'faculty_not_authenticated'}
                                 response_status = 403
                                 report_log.status = 'Faculty not entered yet'
+                                report_log.name = user.student_details.full_name
+                                report_log.school_id = user.student_details.student_number
+                                report_log.program_section = user.student_details.program_section
+                                report_log.role = "student"
                                 db.session.commit()
 
                             else:
                                 print("Failed to lock the door")
                                 display_message("Lock failed", "fail")
+                                report_log.status = 'Door Lock Communication Failed'
+                                report_log.name = user.student_details.full_name
+                                report_log.school_id = user.student_details.student_number
+                                report_log.program_section = user.student_details.program_section
+                                report_log.role = "student"
+                                db.session.commit()
                                 response_data = {'status': 'lock_failed'}
                                 response_status = 500
                         else:
@@ -647,6 +749,10 @@ def create_app():
 
                                     try:
                                         report_log.status = 'Unauthorized access'
+                                        report_log.name = user.student_details.full_name
+                                        report_log.school_id = user.student_details.student_number
+                                        report_log.program_section = user.student_details.program_section
+                                        report_log.role = "student"
                                         db.session.commit()
                                     except sqlalchemy.orm.exc.StaleDataError:
                                         db.session.rollback()
@@ -659,6 +765,12 @@ def create_app():
                                     else:
                                         print("Failed to lock the door")
                                         display_message("Lock failed", "fail")
+                                        report_log.status = 'Door Lock Communication Failed'
+                                        report_log.name = user.student_details.full_name
+                                        report_log.school_id = user.student_details.student_number
+                                        report_log.program_section = user.student_details.program_section
+                                        report_log.role = "student"
+                                        db.session.commit()
                                         response_data = {'status': 'lock_failed'}
                                         response_status = 500
 
@@ -692,6 +804,10 @@ def create_app():
                                             # Update report_log status and commit
                                             try:
                                                 report_log.status = 'Attendance already recorded'
+                                                report_log.name = user.student_details.full_name
+                                                report_log.school_id = user.student_details.student_number
+                                                report_log.program_section = user.student_details.program_section
+                                                report_log.role = "student"
                                                 db.session.commit()
                                             except sqlalchemy.orm.exc.StaleDataError:
                                                 db.session.rollback()
@@ -720,6 +836,12 @@ def create_app():
                                                 else:
                                                     print("Failed to lock the door")
                                                     display_message("Lock failed", "fail")
+                                                    report_log.status = 'Door Lock Communication Failed'
+                                                    report_log.name = user.student_details.full_name
+                                                    report_log.school_id = user.student_details.student_number
+                                                    report_log.program_section = user.student_details.program_section
+                                                    report_log.role = "student"
+                                                    db.session.commit()
                                                     response_data = {'status': 'lock_failed'}
                                                     response_status = 500
 
@@ -749,6 +871,10 @@ def create_app():
                                             # Update report_log status and commit
                                             try:
                                                 report_log.status = 'Attendance recorded'
+                                                report_log.name = user.student_details.full_name
+                                                report_log.school_id = user.student_details.student_number
+                                                report_log.program_section = user.student_details.program_section
+                                                report_log.role = "student"
                                                 db.session.commit()
                                             except Exception as e:
                                                 db.session.rollback()
@@ -781,6 +907,12 @@ def create_app():
                                                 else:
                                                     print("Failed to lock the door")
                                                     display_message("Lock failed", "fail")
+                                                    report_log.status = 'Door Lock Communication Failed'
+                                                    report_log.name = user.student_details.full_name
+                                                    report_log.school_id = user.student_details.student_number
+                                                    report_log.program_section = user.student_details.program_section
+                                                    report_log.role = "student"
+                                                    db.session.commit()
                                                     response_data = {'status': 'lock_failed'}
                                                     response_status = 500
 
@@ -796,6 +928,10 @@ def create_app():
                                             attendance.semester = semester  # Ensure semester is updated
                                             report_log.time_out = attendance.time_out  # Update the ReportLog with timeout
                                             report_log.status = 'Time in & out'
+                                            report_log.name = user.student_details.full_name
+                                            report_log.school_id = user.student_details.student_number
+                                            report_log.program_section = user.student_details.program_section
+                                            report_log.role = "student"
                                             db.session.commit()
                                             print(f"Time-out recorded for student {user.email}")
                                             display_message("Time-out recorded", "unlock")
@@ -823,6 +959,12 @@ def create_app():
                                                 else:
                                                     print("Failed to lock the door")
                                                     display_message("Lock failed", "fail")
+                                                    report_log.status = 'Door Lock Communication Failed'
+                                                    report_log.name = user.student_details.full_name
+                                                    report_log.school_id = user.student_details.student_number
+                                                    report_log.program_section = user.student_details.program_section
+                                                    report_log.role = "student"
+                                                    db.session.commit()
                                                     response_data = {'status': 'lock_failed'}
                                                     response_status = 500
                                         else:
@@ -832,6 +974,10 @@ def create_app():
                                             lock_response = lock()
                                             lock_status = lock_response.get('status')
                                             report_log.status = 'No time-in'
+                                            report_log.name = user.student_details.full_name
+                                            report_log.school_id = user.student_details.student_number
+                                            report_log.program_section = user.student_details.program_section
+                                            report_log.role = "student"
                                             db.session.commit()
 
                                             if lock_status == 'success':
@@ -841,6 +987,12 @@ def create_app():
                                             else:
                                                 print("Failed to lock the door")
                                                 display_message("Lock failed", "fail")
+                                                report_log.status = 'Door Lock Communication Failed'
+                                                report_log.name = user.student_details.full_name
+                                                report_log.school_id = user.student_details.student_number
+                                                report_log.program_section = user.student_details.program_section
+                                                report_log.role = "student"
+                                                db.session.commit()
                                                 response_data = {'status': 'lock_failed'}
                                                 response_status = 500
                             else:
@@ -860,6 +1012,12 @@ def create_app():
                                 else:
                                     print("Failed to lock the door")
                                     display_message("Lock failed", "fail")
+                                    report_log.status = 'Door Lock Communication Failed'
+                                    report_log.name = user.student_details.full_name
+                                    report_log.school_id = user.student_details.student_number
+                                    report_log.program_section = user.student_details.program_section
+                                    report_log.role = "student"
+                                    db.session.commit()
                                     response_data = {'status': 'lock_failed'}
                                     response_status = 500
                 else:
@@ -869,6 +1027,7 @@ def create_app():
                     lock_response = lock()
                     lock_status = lock_response.get('status')
                     report_log.status = 'Unexpected user role'
+
                     db.session.commit()
 
                     if lock_status == 'success':
