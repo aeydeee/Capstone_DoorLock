@@ -249,7 +249,6 @@ class User(db.Model, UserMixin):
     student_details = db.relationship('Student', backref='user', uselist=False, cascade="all, delete-orphan")
     faculty_details = db.relationship('Faculty', backref='user', uselist=False, cascade="all, delete-orphan")
     admin_details = db.relationship('Admin', backref='user', uselist=False, cascade="all, delete-orphan")
-    report_log = db.relationship('ReportLog', backref='user', cascade="all, delete-orphan")
     totp_secret = db.relationship('TOTPSecret', back_populates='user', uselist=False, cascade="all, delete-orphan")
 
     # Establish a one-to-many relationship with OAuth
@@ -554,7 +553,10 @@ class ReportLog(db.Model):
     time_out = db.Column(db.DateTime, nullable=True)  # Only for 'out' actions
     status = db.Column(db.String(50))  # 'accepted' or 'denied'
 
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    name = db.Column(db.String(255))
+    school_id = db.Column(db.String(255))
+    program_section = db.Column(db.String(255))
+    role = db.Column(db.String(50))
 
 
 def delete_null_status_logs(app):
