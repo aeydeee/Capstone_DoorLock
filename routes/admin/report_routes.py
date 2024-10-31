@@ -32,8 +32,8 @@ def export_faculty_excel(reports):
     for report in reports:
         ws.append([
             report.timestamp.strftime('%b. %d, %Y') if report.timestamp else '',
-            report.user.faculty_details.full_name.title() if report.user.faculty_details else '',
-            report.user.faculty_details.faculty_number.upper() if report.user.faculty_details else '',
+            report.name.title() if report.role.lower() == 'faculty' else '',
+            report.school_id.upper() if report.role.lower() == 'faculty' else '',
             report.timestamp.strftime('%I:%M %p') if report.timestamp else '',
             report.status.title()
         ])
@@ -61,8 +61,8 @@ def export_admin_excel(reports):
     for report in reports:
         ws.append([
             report.timestamp.strftime('%b. %d, %Y') if report.timestamp else '',
-            report.user.admin_details.full_name.title() if report.user.admin_details else '',
-            report.user.admin_details.faculty_number.upper() if report.user.admin_details else '',
+            report.name.title() if report.role.lower() == 'admin' else '',
+            report.school_id.upper() if report.role.lower() == 'admin' else '',
             report.timestamp.strftime('%I:%M %p') if report.timestamp else '',
             report.status.title()
         ])
@@ -88,8 +88,8 @@ def export_faculty_admin_excel(reports):
 
     # Write the report data for each faculty/admin report
     for report in reports:
-        name = report.user.faculty_details.full_name.title() if report.user.faculty_details else report.user.admin_details.full_name.title()
-        school_id = report.user.faculty_details.faculty_number.upper() if report.user.faculty_details else report.user.admin_details.school_id.upper()
+        name = report.name.title() if report.role.lower() == 'faculty' else report.name.title()
+        school_id = report.school_id.upper() if report.role.lower() == 'faculty' else report.school_id.upper()
 
         ws.append([
             report.timestamp.strftime('%b. %d, %Y') if report.timestamp else '',
@@ -212,8 +212,8 @@ def export_faculty_pdf(reports, start_date=None, end_date=None):
     for report in reports:
         row = [
             Paragraph(report.timestamp.strftime('%b. %d, %Y') if report.timestamp else '', styles['Normal']),
-            Paragraph(report.user.faculty_details.full_name.title(), styles['Normal']),
-            Paragraph(report.user.faculty_details.faculty_number.upper(), styles['Normal']),
+            Paragraph(report.name.title(), styles['Normal']),
+            Paragraph(report.school_id.upper(), styles['Normal']),
             Paragraph(report.timestamp.strftime('%I:%M %p') if report.timestamp else '', styles['Normal']),
             Paragraph(report.status.title(), styles['Normal']),
         ]
@@ -287,8 +287,8 @@ def export_admin_pdf(reports, start_date=None, end_date=None):
     for report in reports:
         row = [
             Paragraph(report.timestamp.strftime('%b. %d, %Y') if report.timestamp else '', styles['Normal']),
-            Paragraph(report.user.admin_details.full_name.title(), styles['Normal']),
-            Paragraph(report.user.admin_details.faculty_number.upper(), styles['Normal']),
+            Paragraph(report.name.title(), styles['Normal']),
+            Paragraph(report.school_id.upper(), styles['Normal']),
             Paragraph(report.timestamp.strftime('%I:%M %p') if report.timestamp else '', styles['Normal']),
             Paragraph(report.status.title(), styles['Normal']),
         ]
@@ -363,10 +363,10 @@ def export_faculty_admin_pdf(reports, start_date=None, end_date=None):
         row = [
             Paragraph(report.timestamp.strftime('%b. %d, %Y') if report.timestamp else '', styles['Normal']),
             Paragraph(
-                report.user.faculty_details.full_name.title() if report.user.faculty_details else report.user.admin_details.full_name.title(),
+                report.name.title() if report.role.lower() == 'faculty' else report.name.title(),
                 styles['Normal']),
             Paragraph(
-                report.user.faculty_details.faculty_number.upper() if report.user.faculty_details else report.user.admin_details.school_id.upper(),
+                report.school_id.upper() if report.role.lower() == 'faculty' else report.school_id.upper(),
                 styles['Normal']),
             Paragraph(report.timestamp.strftime('%I:%M %p') if report.timestamp else '', styles['Normal']),
             Paragraph(report.status.title(), styles['Normal']),
