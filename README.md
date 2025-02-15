@@ -140,15 +140,24 @@ Make sure you have the following installed:
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Access the application in your browser at http://127.0.0.1:5000. Use the admin panel or routes to manage features.
+Access the application in your browser at [http://127.0.0.1:5000](http://127.0.0.1:5000). Use the admin panel or routes to manage features.
 
+### First-time Login
+When running `flask run` for the first time, the system will automatically create an admin account:
+
+- **Email:** `admin@cspc.edu.ph`
+- **TOTP Secret Key:** Displayed **once** in the terminal.
+- **TOTP QR Code:** Automatically opens on Windows for easy scanning.
+
+⚠️ **Important:** Ensure that you **hide** or **delete** the QR code image after setting up for security.
+
+#### Screenshot Guide:
+<a href="https://ibb.co/SX0Cgq5r"><img src="https://i.ibb.co/BVjMJ8cN/Screenshot-2025-02-15-141449.png" alt="Screenshot-2025-02-15-141449" border="0"></a>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 
 
 <!-- ROADMAP -->
